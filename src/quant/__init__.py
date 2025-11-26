@@ -52,6 +52,43 @@ Comprehensive institutional-grade quantitative finance library:
    - Performance analytics
    - Rebalancing strategies
 
+6. High-Performance Computing
+   - GPU acceleration (CuPy)
+   - Numba JIT compilation
+   - Parallel Monte Carlo
+   - Streaming for large simulations
+
+7. Exotic Options
+   - Rainbow options (multi-asset)
+   - Spread options
+   - Compound options
+   - Chooser options
+   - Variance and volatility swaps
+   - Cliquet/Ratchet options
+   - Autocallables
+   - Forward start options
+
+8. Model Calibration
+   - SVI/SSVI volatility surface fitting
+   - Heston model calibration
+   - SABR calibration
+   - Rough volatility models
+   - Local volatility extraction
+
+9. Stress Testing & Scenario Analysis
+   - Historical scenarios
+   - Hypothetical stress tests
+   - Reverse stress testing
+   - Macro-economic scenarios
+   - Extreme value analysis
+
+10. Backtesting Framework
+    - Event-driven backtesting
+    - Walk-forward optimization
+    - Monte Carlo simulation
+    - Transaction cost modeling
+    - Statistical significance testing
+
 Usage:
     from src.quant import (
         # Stochastic processes
@@ -67,7 +104,22 @@ Usage:
         ValueAtRisk, MertonModel, CDSPricer, XVACalculator,
 
         # Portfolio
-        MeanVarianceOptimizer, BlackLittermanModel, RiskParityOptimizer
+        MeanVarianceOptimizer, BlackLittermanModel, RiskParityOptimizer,
+
+        # High performance
+        HighPerformanceMC, create_high_performance_mc,
+
+        # Exotic options
+        RainbowOption, SpreadOption, VarianceSwap, Autocallable,
+
+        # Calibration
+        HestonCalibrator, SABRCalibrator, SVI, SSVI,
+
+        # Stress testing
+        StressTestEngine, HistoricalScenarios, MacroStressFramework,
+
+        # Backtesting
+        BacktestEngine, WalkForwardOptimizer, MonteCarloBacktest
     )
 """
 
@@ -264,6 +316,181 @@ from .portfolio import (
     optimize_portfolio,
 )
 
+# =============================================================================
+# High-Performance Computing
+# =============================================================================
+from .performance import (
+    # Main classes
+    HighPerformanceMC,
+    StreamingMC,
+    GPUAccelerator,
+
+    # Configuration
+    PerformanceConfig,
+    ComputeBackend,
+
+    # Factory functions
+    create_high_performance_mc,
+    benchmark_backends,
+    get_system_info,
+    get_available_backend,
+
+    # Numba-accelerated functions (internal)
+    NUMBA_AVAILABLE,
+    GPU_AVAILABLE,
+)
+
+# =============================================================================
+# Exotic Options
+# =============================================================================
+from .exotic_options import (
+    # Multi-asset options
+    RainbowOption,
+    RainbowType,
+
+    # Spread options
+    SpreadOption,
+    SpreadType,
+
+    # Compound and chooser
+    CompoundOption,
+    ChooserOption,
+
+    # Variance/volatility
+    VarianceSwap,
+    VolatilitySwap,
+
+    # Structured products
+    CliquetOption,
+    Autocallable,
+    ForwardStartOption,
+    PowerOption,
+
+    # Results
+    ExoticPricingResult,
+
+    # Factory functions
+    create_rainbow_option,
+    create_spread_option,
+    create_variance_swap,
+    create_autocallable,
+)
+
+# =============================================================================
+# Model Calibration
+# =============================================================================
+from .calibration import (
+    # Volatility surfaces
+    SVI,
+    SSVI,
+    VolatilitySurface,
+
+    # Model calibrators
+    HestonCalibrator,
+    SABRCalibrator,
+    LocalVolCalibrator,
+    RoughBergomiCalibrator,
+
+    # Implied vol
+    ImpliedVolCalculator,
+
+    # Data classes
+    MarketData,
+    CalibrationResult,
+    CalibrationObjective,
+
+    # Factory functions
+    create_heston_calibrator,
+    create_sabr_calibrator,
+    create_svi_fitter,
+    create_ssvi_fitter,
+    calibrate_volatility_surface,
+)
+
+# =============================================================================
+# Stress Testing & Scenario Analysis
+# =============================================================================
+from .stress_testing import (
+    # Main engine
+    StressTestEngine,
+
+    # Scenarios
+    Scenario,
+    ScenarioType,
+    HistoricalScenarios,
+    ScenarioGenerator,
+
+    # Macro framework
+    MacroStressFramework,
+
+    # EVT
+    ExtremeValueAnalysis,
+
+    # Portfolio
+    Portfolio,
+    PortfolioPosition,
+
+    # Results
+    StressResult,
+    StressTestReport,
+
+    # Factory functions
+    create_stress_test_engine,
+    create_macro_framework,
+    run_standard_stress_tests,
+)
+
+# =============================================================================
+# Backtesting Framework
+# =============================================================================
+from .backtesting import (
+    # Main engine
+    BacktestEngine,
+
+    # Strategy
+    Strategy,
+    StrategyConfig,
+
+    # Orders and trades
+    Order,
+    OrderType,
+    OrderSide,
+    Trade,
+    Position,
+    PositionType,
+    Bar,
+
+    # Transaction costs
+    TransactionCostModel,
+    SimpleTransactionCost,
+    TieredCommission,
+    MarketImpactModel,
+
+    # Position sizing
+    PositionSizer,
+    FixedFractionSizer,
+    VolatilityTargetSizer,
+    KellyCriterionSizer,
+    RiskParitySizer,
+
+    # Walk-forward
+    WalkForwardOptimizer,
+
+    # Monte Carlo
+    MonteCarloBacktest,
+
+    # Statistics
+    SignificanceTester,
+
+    # Results
+    BacktestResult,
+
+    # Factory functions
+    create_backtest_engine,
+    create_walk_forward_optimizer,
+    run_quick_backtest,
+)
+
 __all__ = [
     # Stochastic Calculus
     "BrownianMotion",
@@ -374,6 +601,100 @@ __all__ = [
     "create_risk_parity_optimizer",
     "create_performance_analyzer",
     "optimize_portfolio",
+
+    # High Performance
+    "HighPerformanceMC",
+    "StreamingMC",
+    "GPUAccelerator",
+    "PerformanceConfig",
+    "ComputeBackend",
+    "create_high_performance_mc",
+    "benchmark_backends",
+    "get_system_info",
+    "get_available_backend",
+    "NUMBA_AVAILABLE",
+    "GPU_AVAILABLE",
+
+    # Exotic Options
+    "RainbowOption",
+    "RainbowType",
+    "SpreadOption",
+    "SpreadType",
+    "CompoundOption",
+    "ChooserOption",
+    "VarianceSwap",
+    "VolatilitySwap",
+    "CliquetOption",
+    "Autocallable",
+    "ForwardStartOption",
+    "PowerOption",
+    "ExoticPricingResult",
+    "create_rainbow_option",
+    "create_spread_option",
+    "create_variance_swap",
+    "create_autocallable",
+
+    # Calibration
+    "SVI",
+    "SSVI",
+    "VolatilitySurface",
+    "HestonCalibrator",
+    "SABRCalibrator",
+    "LocalVolCalibrator",
+    "RoughBergomiCalibrator",
+    "ImpliedVolCalculator",
+    "MarketData",
+    "CalibrationResult",
+    "CalibrationObjective",
+    "create_heston_calibrator",
+    "create_sabr_calibrator",
+    "create_svi_fitter",
+    "create_ssvi_fitter",
+    "calibrate_volatility_surface",
+
+    # Stress Testing
+    "StressTestEngine",
+    "Scenario",
+    "ScenarioType",
+    "HistoricalScenarios",
+    "ScenarioGenerator",
+    "MacroStressFramework",
+    "ExtremeValueAnalysis",
+    "Portfolio",
+    "PortfolioPosition",
+    "StressResult",
+    "StressTestReport",
+    "create_stress_test_engine",
+    "create_macro_framework",
+    "run_standard_stress_tests",
+
+    # Backtesting
+    "BacktestEngine",
+    "Strategy",
+    "StrategyConfig",
+    "Order",
+    "OrderType",
+    "OrderSide",
+    "Trade",
+    "Position",
+    "PositionType",
+    "Bar",
+    "TransactionCostModel",
+    "SimpleTransactionCost",
+    "TieredCommission",
+    "MarketImpactModel",
+    "PositionSizer",
+    "FixedFractionSizer",
+    "VolatilityTargetSizer",
+    "KellyCriterionSizer",
+    "RiskParitySizer",
+    "WalkForwardOptimizer",
+    "MonteCarloBacktest",
+    "SignificanceTester",
+    "BacktestResult",
+    "create_backtest_engine",
+    "create_walk_forward_optimizer",
+    "run_quick_backtest",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
