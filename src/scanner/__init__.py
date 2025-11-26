@@ -86,6 +86,17 @@ from .momentum_scanner import (
     PatternMatch,
 )
 
+# Multi-Timeframe Scanner
+from .mtf_scanner import (
+    MultiTimeframeScanner,
+    MTFAnalyzer,
+    TimeframeConverter,
+    MTFSignal,
+    MTFScanResult,
+    TimeframeAnalysis,
+    MTFConfig,
+)
+
 # Engine
 from .engine import (
     ScannerEngine,
@@ -146,6 +157,14 @@ __all__ = [
     "BreakoutScanner",
     "MomentumMetrics",
     "PatternMatch",
+    # Multi-Timeframe
+    "MultiTimeframeScanner",
+    "MTFAnalyzer",
+    "TimeframeConverter",
+    "MTFSignal",
+    "MTFScanResult",
+    "TimeframeAnalysis",
+    "MTFConfig",
     # Engine
     "ScannerEngine",
     "EngineConfig",
