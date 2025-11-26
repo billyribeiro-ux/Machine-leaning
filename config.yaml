@@ -1,0 +1,186 @@
+# Revolution Alpha Engine Configuration
+# =====================================
+# Copy this file to customize your settings
+
+# Environment: development, staging, production, backtest
+environment: development
+version: "1.0.0"
+
+# Trading Configuration
+trading:
+  # Symbols to trade
+  symbols:
+    - SPY
+    - QQQ
+    - SPX
+    - AAPL
+    - MSFT
+    - NVDA
+    - TSLA
+    - AMD
+    - META
+    - GOOGL
+
+  # Futures symbols (ES = E-mini S&P 500, NQ = E-mini Nasdaq)
+  futures_symbols:
+    - ES
+    - NQ
+
+  # Market hours (Eastern Time)
+  market_open_hour: 9
+  market_open_minute: 30
+  market_close_hour: 16
+  market_close_minute: 0
+
+  # Position limits
+  max_position_size: 100        # Max contracts per position
+  max_daily_trades: 50          # Max trades per day
+  max_open_positions: 10        # Max concurrent positions
+
+  # Order settings
+  default_order_type: limit     # limit or market
+  slippage_bps: 5.0            # Expected slippage in basis points
+  commission_per_contract: 0.65 # Commission per contract
+
+  # Timeouts
+  order_timeout_seconds: 30
+  data_timeout_seconds: 10
+
+# Risk Management Configuration
+risk:
+  # Portfolio risk
+  max_portfolio_risk_pct: 2.0   # Max 2% of portfolio at risk
+  max_position_risk_pct: 0.5    # Max 0.5% per position
+  max_daily_loss_pct: 3.0       # Stop trading after 3% daily loss
+
+  # Position sizing
+  kelly_fraction: 0.25          # Quarter Kelly for position sizing
+  max_leverage: 2.0             # Maximum leverage
+
+  # Stop loss settings
+  default_stop_loss_pct: 2.0    # Default stop loss percentage
+  trailing_stop_pct: 1.5        # Trailing stop percentage
+
+  # Greeks limits (for options trading)
+  max_delta_exposure: 100.0     # Max delta exposure
+  max_gamma_exposure: 50.0      # Max gamma exposure
+  max_vega_exposure: 1000.0     # Max vega exposure
+  max_theta_decay_daily: 500.0  # Max daily theta decay
+
+  # Correlation
+  max_correlation_exposure: 0.7  # Max correlation between positions
+
+# Scanner Configuration
+scanner:
+  # Scanning settings
+  scan_interval_seconds: 5       # How often to scan
+  momentum_lookback_periods:
+    - 5
+    - 10
+    - 20
+    - 50
+
+  # Filters
+  min_volume: 100000            # Minimum average volume
+  min_price: 5.0                # Minimum stock price
+  max_spread_pct: 0.5           # Maximum bid-ask spread %
+
+  # Signal requirements
+  min_confidence: 70.0          # Minimum confidence for signals
+  min_confirmations: 3          # Minimum confirmations required
+
+  # Enable/disable scanners
+  enable_momentum_scanner: true
+  enable_squeeze_scanner: true
+  enable_options_scanner: true
+  enable_mtf_scanner: true
+
+  # Alerts
+  alert_on_high_confidence: true
+  alert_threshold: 85.0         # Alert when confidence exceeds this
+
+# Machine Learning Configuration
+ml:
+  # Model settings
+  model_type: ensemble          # ensemble, transformer, lstm
+  hidden_sizes:
+    - 256
+    - 128
+    - 64
+  dropout_rate: 0.2
+  learning_rate: 0.001
+
+  # Training settings
+  batch_size: 32
+  epochs: 100
+  early_stopping_patience: 10
+  validation_split: 0.2
+
+  # Feature engineering
+  lookback_window: 60           # Bars to look back
+  prediction_horizon: 5         # Bars to predict ahead
+  use_technical_features: true
+  use_sentiment_features: true
+
+  # Self-learning
+  enable_online_learning: true
+  online_learning_rate: 0.0001
+  experience_replay_size: 10000
+
+# API Configuration
+api:
+  # Data providers
+  primary_data_provider: polygon
+  backup_data_provider: alpaca
+
+  # Trading mode
+  use_paper_trading: true       # Use paper trading by default
+  websocket_enabled: true       # Enable WebSocket connections
+
+  # Rate limiting
+  max_requests_per_second: 100
+  max_websocket_connections: 5
+
+# Logging Configuration
+logging:
+  level: INFO                   # DEBUG, INFO, WARNING, ERROR, CRITICAL
+  format: "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+  date_format: "%Y-%m-%d %H:%M:%S"
+
+  # File logging
+  log_to_file: true
+  log_dir: logs
+  max_file_size_mb: 100
+  backup_count: 10
+
+  # Trade logging
+  log_trades: true
+  trade_log_file: trades.log
+
+  # Performance logging
+  log_performance: true
+  performance_log_file: performance.log
+
+# Display Configuration
+display:
+  # Theme
+  theme: dark                   # dark or light
+  color_scheme: professional    # professional, vibrant, minimal
+
+  # Dashboard
+  refresh_rate_ms: 1000         # Dashboard refresh rate
+  show_charts: true
+  chart_height: 20
+
+  # Alerts
+  enable_sound_alerts: false
+  enable_desktop_notifications: true
+
+  # Table settings
+  max_rows_display: 50
+  truncate_long_text: true
+
+# Paths
+data_dir: data
+models_dir: models
+output_dir: output
