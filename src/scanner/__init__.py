@@ -109,6 +109,19 @@ from .engine import (
     create_full_engine,
 )
 
+# Data Integration
+from .data_integration import (
+    ScannerDataIntegration,
+    UniversalScannerDataProvider,
+    ScannerDataPackage,
+    ScannerDataConfig,
+    ScannerType,
+    SCANNER_REQUIREMENTS,
+    create_scanner_data_provider,
+    create_scanner_integration,
+    get_scanner_requirements,
+)
+
 __all__ = [
     # Models
     "ScanMode",
@@ -174,6 +187,16 @@ __all__ = [
     "create_squeeze_engine",
     "create_momentum_engine",
     "create_full_engine",
+    # Data Integration
+    "ScannerDataIntegration",
+    "UniversalScannerDataProvider",
+    "ScannerDataPackage",
+    "ScannerDataConfig",
+    "ScannerType",
+    "SCANNER_REQUIREMENTS",
+    "create_scanner_data_provider",
+    "create_scanner_integration",
+    "get_scanner_requirements",
 ]
 
 __version__ = "0.1.0"

@@ -37,6 +37,19 @@ from .self_supervised import (
     create_masked_predictor,
 )
 
+from .data_pipeline import (
+    MLDataPipeline,
+    FeatureEngineer,
+    FeatureConfig,
+    DataStreamManager,
+    DataStreamConfig,
+    FeatureType,
+    TimeFrame,
+    create_feature_engineer,
+    create_ml_pipeline,
+    create_stream_manager,
+)
+
 __all__ = [
     # Models
     "TemporalFusionTransformer",
@@ -62,6 +75,17 @@ __all__ = [
     "create_adaptive_system",
     "create_contrastive_learner",
     "create_masked_predictor",
+    # Data Pipeline
+    "MLDataPipeline",
+    "FeatureEngineer",
+    "FeatureConfig",
+    "DataStreamManager",
+    "DataStreamConfig",
+    "FeatureType",
+    "TimeFrame",
+    "create_feature_engineer",
+    "create_ml_pipeline",
+    "create_stream_manager",
 ]
 
 __version__ = "0.1.0"
