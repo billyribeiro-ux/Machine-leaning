@@ -32,6 +32,19 @@ from .reports import (
     create_report_manager,
 )
 
+from .visual_dashboard import (
+    RevolutionDashboardV2,
+    ASCIIChart,
+    SignalPanel as SignalPanelV2,
+    PerformancePanel as PerformancePanelV2,
+    RiskPanel as RiskPanelV2,
+    OrderBookPanel,
+    HeaderPanel,
+    ColorScheme,
+    ChartConfig,
+    create_dashboard as create_dashboard_v2,
+)
+
 __all__ = [
     # Dashboard
     "RevolutionDashboard",
@@ -51,6 +64,17 @@ __all__ = [
     "HTMLReportGenerator",
     "ReportConfig",
     "create_report_manager",
+    # Visual Dashboard V2
+    "RevolutionDashboardV2",
+    "ASCIIChart",
+    "SignalPanelV2",
+    "PerformancePanelV2",
+    "RiskPanelV2",
+    "OrderBookPanel",
+    "HeaderPanel",
+    "ColorScheme",
+    "ChartConfig",
+    "create_dashboard_v2",
 ]
 
 __version__ = "0.1.0"
