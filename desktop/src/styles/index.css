@@ -1,0 +1,116 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #16161d;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3f3f50;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4f4f60;
+}
+
+/* Base styles */
+body {
+  @apply bg-scanify-dark-900 text-gray-100 font-sans antialiased;
+  overflow: hidden;
+}
+
+/* Custom utility classes */
+@layer components {
+  .card {
+    @apply bg-scanify-dark-800 rounded-xl border border-scanify-dark-600 p-4;
+  }
+
+  .card-header {
+    @apply text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3;
+  }
+
+  .btn-primary {
+    @apply bg-scanify-primary hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg transition-colors;
+  }
+
+  .btn-secondary {
+    @apply bg-scanify-dark-700 hover:bg-scanify-dark-600 text-gray-200 font-medium py-2 px-4 rounded-lg transition-colors border border-scanify-dark-600;
+  }
+
+  .signal-long {
+    @apply text-scanify-success;
+  }
+
+  .signal-short {
+    @apply text-scanify-danger;
+  }
+
+  .signal-neutral {
+    @apply text-gray-400;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+  }
+
+  .badge-success {
+    @apply bg-green-900/50 text-green-400 border border-green-800;
+  }
+
+  .badge-warning {
+    @apply bg-amber-900/50 text-amber-400 border border-amber-800;
+  }
+
+  .badge-danger {
+    @apply bg-red-900/50 text-red-400 border border-red-800;
+  }
+
+  .badge-info {
+    @apply bg-cyan-900/50 text-cyan-400 border border-cyan-800;
+  }
+
+  .table-row {
+    @apply border-b border-scanify-dark-700 hover:bg-scanify-dark-700/50 transition-colors;
+  }
+
+  .input {
+    @apply bg-scanify-dark-700 border border-scanify-dark-600 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-scanify-primary focus:ring-1 focus:ring-scanify-primary;
+  }
+}
+
+/* Animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Glow effects */
+.glow-green {
+  box-shadow: 0 0 10px rgba(34, 197, 94, 0.3);
+}
+
+.glow-red {
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+.glow-purple {
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
