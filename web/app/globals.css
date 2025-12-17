@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 15, 15, 18;
+  --background-end-rgb: 22, 22, 29;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--background-start-rgb)),
+    rgb(var(--background-end-rgb))
+  );
+  min-height: 100vh;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #16161d;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3f3f50;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4f4f60;
+}
+
+@layer components {
+  .card {
+    @apply bg-scanify-dark-800 rounded-xl border border-scanify-dark-600 p-4 shadow-lg;
+  }
+
+  .btn-primary {
+    @apply bg-scanify-primary hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50;
+  }
+
+  .btn-secondary {
+    @apply bg-scanify-dark-700 hover:bg-scanify-dark-600 text-gray-200 font-medium py-2 px-4 rounded-lg transition-colors border border-scanify-dark-600;
+  }
+
+  .input {
+    @apply bg-scanify-dark-700 border border-scanify-dark-600 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-scanify-primary focus:ring-1 focus:ring-scanify-primary w-full;
+  }
+
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+}
