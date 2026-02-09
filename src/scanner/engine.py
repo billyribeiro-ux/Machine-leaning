@@ -61,6 +61,11 @@ from .extreme_value_scanner import ExtremeValueScanner
 from .composite_alpha import CompositeAlphaScanner
 from .ml_adaptive_scanner import AdaptiveScannerFramework
 
+# Phase 3 scanners
+from .skew_intelligence import SkewIntelligenceScanner
+from .vix_intelligence import VIXDeepIntelligenceScanner
+from .gaps_power_scanner import GapsPowerScanner
+
 logger = logging.getLogger(__name__)
 
 
@@ -190,6 +195,11 @@ class ScannerEngine:
         self.register_scanner(MarketBreadthScanner(config=self.scanner_config))
         self.register_scanner(WaveletFourierScanner(config=self.scanner_config))
         self.register_scanner(ExtremeValueScanner(config=self.scanner_config))
+
+        # Phase 3 scanners
+        self.register_scanner(SkewIntelligenceScanner(config=self.scanner_config))
+        self.register_scanner(VIXDeepIntelligenceScanner(config=self.scanner_config))
+        self.register_scanner(GapsPowerScanner(config=self.scanner_config))
 
         # Meta-scanners (combine signals from above)
         composite = CompositeAlphaScanner(config=self.scanner_config)
@@ -792,7 +802,7 @@ def create_advanced_engine(
     This is the ultimate configuration that includes:
     - All base scanners (options, squeeze, momentum)
     - Volatility regime detection (GARCH, regime-switching)
-    - Market structure analysis (BOS, CHoCH, FVG, order blocks)
+    - Predictive structure intelligence (continuation/reversal breaks, PIZ, DSAZ)
     - Advanced options intelligence (IV surface, GEX, vanna/charm)
     - Fractal & information theory (Hurst, entropy, transfer entropy)
     - Market breadth & internals (AD line, McClellan, breadth thrusts)
@@ -800,9 +810,13 @@ def create_advanced_engine(
     - Extreme value theory (tail risk, VaR, CVaR)
     - Composite alpha scanner (Bayesian model averaging)
     - Self-learning adaptive framework (Thompson Sampling, drift detection)
+    - Skew & market internals intelligence (deep skew, PCR, intermarket)
+    - VIX deep intelligence (full VIX chain, VVIX, term structure, patterns)
+    - Gaps power scanner (historical gap stats, fill rates, predictions)
+    - Universal backtest framework (win rate tracking, 1m to 30yr timeframes)
     """
     engine_config = EngineConfig(
-        max_concurrent_scanners=10,
+        max_concurrent_scanners=12,
         scan_interval_seconds=60,
         min_alert_confidence=65.0,
     )

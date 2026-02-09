@@ -144,6 +144,20 @@ from .extreme_value_scanner import ExtremeValueScanner
 from .composite_alpha import CompositeAlphaScanner
 from .ml_adaptive_scanner import AdaptiveScannerFramework
 
+# Phase 3 Scanners
+from .skew_intelligence import SkewIntelligenceScanner
+from .vix_intelligence import VIXDeepIntelligenceScanner
+from .gaps_power_scanner import GapsPowerScanner
+from .scanner_backtest import (
+    ScannerBacktestEngine,
+    ScannerBacktestResult,
+    BacktestTimeframe,
+    TradeSimulator,
+    MultiTimeframeBacktest,
+    ScannerPerformanceTracker,
+    BacktestReportGenerator,
+)
+
 # Data Integration
 from .data_integration import (
     ScannerDataIntegration,
@@ -263,6 +277,18 @@ __all__ = [
     "ExtremeValueScanner",
     "CompositeAlphaScanner",
     "AdaptiveScannerFramework",
+    # Phase 3 Scanners
+    "SkewIntelligenceScanner",
+    "VIXDeepIntelligenceScanner",
+    "GapsPowerScanner",
+    # Universal Backtest Framework
+    "ScannerBacktestEngine",
+    "ScannerBacktestResult",
+    "BacktestTimeframe",
+    "TradeSimulator",
+    "MultiTimeframeBacktest",
+    "ScannerPerformanceTracker",
+    "BacktestReportGenerator",
 ]
 
 __version__ = "0.1.0"
