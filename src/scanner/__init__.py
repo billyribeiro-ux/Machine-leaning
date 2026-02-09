@@ -107,7 +107,42 @@ from .engine import (
     create_squeeze_engine,
     create_momentum_engine,
     create_full_engine,
+    create_advanced_engine,
 )
+
+# Advanced Models
+from .advanced_models import (
+    AdvancedScanResult,
+    ScanCategory,
+    RegimeContext,
+    ExpectedTimeframe,
+    VolatilityRegime,
+    TrendPhase,
+    VolatilityEstimate,
+    GARCHResult,
+    StructureBreak,
+    FairValueGap,
+    OrderBlock,
+    LiquiditySweep,
+    IVSurface,
+    IVSurfacePoint,
+    GreeksExposure,
+    FractalAnalysis,
+    BreadthSnapshot,
+    BacktestValidation,
+    ScanPerformanceTracker,
+)
+
+# Advanced Scanners
+from .volatility_scanner import VolatilityRegimeScanner
+from .market_structure_scanner import MarketStructureScanner
+from .options_intelligence import OptionsIntelligenceScanner
+from .fractal_scanner import FractalInformationScanner
+from .breadth_scanner import MarketBreadthScanner
+from .wavelet_scanner import WaveletFourierScanner
+from .extreme_value_scanner import ExtremeValueScanner
+from .composite_alpha import CompositeAlphaScanner
+from .ml_adaptive_scanner import AdaptiveScannerFramework
 
 # Data Integration
 from .data_integration import (
@@ -187,6 +222,7 @@ __all__ = [
     "create_squeeze_engine",
     "create_momentum_engine",
     "create_full_engine",
+    "create_advanced_engine",
     # Data Integration
     "ScannerDataIntegration",
     "UniversalScannerDataProvider",
@@ -197,6 +233,36 @@ __all__ = [
     "create_scanner_data_provider",
     "create_scanner_integration",
     "get_scanner_requirements",
+    # Advanced Models
+    "AdvancedScanResult",
+    "ScanCategory",
+    "RegimeContext",
+    "ExpectedTimeframe",
+    "VolatilityRegime",
+    "TrendPhase",
+    "VolatilityEstimate",
+    "GARCHResult",
+    "StructureBreak",
+    "FairValueGap",
+    "OrderBlock",
+    "LiquiditySweep",
+    "IVSurface",
+    "IVSurfacePoint",
+    "GreeksExposure",
+    "FractalAnalysis",
+    "BreadthSnapshot",
+    "BacktestValidation",
+    "ScanPerformanceTracker",
+    # Advanced Scanners
+    "VolatilityRegimeScanner",
+    "MarketStructureScanner",
+    "OptionsIntelligenceScanner",
+    "FractalInformationScanner",
+    "MarketBreadthScanner",
+    "WaveletFourierScanner",
+    "ExtremeValueScanner",
+    "CompositeAlphaScanner",
+    "AdaptiveScannerFramework",
 ]
 
 __version__ = "0.1.0"

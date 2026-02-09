@@ -21,6 +21,21 @@ from .engine import (
     create_backtest_engine,
 )
 
+from .validation import (
+    BacktestValidator,
+    WalkForwardOptimizer,
+    PurgedKFoldCV,
+    CombinatorialPurgedCV,
+    TransactionCostModel,
+    CrisisScenario,
+    deflated_sharpe_ratio,
+    probability_of_overfitting,
+    minimum_backtest_length,
+    bonferroni_correction,
+    benjamini_hochberg,
+    holm_correction,
+)
+
 __all__ = [
     "BacktestEngine",
     "Trade",
@@ -30,6 +45,19 @@ __all__ = [
     "PerformanceMetrics",
     "DrawdownAnalysis",
     "create_backtest_engine",
+    # Validation framework
+    "BacktestValidator",
+    "WalkForwardOptimizer",
+    "PurgedKFoldCV",
+    "CombinatorialPurgedCV",
+    "TransactionCostModel",
+    "CrisisScenario",
+    "deflated_sharpe_ratio",
+    "probability_of_overfitting",
+    "minimum_backtest_length",
+    "bonferroni_correction",
+    "benjamini_hochberg",
+    "holm_correction",
 ]
 
 __version__ = "0.1.0"
