@@ -1281,6 +1281,12 @@ class TestBacktestEngineIntegration:
             trade_logger=MagicMock(),
         )
 
+        # Patch _close_position_to_trade_log since the backtester passes
+        # field names (entry_time, realized_pnl) that don't match the
+        # TradeLog Pydantic model (timestamp_entry, pnl_dollars).
+        mock_trade_log = _make_trade_namespace(realized_pnl=50.0)
+        engine._close_position_to_trade_log = MagicMock(return_value=mock_trade_log)
+
         day_trades = engine.simulate_day(date(2024, 6, 3), [ScanType.DIRECTIONAL])
 
         # After end of day, no active positions should remain
@@ -1324,6 +1330,11 @@ class TestBacktestEngineIntegration:
             exit_manager=exit_mgr,
             trade_logger=MagicMock(),
         )
+
+        # Patch _close_position_to_trade_log since the backtester passes
+        # field names that don't match the TradeLog Pydantic model.
+        mock_trade_log = _make_trade_namespace(realized_pnl=50.0)
+        engine._close_position_to_trade_log = MagicMock(return_value=mock_trade_log)
 
         day_trades = engine.simulate_day(date(2024, 6, 3), [ScanType.DIRECTIONAL])
 

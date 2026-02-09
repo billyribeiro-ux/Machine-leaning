@@ -405,17 +405,14 @@ def orchestrator(
     mock_calibrator,
 ) -> ScanifyOrchestrator:
     """Create a ScanifyOrchestrator with all components mocked."""
-    with patch.object(
-        ScanifyOrchestrator, "load_state", return_value=None
-    ):
-        orch = ScanifyOrchestrator(
-            data_provider="mock",
-            api_key="test-key",
-            risk_budget=10_000.0,
-            paper_trade=True,
-            calibration_state=_make_calibration_state(),
-            log_dir="/tmp/scanify_test_logs",
-        )
+    orch = _create_orchestrator_patched(
+        data_provider="mock",
+        api_key="test-key",
+        risk_budget=10_000.0,
+        paper_trade=True,
+        calibration_state=_make_calibration_state(),
+        log_dir="/tmp/scanify_test_logs",
+    )
 
     # Replace sub-components with mocks
     orch.data_feed = mock_data_feed
@@ -442,13 +439,10 @@ class TestInitialization:
 
     def test_creates_all_sub_components(self) -> None:
         """All sub-components are instantiated on construction."""
-        with patch.object(
-            ScanifyOrchestrator, "load_state", return_value=None
-        ):
-            orch = ScanifyOrchestrator(
-                data_provider="mock",
-                calibration_state=_make_calibration_state(),
-            )
+        orch = _create_orchestrator_patched(
+            data_provider="mock",
+            calibration_state=_make_calibration_state(),
+        )
 
         assert orch.data_feed is not None
         assert orch.bs_calc is not None
@@ -465,13 +459,10 @@ class TestInitialization:
 
     def test_default_configuration_values(self) -> None:
         """Default constructor arguments produce expected internal state."""
-        with patch.object(
-            ScanifyOrchestrator, "load_state", return_value=None
-        ):
-            orch = ScanifyOrchestrator(
-                data_provider="mock",
-                calibration_state=_make_calibration_state(),
-            )
+        orch = _create_orchestrator_patched(
+            data_provider="mock",
+            calibration_state=_make_calibration_state(),
+        )
 
         assert orch._data_provider == "mock"
         assert orch._risk_budget == 10_000.0
@@ -489,17 +480,14 @@ class TestInitialization:
 
     def test_custom_configuration_override(self) -> None:
         """Custom constructor arguments override defaults."""
-        with patch.object(
-            ScanifyOrchestrator, "load_state", return_value=None
-        ):
-            orch = ScanifyOrchestrator(
-                data_provider="mock",
-                api_key="CUSTOM_KEY",
-                risk_budget=50_000.0,
-                paper_trade=False,
-                calibration_state=_make_calibration_state(),
-                log_dir="/custom/logs",
-            )
+        orch = _create_orchestrator_patched(
+            data_provider="mock",
+            api_key="CUSTOM_KEY",
+            risk_budget=50_000.0,
+            paper_trade=False,
+            calibration_state=_make_calibration_state(),
+            log_dir="/custom/logs",
+        )
 
         assert orch._data_provider == "mock"
         assert orch._api_key == "CUSTOM_KEY"
@@ -510,29 +498,43 @@ class TestInitialization:
     def test_calibration_state_loaded_from_disk_when_none(self) -> None:
         """When no CalibrationState is given, load_state is invoked."""
         mock_state = _make_calibration_state()
-        with patch.object(
-            ScanifyOrchestrator, "load_state", return_value=mock_state
-        ) as mock_load:
-            orch = ScanifyOrchestrator(
-                data_provider="mock",
-                calibration_state=None,
-            )
-        mock_load.assert_called_once()
-        assert orch._calibration_state is mock_state
+        patches = [patch(target) for target in _PATCHES_FOR_INIT]
+        for p in patches:
+            p.start()
+        try:
+            with patch.object(
+                ScanifyOrchestrator, "load_state", return_value=mock_state
+            ) as mock_load:
+                orch = ScanifyOrchestrator(
+                    data_provider="mock",
+                    calibration_state=None,
+                )
+            mock_load.assert_called_once()
+            assert orch._calibration_state is mock_state
+        finally:
+            for p in patches:
+                p.stop()
 
     def test_calibration_state_skips_load_when_provided(self) -> None:
         """When CalibrationState is provided, load_state is NOT used."""
         provided_state = _make_calibration_state()
-        with patch.object(
-            ScanifyOrchestrator, "load_state", return_value=None
-        ) as mock_load:
-            orch = ScanifyOrchestrator(
-                data_provider="mock",
-                calibration_state=provided_state,
-            )
-        # load_state is never called when calibration_state is passed
-        mock_load.assert_not_called()
-        assert orch._calibration_state is provided_state
+        patches = [patch(target) for target in _PATCHES_FOR_INIT]
+        for p in patches:
+            p.start()
+        try:
+            with patch.object(
+                ScanifyOrchestrator, "load_state", return_value=None
+            ) as mock_load:
+                orch = ScanifyOrchestrator(
+                    data_provider="mock",
+                    calibration_state=provided_state,
+                )
+            # load_state is never called when calibration_state is passed
+            mock_load.assert_not_called()
+            assert orch._calibration_state is provided_state
+        finally:
+            for p in patches:
+                p.stop()
 
 
 # ============================================================================
@@ -1597,21 +1599,29 @@ class TestStatePersistence:
 class TestFactoryFunction:
     """Test create_scanify_system factory."""
 
+    def _patched_factory(self, config=None):
+        """Run create_scanify_system with all sub-component constructors patched."""
+        patches = [patch(target) for target in _PATCHES_FOR_INIT]
+        for p in patches:
+            p.start()
+        try:
+            with patch.object(
+                ScanifyOrchestrator, "load_state", return_value=None
+            ):
+                system = create_scanify_system(config)
+        finally:
+            for p in patches:
+                p.stop()
+        return system
+
     def test_create_scanify_system_returns_orchestrator(self) -> None:
         """Factory returns a valid ScanifyOrchestrator instance."""
-        with patch.object(
-            ScanifyOrchestrator, "load_state", return_value=None
-        ):
-            system = create_scanify_system()
-
+        system = self._patched_factory()
         assert isinstance(system, ScanifyOrchestrator)
 
     def test_create_scanify_system_default_config(self) -> None:
         """Factory with no config uses sensible defaults."""
-        with patch.object(
-            ScanifyOrchestrator, "load_state", return_value=None
-        ):
-            system = create_scanify_system()
+        system = self._patched_factory()
 
         assert system._data_provider == "polygon"
         assert system._risk_budget == 10_000.0
@@ -1627,10 +1637,7 @@ class TestFactoryFunction:
             "log_dir": "/tmp/custom_scanify",
         }
 
-        with patch.object(
-            ScanifyOrchestrator, "load_state", return_value=None
-        ):
-            system = create_scanify_system(config)
+        system = self._patched_factory(config)
 
         assert system._data_provider == "mock"
         assert system._api_key == "MY_KEY"
@@ -1646,30 +1653,31 @@ class TestFactoryFunction:
             "calibration_state": cal_state,
         }
 
-        with patch.object(
-            ScanifyOrchestrator, "load_state", return_value=None
-        ) as mock_load:
-            system = create_scanify_system(config)
+        patches = [patch(target) for target in _PATCHES_FOR_INIT]
+        for p in patches:
+            p.start()
+        try:
+            with patch.object(
+                ScanifyOrchestrator, "load_state", return_value=None
+            ) as mock_load:
+                system = create_scanify_system(config)
+        finally:
+            for p in patches:
+                p.stop()
 
         assert system._calibration_state is cal_state
         mock_load.assert_not_called()
 
     def test_create_scanify_system_with_none_config(self) -> None:
         """Factory handles None config gracefully (uses defaults)."""
-        with patch.object(
-            ScanifyOrchestrator, "load_state", return_value=None
-        ):
-            system = create_scanify_system(None)
+        system = self._patched_factory(None)
 
         assert isinstance(system, ScanifyOrchestrator)
         assert system._data_provider == "polygon"
 
     def test_create_scanify_system_with_empty_config(self) -> None:
         """Factory handles empty dict config (uses all defaults)."""
-        with patch.object(
-            ScanifyOrchestrator, "load_state", return_value=None
-        ):
-            system = create_scanify_system({})
+        system = self._patched_factory({})
 
         assert isinstance(system, ScanifyOrchestrator)
         assert system.paper_trade is True
