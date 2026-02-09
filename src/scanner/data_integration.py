@@ -58,7 +58,7 @@ class ScannerType(Enum):
     ZERO_DTE = "0dte"
     VIX_TRACKER = "vix_tracker"
     DARK_POOL = "dark_pool"
-    SMART_MONEY = "smart_money"
+    ALPHA_FLOW = "alpha_flow"
     REGIME = "regime"
     CROSS_ASSET = "cross_asset"
     ORDER_FLOW = "order_flow"
@@ -146,8 +146,8 @@ SCANNER_REQUIREMENTS = {
         lookback_days=30,
         timeframe="1d"
     ),
-    ScannerType.SMART_MONEY: ScannerDataConfig(
-        scanner_type=ScannerType.SMART_MONEY,
+    ScannerType.ALPHA_FLOW: ScannerDataConfig(
+        scanner_type=ScannerType.ALPHA_FLOW,
         requires_options=True,
         requires_trades=True,
         lookback_days=30,
@@ -603,7 +603,7 @@ class ScannerDataIntegration:
             scanner_types = [
                 ScannerType.VIX_TRACKER,
                 ScannerType.DARK_POOL,
-                ScannerType.SMART_MONEY,
+                ScannerType.ALPHA_FLOW,
                 ScannerType.REGIME,
                 ScannerType.CROSS_ASSET,
                 ScannerType.ORDER_FLOW

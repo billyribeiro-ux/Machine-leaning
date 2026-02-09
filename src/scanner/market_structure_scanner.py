@@ -1,24 +1,26 @@
 """
-Revolution Alpha Engine - Market Structure Scanner (ICT/SMC Concepts)
+Revolution Alpha Engine - Predictive Structure Intelligence Scanner
 
-Institutional-grade scanner implementing Inner Circle Trader (ICT) and
-Smart Money Concepts (SMC) for detecting:
-- Break of Structure (BOS) and Change of Character (CHoCH)
-- Fair Value Gaps (FVG / Imbalances)
-- Order Blocks (OB) with volume confirmation
-- Liquidity Sweeps / Stop Hunts
-- Premium/Discount zone classification
+Revolution Alpha's proprietary market structure detection system.
+We see the move BEFORE the move. We are ahead of institutions.
+
+Detects predictive price structure using:
+- Structure Shift Detection (SSD) — trend continuation & reversal breaks
+- Price Imbalance Zones (PIZ) — gaps left by aggressive momentum
+- Demand/Supply Accumulation Zones (DSAZ) — with volume confirmation
+- Liquidity Trap Detection (LTD) — false breakout / trap identification
+- Value Zone classification — overextended vs. discounted pricing
 
 Mathematical Basis:
-    Market structure analysis is grounded in auction market theory.
-    Price moves from areas of efficiency (fair value) to inefficiency
-    (imbalances), and smart money accumulates/distributes at order blocks
-    before engineering liquidity sweeps to fill institutional orders.
+    Grounded in auction market theory and statistical price behavior.
+    Price moves from efficiency (fair value) to inefficiency (imbalances).
+    Accumulation/distribution zones form before explosive directional moves.
+    Liquidity traps reveal exhaustion and set up high-probability reversals.
 
 References:
-    - ICT Mentorship concepts (swing structure, BOS, CHoCH)
-    - SMC framework (order blocks, fair value gaps, liquidity)
+    - Auction Market Theory (Steidlmayer)
     - Wyckoff methodology (accumulation, distribution phases)
+    - Revolution Alpha proprietary research
 """
 
 import numpy as np
@@ -206,16 +208,16 @@ class SwingDetector:
 # ============================================================================
 
 class MarketStructureAnalyzer:
-    """Detect Break of Structure (BOS) and Change of Character (CHoCH).
+    """Detect Structure Shifts — trend continuations and reversals.
 
     The analyser tracks whether the market is making higher-highs /
     higher-lows (uptrend) or lower-highs / lower-lows (downtrend) and
     flags transitions between the two states.
 
-    * **BOS** -- continuation: price breaks the most recent swing extreme
-      in the direction of the established trend.
-    * **CHoCH** -- reversal: price breaks a swing extreme *against* the
-      established trend, signalling a potential character change.
+    * **Continuation Break (BOS)** -- price breaks the most recent swing
+      extreme in the direction of the established trend.
+    * **Reversal Break (CHoCH)** -- price breaks a swing extreme *against*
+      the established trend, signalling a predictive shift.
     """
 
     @staticmethod
@@ -246,14 +248,14 @@ class MarketStructureAnalyzer:
         swings: List[SwingPoint],
         closes: np.ndarray,
     ) -> List[StructureBreak]:
-        """Detect Break of Structure events.
+        """Detect Continuation Breaks (trend-confirming structure shifts).
 
-        A **bullish BOS** occurs when, in an established uptrend, the close
-        breaks above the most recent swing high -- confirming trend
-        continuation.
+        A **bullish continuation** occurs when, in an established uptrend,
+        the close breaks above the most recent swing high — confirming
+        trend persistence.
 
-        A **bearish BOS** occurs when, in an established downtrend, the
-        close breaks below the most recent swing low.
+        A **bearish continuation** occurs when, in an established downtrend,
+        the close breaks below the most recent swing low.
 
         Parameters
         ----------
@@ -325,15 +327,15 @@ class MarketStructureAnalyzer:
         swings: List[SwingPoint],
         closes: np.ndarray,
     ) -> List[StructureBreak]:
-        """Detect Change of Character events.
+        """Detect Reversal Breaks (predictive structure shifts).
 
-        A **bullish CHoCH** occurs in a downtrend (lower-lows, lower-highs)
-        when price breaks above the most recent swing high -- signalling a
-        potential reversal to the upside.
+        A **bullish reversal** occurs in a downtrend (lower-lows,
+        lower-highs) when price breaks above the most recent swing high
+        — signalling a predictive shift to the upside.
 
-        A **bearish CHoCH** occurs in an uptrend (higher-highs, higher-lows)
-        when price breaks below the most recent swing low -- signalling a
-        potential reversal to the downside.
+        A **bearish reversal** occurs in an uptrend (higher-highs,
+        higher-lows) when price breaks below the most recent swing low
+        — signalling a predictive shift to the downside.
 
         Parameters
         ----------
@@ -405,12 +407,12 @@ class MarketStructureAnalyzer:
 # ============================================================================
 
 class FVGDetector:
-    """Detect Fair Value Gaps (imbalances) in price action.
+    """Detect Price Imbalance Zones (PIZ) in price action.
 
-    A **bullish FVG** forms when ``candle[i-1].high < candle[i+1].low``,
+    A **bullish imbalance** forms when ``candle[i-1].high < candle[i+1].low``,
     leaving a gap that price has not efficiently traded through.
 
-    A **bearish FVG** forms when ``candle[i-1].low > candle[i+1].high``.
+    A **bearish imbalance** forms when ``candle[i-1].low > candle[i+1].high``.
 
     Parameters
     ----------
@@ -429,7 +431,7 @@ class FVGDetector:
         lows: np.ndarray,
         closes: np.ndarray,
     ) -> List[FairValueGap]:
-        """Scan for Fair Value Gaps across the bar series.
+        """Scan for Price Imbalance Zones across the bar series.
 
         Parameters
         ----------
@@ -558,12 +560,12 @@ class FVGDetector:
 # ============================================================================
 
 class OrderBlockDetector:
-    """Detect institutional order blocks.
+    """Detect Demand/Supply Accumulation Zones (DSAZ).
 
-    A **bullish order block** is the last bearish candle before a
+    A **bullish accumulation zone** is the last bearish candle before a
     significant bullish impulse move (> ``impulse_atr_mult`` x ATR).
 
-    A **bearish order block** is the last bullish candle before a
+    A **bearish distribution zone** is the last bullish candle before a
     significant bearish impulse move.
 
     Parameters
@@ -798,12 +800,12 @@ class OrderBlockDetector:
 # ============================================================================
 
 class LiquiditySweepDetector:
-    """Detect liquidity sweeps (stop hunts).
+    """Detect liquidity traps — predictive reversal zones.
 
-    A **buy-side sweep** occurs when price pokes above a prior swing high
+    A **buy-side trap** occurs when price pokes above a prior swing high
     or pool of equal highs and then reverses back below within a few bars.
 
-    A **sell-side sweep** occurs when price pokes below a prior swing low
+    A **sell-side trap** occurs when price pokes below a prior swing low
     or pool of equal lows and then reverses back above.
 
     Parameters
@@ -992,9 +994,9 @@ class PremiumDiscountAnalyzer:
     Given a swing high and swing low that define the dealing range:
 
     * **Premium zone**: price is above the 50% (equilibrium) level.
-      Institutional sellers look to distribute here.
+      Distribution pressure increases here.
     * **Discount zone**: price is below the 50% level.
-      Institutional buyers look to accumulate here.
+      Accumulation pressure increases here.
     * **Equilibrium**: price is within a small tolerance band of 50%.
 
     Parameters
@@ -1067,24 +1069,24 @@ class PremiumDiscountAnalyzer:
 # ============================================================================
 
 class MarketStructureScanner(BaseScanner[AdvancedScanResult]):
-    """ICT / SMC Market Structure Scanner.
+    """Revolution Alpha — Predictive Structure Intelligence Scanner.
 
-    For each symbol in the scan universe this scanner:
+    We see the move BEFORE the move. For each symbol this scanner:
 
     1. Detects swing highs and swing lows.
-    2. Checks for Break of Structure (BOS) and Change of Character (CHoCH).
-    3. Identifies Fair Value Gaps.
-    4. Detects order blocks with volume confirmation.
-    5. Checks for liquidity sweeps / stop hunts.
+    2. Identifies Continuation Breaks and Reversal Breaks.
+    3. Maps Price Imbalance Zones (PIZ).
+    4. Detects Demand/Supply Accumulation Zones (DSAZ) with volume confirmation.
+    5. Identifies Liquidity Traps — predictive reversal zones.
     6. Classifies the current price as premium or discount.
     7. Generates an :class:`AdvancedScanResult` when actionable structure
        is found.
 
     Signal Logic
     -------------
-    * **CHoCH + FVG in discount** -- strong BULLISH signal.
-    * **CHoCH + FVG in premium** -- strong BEARISH signal.
-    * **BOS + order-block retest** -- continuation signal.
+    * **Reversal Break + PIZ in discount** -- strong BULLISH signal.
+    * **Reversal Break + PIZ in premium** -- strong BEARISH signal.
+    * **Continuation Break + DSAZ retest** -- continuation signal.
     """
 
     def __init__(
@@ -1143,7 +1145,7 @@ class MarketStructureScanner(BaseScanner[AdvancedScanResult]):
         symbol: str,
         context: ScanContext,
     ) -> Optional[AdvancedScanResult]:
-        """Run the full ICT/SMC analysis pipeline for a single symbol."""
+        """Run the full predictive structure analysis pipeline for a single symbol."""
         market_data = context.market_data.get(symbol)
         hist_data = context.historical_data.get(symbol)
 
@@ -1371,10 +1373,10 @@ class MarketStructureScanner(BaseScanner[AdvancedScanResult]):
             contradicting_evidence=contradicting,
             regime_context=regime,
             mathematical_basis=(
-                "ICT/SMC structure analysis: swing detection via N-bar "
-                "fractal, BOS/CHoCH from trend-state transitions, FVG "
-                "from 3-candle imbalance, OB from impulse-preceded candle "
-                "with volume confirmation."
+                "Revolution Alpha predictive structure analysis: swing "
+                "detection via N-bar fractal, continuation/reversal breaks "
+                "from trend-state transitions, PIZ from 3-candle imbalance, "
+                "DSAZ from impulse-preceded candle with volume confirmation."
             ),
             false_positive_rate=round(1.0 - confidence, 4),
             decay_halflife_days=5,

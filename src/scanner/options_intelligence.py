@@ -6,7 +6,7 @@ Institutional-grade options intelligence providing:
 - Gamma exposure mapping with pin prediction
 - Vanna/charm flow estimation for mechanical hedging flows
 - Max pain calculation with convergence probability
-- Options flow classification (smart money, whale detection)
+- Options flow classification (alpha flow scoring, whale detection)
 - Integrated scanner producing AdvancedScanResult signals
 
 Mathematical foundations:
@@ -1097,7 +1097,7 @@ class ClassifiedTrade:
     is_opening: bool
     is_buyer_initiated: bool
     is_institutional: bool
-    smart_money_score: float
+    alpha_flow_score: float
     classification: str  # "opening_buy", "opening_sell", "closing_buy", "closing_sell"
 
 
@@ -1191,20 +1191,20 @@ class OptionsFlowClassifier:
             "conviction": conviction,
         }
 
-    def calculate_smart_money_score(
+    def calculate_alpha_flow_score(
         self, trades: List[ClassifiedTrade]
     ) -> float:
-        """Calculate an aggregate smart money score from classified trades.
+        """Calculate an aggregate alpha flow score from classified trades.
 
-        Weights institutional opening trades higher. Buyer-initiated
-        trades above the ask receive extra weight. The score reflects
-        the degree to which informed, directional money is entering.
+        Weights large opening trades higher. Buyer-initiated trades above
+        the ask receive extra weight. The score reflects the degree to
+        which informed, directional capital is entering.
 
         Args:
             trades: List of classified trades.
 
         Returns:
-            Smart money score from 0.0 to 100.0.
+            Alpha flow score from 0.0 to 100.0.
         """
         if not trades:
             return 0.0
@@ -1217,7 +1217,7 @@ class OptionsFlowClassifier:
         for t in trades:
             weight = t.premium / total_premium
 
-            base = t.smart_money_score
+            base = t.alpha_flow_score
 
             # Institutional opening trades are highest signal
             if t.is_institutional and t.is_opening:
@@ -1236,7 +1236,7 @@ class OptionsFlowClassifier:
         trades: List[ClassifiedTrade],
         threshold: int = 1_000_000,
     ) -> List[Dict[str, Any]]:
-        """Flag large premium trades that indicate whale/institutional activity.
+        """Flag large premium trades that indicate whale activity.
 
         Args:
             trades: List of classified trades.
@@ -1259,7 +1259,7 @@ class OptionsFlowClassifier:
                     "is_institutional": t.is_institutional,
                     "is_opening": t.is_opening,
                     "is_buyer_initiated": t.is_buyer_initiated,
-                    "smart_money_score": round(t.smart_money_score, 2),
+                    "alpha_flow_score": round(t.alpha_flow_score, 2),
                     "alert_level": (
                         "critical" if t.premium >= threshold * 5
                         else "high" if t.premium >= threshold * 2
@@ -1310,7 +1310,7 @@ class OptionsIntelligenceScanner(BaseScanner[AdvancedScanResult]):
         2. Maps gamma exposure and identifies key levels.
         3. Calculates vanna/charm exposure for flow prediction.
         4. Calculates max pain.
-        5. Classifies options flow for smart money detection.
+        5. Classifies options flow for alpha flow scoring.
         6. Generates AdvancedScanResult when actionable signals emerge.
 
         Args:
@@ -1421,7 +1421,7 @@ class OptionsIntelligenceScanner(BaseScanner[AdvancedScanResult]):
 
         # Step 5: Flow Classification
         classified_trades = self._classify_chain_flow(chain)
-        smart_money_score = self.flow_classifier.calculate_smart_money_score(
+        alpha_flow_score = self.flow_classifier.calculate_alpha_flow_score(
             classified_trades
         )
         whale_trades = self.flow_classifier.detect_whale_activity(classified_trades)
@@ -1470,7 +1470,7 @@ class OptionsIntelligenceScanner(BaseScanner[AdvancedScanResult]):
             max_pain=max_pain,
             pin_prob=pin_prob,
             predicted_pin=predicted_pin,
-            smart_money_score=smart_money_score,
+            alpha_flow_score=alpha_flow_score,
             whale_trades=whale_trades,
             chain=chain,
             context=context,
@@ -1495,7 +1495,7 @@ class OptionsIntelligenceScanner(BaseScanner[AdvancedScanResult]):
         max_pain: Optional[float],
         pin_prob: float,
         predicted_pin: Optional[float],
-        smart_money_score: float,
+        alpha_flow_score: float,
         whale_trades: List[Dict[str, Any]],
         chain: OptionsChain,
         context: ScanContext,
@@ -1537,7 +1537,7 @@ class OptionsIntelligenceScanner(BaseScanner[AdvancedScanResult]):
                 "predicted_pin": predicted_pin,
             },
             "flow": {
-                "smart_money_score": round(smart_money_score, 2),
+                "alpha_flow_score": round(alpha_flow_score, 2),
                 "whale_count": len(whale_trades),
                 "put_call_ratio": round(chain.put_call_ratio, 3),
             },
@@ -1812,12 +1812,12 @@ class OptionsIntelligenceScanner(BaseScanner[AdvancedScanResult]):
             else:
                 direction = "NEUTRAL"
 
-            confidence = min(0.80, 0.45 + len(whale_trades) * 0.05 + smart_money_score / 200.0)
+            confidence = min(0.80, 0.45 + len(whale_trades) * 0.05 + alpha_flow_score / 200.0)
             strength = min(1.0, total_whale_premium / 5_000_000)
 
             evidence_for = [
                 f"{len(whale_trades)} whale trades detected, total premium ${total_whale_premium:,.0f}",
-                f"Smart money score: {smart_money_score:.0f}/100",
+                f"Alpha flow score: {alpha_flow_score:.0f}/100",
             ]
             evidence_against = []
 
@@ -1859,7 +1859,7 @@ class OptionsIntelligenceScanner(BaseScanner[AdvancedScanResult]):
                 regime_context=regime_context,
                 mathematical_basis=(
                     f"Whale Premium = ${total_whale_premium:,.0f}, "
-                    f"Smart Money Score = {smart_money_score:.1f}, "
+                    f"Alpha Flow Score = {alpha_flow_score:.1f}, "
                     f"Bullish/Bearish Ratio = "
                     f"{bullish_premium / max(1, bearish_premium):.2f}"
                 ),
@@ -2005,7 +2005,7 @@ class OptionsIntelligenceScanner(BaseScanner[AdvancedScanResult]):
                 is_opening=classification["is_opening"],
                 is_buyer_initiated=classification["is_buyer_initiated"],
                 is_institutional=classification["is_institutional"],
-                smart_money_score=smart_score,
+                alpha_flow_score=smart_score,
                 classification=classification["classification"],
             ))
 

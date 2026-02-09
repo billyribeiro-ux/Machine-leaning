@@ -276,7 +276,7 @@ class OrderBlock(BaseModel):
 
 
 class LiquiditySweep(BaseModel):
-    """Liquidity sweep / stop hunt detection."""
+    """Liquidity trap detection — predictive reversal zone."""
     sweep_type: Literal["buy_side", "sell_side"] = Field(description="Type of sweep")
     level_swept: float = Field(description="Price level that was swept")
     sweep_depth: float = Field(description="How far past the level")
