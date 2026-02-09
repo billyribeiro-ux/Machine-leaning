@@ -713,6 +713,62 @@ RISK_MANAGEMENT = RiskManagementConstants()
 
 
 # ---------------------------------------------------------------------------
+# CONVENIENCE ALIASES -- alternate names used by __init__.py and scanners
+# ---------------------------------------------------------------------------
+
+# Trading hours extracted from the contract spec for convenient access
+@dataclass(frozen=True)
+class TradingHoursSpec:
+    """Trading hours for SPX options."""
+    market_open: time = SPX_CONTRACT.market_open
+    market_close: time = SPX_CONTRACT.market_close
+    settlement_time: time = SPX_CONTRACT.settlement_time
+
+TRADING_HOURS = TradingHoursSpec()
+
+# Tick sizes extracted from the contract spec
+@dataclass(frozen=True)
+class TickSizesSpec:
+    """Tick size rules for SPX options."""
+    below_boundary: float = SPX_CONTRACT.tick_size_below_3
+    at_or_above_boundary: float = SPX_CONTRACT.tick_size_at_or_above_3
+    boundary: float = SPX_CONTRACT.tick_price_boundary
+
+TICK_SIZES = TickSizesSpec()
+
+# Contract multiplier shortcut
+MULTIPLIER: float = SPX_CONTRACT.multiplier
+
+# Intraday zone schedule aliases
+TIME_ZONES = INTRADAY_ZONE_SCHEDULE
+TimeZoneConfig = TimeZoneBoundary
+
+# Factor weights aliases (used by __init__.py and directional_scanner.py)
+FACTOR_WEIGHTS_DEFAULT = DEFAULT_FACTOR_WEIGHTS
+FACTOR_WEIGHTS = DEFAULT_FACTOR_WEIGHTS
+
+# Exit management alias
+EXIT_CONSTANTS = EXIT_MANAGEMENT
+
+# Liquidity filters extracted from strike selection constants
+@dataclass(frozen=True)
+class LiquidityFiltersSpec:
+    """Minimum liquidity thresholds for options."""
+    min_open_interest: int = STRIKE_SELECTION.min_open_interest
+    min_volume: int = STRIKE_SELECTION.min_volume
+    max_bid_ask_spread_pct: float = STRIKE_SELECTION.max_bid_ask_spread_pct
+
+LIQUIDITY_FILTERS = LiquidityFiltersSpec()
+
+# Section aliases for downstream consumers
+PREMIUM_SELLING_CONSTANTS = PREMIUM_SELLING
+GEX_CONSTANTS = GEX_SCANNER
+CALIBRATION_CONSTANTS = SELF_LEARNING
+RISK_CONSTANTS = RISK_MANAGEMENT
+VIX1D_CONSTANTS = VIX1D
+
+
+# ---------------------------------------------------------------------------
 # AGGREGATE EXPORT -- single namespace for downstream imports
 # ---------------------------------------------------------------------------
 
@@ -769,4 +825,22 @@ __all__: List[str] = [
     # Section 12 - Risk Management
     "RiskManagementConstants",
     "RISK_MANAGEMENT",
+    # Convenience aliases
+    "TradingHoursSpec",
+    "TRADING_HOURS",
+    "TickSizesSpec",
+    "TICK_SIZES",
+    "MULTIPLIER",
+    "TIME_ZONES",
+    "TimeZoneConfig",
+    "FACTOR_WEIGHTS_DEFAULT",
+    "FACTOR_WEIGHTS",
+    "EXIT_CONSTANTS",
+    "LiquidityFiltersSpec",
+    "LIQUIDITY_FILTERS",
+    "PREMIUM_SELLING_CONSTANTS",
+    "GEX_CONSTANTS",
+    "CALIBRATION_CONSTANTS",
+    "RISK_CONSTANTS",
+    "VIX1D_CONSTANTS",
 ]
