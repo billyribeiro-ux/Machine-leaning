@@ -50,6 +50,17 @@ from .momentum_scanner import (
     BreakoutScanner,
 )
 
+# Advanced scanners (Phase 2 expansion)
+from .volatility_scanner import VolatilityRegimeScanner
+from .market_structure_scanner import MarketStructureScanner
+from .options_intelligence import OptionsIntelligenceScanner
+from .fractal_scanner import FractalInformationScanner
+from .breadth_scanner import MarketBreadthScanner
+from .wavelet_scanner import WaveletFourierScanner
+from .extreme_value_scanner import ExtremeValueScanner
+from .composite_alpha import CompositeAlphaScanner
+from .ml_adaptive_scanner import AdaptiveScannerFramework
+
 logger = logging.getLogger(__name__)
 
 
@@ -170,6 +181,21 @@ class ScannerEngine:
         self.register_scanner(MomentumScanner(config=self.scanner_config))
         self.register_scanner(ReversalScanner(config=self.scanner_config))
         self.register_scanner(BreakoutScanner(config=self.scanner_config))
+
+        # Advanced scanners (Phase 2)
+        self.register_scanner(VolatilityRegimeScanner(config=self.scanner_config))
+        self.register_scanner(MarketStructureScanner(config=self.scanner_config))
+        self.register_scanner(OptionsIntelligenceScanner(config=self.scanner_config))
+        self.register_scanner(FractalInformationScanner(config=self.scanner_config))
+        self.register_scanner(MarketBreadthScanner(config=self.scanner_config))
+        self.register_scanner(WaveletFourierScanner(config=self.scanner_config))
+        self.register_scanner(ExtremeValueScanner(config=self.scanner_config))
+
+        # Meta-scanners (combine signals from above)
+        composite = CompositeAlphaScanner(config=self.scanner_config)
+        for name, scanner in list(self._scanners.items()):
+            composite.register_sub_scanner(scanner)
+        self.register_scanner(composite)
 
     @property
     def state(self) -> EngineState:
@@ -754,3 +780,45 @@ def create_full_engine(
     )
 
     return ScannerEngine(engine_config, scanner_config)
+
+
+def create_advanced_engine(
+    config: Optional[ScannerConfig] = None
+) -> ScannerEngine:
+    """
+    Create engine with all advanced scanners and the adaptive
+    ML framework for self-learning signal combination.
+
+    This is the ultimate configuration that includes:
+    - All base scanners (options, squeeze, momentum)
+    - Volatility regime detection (GARCH, regime-switching)
+    - Market structure analysis (BOS, CHoCH, FVG, order blocks)
+    - Advanced options intelligence (IV surface, GEX, vanna/charm)
+    - Fractal & information theory (Hurst, entropy, transfer entropy)
+    - Market breadth & internals (AD line, McClellan, breadth thrusts)
+    - Wavelet & Fourier analysis (cycle detection, spectral entropy)
+    - Extreme value theory (tail risk, VaR, CVaR)
+    - Composite alpha scanner (Bayesian model averaging)
+    - Self-learning adaptive framework (Thompson Sampling, drift detection)
+    """
+    engine_config = EngineConfig(
+        max_concurrent_scanners=10,
+        scan_interval_seconds=60,
+        min_alert_confidence=65.0,
+    )
+
+    scanner_config = config or ScannerConfig(
+        scan_modes=[ScanMode.ALL],
+        min_confidence=55.0,
+    )
+
+    engine = ScannerEngine(engine_config, scanner_config)
+
+    # Register adaptive framework wrapping all scanners
+    adaptive = AdaptiveScannerFramework(config=scanner_config)
+    for name, scanner in list(engine._scanners.items()):
+        if name != "composite_alpha":
+            adaptive.register_scan(name, scanner)
+    engine.register_scanner(adaptive)
+
+    return engine

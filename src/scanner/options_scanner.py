@@ -2,7 +2,7 @@
 Revolution Alpha Engine - Options Scanner
 
 Institutional-grade options flow scanner for detecting unusual activity,
-smart money positioning, and high-probability setups.
+alpha flow positioning, and high-probability setups.
 """
 
 from datetime import datetime, timedelta
@@ -200,7 +200,7 @@ class UnusualActivity:
 
 class OptionsFlowScanner(AsyncStreamingScanner[OptionsScanResult]):
     """
-    Scanner for detecting unusual options flow and smart money activity.
+    Scanner for detecting unusual options flow and alpha flow activity.
 
     Analyzes volume, open interest, trade execution, and positioning
     to identify high-probability directional signals.
