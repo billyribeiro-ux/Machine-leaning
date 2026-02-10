@@ -1,7 +1,11 @@
 // ---------------------------------------------------------------------------
-// Data transform worker — off-main-thread sort, filter, group, aggregate
+// Data Transform Worker — off-main-thread sort, filter, group, aggregate
+// Scanify trading scanner
 //
 // Processes large arrays of record-like objects without blocking the UI.
+//
+// Message types: sort, filter, group, aggregate
+// Returns transformed data via postMessage.
 // ---------------------------------------------------------------------------
 
 /// <reference lib="webworker" />
@@ -11,7 +15,7 @@ declare const self: DedicatedWorkerGlobalScope;
 // Types
 // ---------------------------------------------------------------------------
 
-type Record = { [key: string]: unknown };
+type DataRecord = { [key: string]: unknown };
 
 interface SortParams {
   field: string;
@@ -20,22 +24,28 @@ interface SortParams {
 
 interface FilterCondition {
   field: string;
-  operator: 'eq' | 'neq' | 'gt' | 'gte' | 'lt' | 'lte' | 'contains' | 'startsWith' | 'endsWith' | 'in';
+  operator:
+    | 'eq'
+    | 'neq'
+    | 'gt'
+    | 'gte'
+    | 'lt'
+    | 'lte'
+    | 'contains'
+    | 'startsWith'
+    | 'endsWith'
+    | 'in';
   value: unknown;
 }
 
 interface FilterParams {
   conditions: FilterCondition[];
-  /** When true, ALL conditions must match (AND). When false, ANY can match (OR). Default: true. */
+  /** When true ALL conditions must match (AND). When false ANY can match (OR). Default: true. */
   matchAll?: boolean;
 }
 
 interface GroupParams {
   field: string;
-}
-
-interface AggregateParams {
-  operations: AggregateOperation[];
 }
 
 interface AggregateOperation {
@@ -44,17 +54,21 @@ interface AggregateOperation {
   alias?: string;
 }
 
+interface AggregateParams {
+  operations: AggregateOperation[];
+}
+
 type TransformMessage =
-  | { type: 'sort'; data: Record[]; params: SortParams }
-  | { type: 'filter'; data: Record[]; params: FilterParams }
-  | { type: 'group'; data: Record[]; params: GroupParams }
-  | { type: 'aggregate'; data: Record[]; params: AggregateParams };
+  | { type: 'sort'; data: DataRecord[]; params: SortParams; requestId?: string }
+  | { type: 'filter'; data: DataRecord[]; params: FilterParams; requestId?: string }
+  | { type: 'group'; data: DataRecord[]; params: GroupParams; requestId?: string }
+  | { type: 'aggregate'; data: DataRecord[]; params: AggregateParams; requestId?: string };
 
 // ---------------------------------------------------------------------------
 // Sort
 // ---------------------------------------------------------------------------
 
-function sortData(data: Record[], params: SortParams): Record[] {
+function sortData(data: DataRecord[], params: SortParams): DataRecord[] {
   const { field, direction } = params;
   const multiplier = direction === 'asc' ? 1 : -1;
 
@@ -63,7 +77,7 @@ function sortData(data: Record[], params: SortParams): Record[] {
     const aVal = a[field];
     const bVal = b[field];
 
-    // Handle null / undefined — push them to the end regardless of direction.
+    // Handle null / undefined -- push them to the end regardless of direction.
     if (aVal == null && bVal == null) return 0;
     if (aVal == null) return 1;
     if (bVal == null) return -1;
@@ -78,9 +92,9 @@ function sortData(data: Record[], params: SortParams): Record[] {
       return (aVal - bVal) * multiplier;
     }
 
-    // Boolean — true > false.
+    // Boolean -- true > false.
     if (typeof aVal === 'boolean' && typeof bVal === 'boolean') {
-      return ((aVal === bVal ? 0 : aVal ? 1 : -1)) * multiplier;
+      return (aVal === bVal ? 0 : aVal ? 1 : -1) * multiplier;
     }
 
     // Fallback: coerce to string.
@@ -94,7 +108,7 @@ function sortData(data: Record[], params: SortParams): Record[] {
 // Filter
 // ---------------------------------------------------------------------------
 
-function matchesCondition(row: Record, condition: FilterCondition): boolean {
+function matchesCondition(row: DataRecord, condition: FilterCondition): boolean {
   const { field, operator, value } = condition;
   const fieldValue = row[field];
 
@@ -123,26 +137,35 @@ function matchesCondition(row: Record, condition: FilterCondition): boolean {
       return typeof fieldValue === 'number' && typeof value === 'number' && fieldValue <= value;
 
     case 'contains':
-      return typeof fieldValue === 'string' && typeof value === 'string' &&
-        fieldValue.toLowerCase().includes(value.toLowerCase());
+      return (
+        typeof fieldValue === 'string' &&
+        typeof value === 'string' &&
+        fieldValue.toLowerCase().includes(value.toLowerCase())
+      );
 
     case 'startsWith':
-      return typeof fieldValue === 'string' && typeof value === 'string' &&
-        fieldValue.toLowerCase().startsWith(value.toLowerCase());
+      return (
+        typeof fieldValue === 'string' &&
+        typeof value === 'string' &&
+        fieldValue.toLowerCase().startsWith(value.toLowerCase())
+      );
 
     case 'endsWith':
-      return typeof fieldValue === 'string' && typeof value === 'string' &&
-        fieldValue.toLowerCase().endsWith(value.toLowerCase());
+      return (
+        typeof fieldValue === 'string' &&
+        typeof value === 'string' &&
+        fieldValue.toLowerCase().endsWith(value.toLowerCase())
+      );
 
     case 'in':
-      return Array.isArray(value) && value.includes(fieldValue);
+      return Array.isArray(value) && (value as unknown[]).includes(fieldValue);
 
     default:
       return false;
   }
 }
 
-function filterData(data: Record[], params: FilterParams): Record[] {
+function filterData(data: DataRecord[], params: FilterParams): DataRecord[] {
   const { conditions, matchAll = true } = params;
 
   if (conditions.length === 0) return [...data];
@@ -160,18 +183,18 @@ function filterData(data: Record[], params: FilterParams): Record[] {
 // ---------------------------------------------------------------------------
 
 function groupData(
-  data: Record[],
+  data: DataRecord[],
   params: GroupParams,
-): { [groupKey: string]: Record[] } {
+): { [groupKey: string]: DataRecord[] } {
   const { field } = params;
-  const groups: { [groupKey: string]: Record[] } = {};
+  const groups: { [groupKey: string]: DataRecord[] } = {};
 
   for (const row of data) {
     const key = String(row[field] ?? '__null__');
     if (!groups[key]) {
       groups[key] = [];
     }
-    (groups[key] as Record[]).push(row);
+    (groups[key] as DataRecord[]).push(row);
   }
 
   return groups;
@@ -192,7 +215,7 @@ function computeMedian(values: number[]): number {
 }
 
 function aggregateData(
-  data: Record[],
+  data: DataRecord[],
   params: AggregateParams,
 ): { [alias: string]: number } {
   const result: { [alias: string]: number } = {};
@@ -216,7 +239,10 @@ function aggregateData(
         break;
 
       case 'avg':
-        result[key] = values.length === 0 ? NaN : values.reduce((acc, v) => acc + v, 0) / values.length;
+        result[key] =
+          values.length === 0
+            ? NaN
+            : values.reduce((acc, v) => acc + v, 0) / values.length;
         break;
 
       case 'min':
@@ -248,10 +274,11 @@ function aggregateData(
 // Message handler
 // ---------------------------------------------------------------------------
 
-self.onmessage = (event: MessageEvent) => {
-  const msg = event.data as TransformMessage;
+self.onmessage = (event: MessageEvent<TransformMessage>): void => {
+  const msg = event.data;
 
   let result: unknown;
+  const startTime = performance.now();
 
   switch (msg.type) {
     case 'sort':
@@ -271,12 +298,22 @@ self.onmessage = (event: MessageEvent) => {
       break;
 
     default:
-      console.warn(`[data-transform] Unknown operation: ${(msg as { type: string }).type}`);
+      console.warn(
+        `[data-transform] Unknown operation: ${(msg as { type: string }).type}`,
+      );
       result = null;
       break;
   }
 
-  self.postMessage({ type: 'result', operation: msg.type, result });
+  const elapsed = performance.now() - startTime;
+
+  self.postMessage({
+    type: 'result',
+    operation: msg.type,
+    result,
+    requestId: (msg as { requestId?: string }).requestId ?? null,
+    computeTimeMs: elapsed,
+  });
 };
 
 export {};
