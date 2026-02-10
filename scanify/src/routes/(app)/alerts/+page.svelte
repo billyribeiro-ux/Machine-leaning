@@ -1,76 +1,141 @@
 <script lang="ts">
-	let activeTab = $state<'active' | 'history'>('active');
+  let alertConfigs = $state([
+    {
+      id: 'ac1',
+      name: 'Momentum Breakout Scanner',
+      description: 'Alerts when stocks break above key resistance with high relative volume',
+      enabled: true,
+    },
+    {
+      id: 'ac2',
+      name: 'Unusual Options Activity',
+      description: 'Triggers on options volume exceeding 3x open interest',
+      enabled: true,
+    },
+    {
+      id: 'ac3',
+      name: 'Dark Pool Block Alerts',
+      description: 'Notifies on dark pool prints exceeding $1M notional value',
+      enabled: false,
+    },
+  ]);
 
-	const activeAlerts = [
-		{ id: '1', name: 'High Strength Signals', description: 'Alerts for strength 4-5 signals across all scans', minStrength: 4, directions: ['bullish', 'bearish'], soundEnabled: true, isActive: true },
-		{ id: '2', name: 'Unusual Volume Breakouts', description: 'Volume > 3x average with price breakout', minStrength: 3, directions: ['bullish'], soundEnabled: true, isActive: true },
-		{ id: '3', name: 'Options Sweep Alerts', description: 'Large sweep orders > $500K premium', minStrength: 2, directions: ['bullish', 'bearish'], soundEnabled: false, isActive: false },
-	];
+  const alertHistory = [
+    { id: 'ah1', symbol: 'NVDA', message: 'Momentum Breakout detected at $875.30', time: '14:32:15', type: 'bullish' as const },
+    { id: 'ah2', symbol: 'TSLA', message: 'Unusual put activity - 6,200 contracts at $230P', time: '14:28:43', type: 'bearish' as const },
+    { id: 'ah3', symbol: 'AMD',  message: 'Relative volume spike to 2.8x average', time: '14:15:22', type: 'bullish' as const },
+    { id: 'ah4', symbol: 'SPY',  message: 'Dark pool block print: 45,000 shares at $502.10', time: '13:58:07', type: 'neutral' as const },
+    { id: 'ah5', symbol: 'COIN', message: 'Breakout above $225 with 3.8x relative volume', time: '13:42:51', type: 'bullish' as const },
+  ];
 
-	const alertHistory = [
-		{ id: 'h1', symbol: 'NVDA', signalName: 'Momentum Breakout', direction: 'bullish', strength: 5, price: 875.30, timestamp: Date.now() - 120000, isRead: false },
-		{ id: 'h2', symbol: 'TSLA', signalName: 'Volume Surge', direction: 'bearish', strength: 4, price: 245.10, timestamp: Date.now() - 300000, isRead: false },
-		{ id: 'h3', symbol: 'AMD', signalName: 'Unusual Options', direction: 'bullish', strength: 4, price: 165.40, timestamp: Date.now() - 600000, isRead: true },
-		{ id: 'h4', symbol: 'META', signalName: 'Institutional Flow', direction: 'bullish', strength: 3, price: 505.80, timestamp: Date.now() - 1200000, isRead: true },
-		{ id: 'h5', symbol: 'SPY', signalName: 'Breadth Divergence', direction: 'bearish', strength: 3, price: 502.34, timestamp: Date.now() - 1800000, isRead: true },
-	];
+  function typeColor(t: string): string {
+    if (t === 'bullish') return 'var(--bullish)';
+    if (t === 'bearish') return 'var(--bearish)';
+    return 'var(--neutral)';
+  }
 
-	function formatTime(ts: number): string {
-		const diff = Math.floor((Date.now() - ts) / 1000);
-		if (diff < 60) return `${diff}s ago`;
-		if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-		return `${Math.floor(diff / 3600)}h ago`;
-	}
+  function typeBg(t: string): string {
+    if (t === 'bullish') return 'var(--bullish-bg)';
+    if (t === 'bearish') return 'var(--bearish-bg)';
+    return 'var(--neutral-bg)';
+  }
 
-	let toggles = $state(activeAlerts.map(a => a.isActive));
+  function typeBorder(t: string): string {
+    if (t === 'bullish') return 'oklch(0.45 0.12 155 / 0.3)';
+    if (t === 'bearish') return 'oklch(0.42 0.12 25 / 0.3)';
+    return 'oklch(0.45 0.08 250 / 0.3)';
+  }
+
+  function toggleAlert(id: string) {
+    alertConfigs = alertConfigs.map(a =>
+      a.id === id ? { ...a, enabled: !a.enabled } : a
+    );
+  }
 </script>
 
-<div class="flex h-full flex-col gap-4 p-4" style="color: oklch(0.95 0.005 260);">
-	<h1 class="text-lg font-semibold">Alerts</h1>
+<svelte:head>
+  <title>Alerts - Scanify</title>
+</svelte:head>
 
-	<div class="flex gap-1 rounded-md p-1" style="background: oklch(0.11 0.008 260); border: 1px solid oklch(0.20 0.008 260); width: fit-content;">
-		<button onclick={() => activeTab = 'active'} class="rounded px-4 py-1.5 text-xs font-medium transition-colors" style="background: {activeTab === 'active' ? 'oklch(0.17 0.012 260)' : 'transparent'}; color: {activeTab === 'active' ? 'oklch(0.95 0.005 260)' : 'oklch(0.52 0.006 260)'};">Active Alerts</button>
-		<button onclick={() => activeTab = 'history'} class="rounded px-4 py-1.5 text-xs font-medium transition-colors" style="background: {activeTab === 'history' ? 'oklch(0.17 0.012 260)' : 'transparent'}; color: {activeTab === 'history' ? 'oklch(0.95 0.005 260)' : 'oklch(0.52 0.006 260)'};">History</button>
-	</div>
+<div class="flex flex-col h-full overflow-auto">
+  <!-- Header -->
+  <div class="flex items-center justify-between px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
+    <h1 class="text-lg font-bold" style="color: var(--text-primary);">Alerts</h1>
+    <span class="text-xs font-mono" style="color: var(--text-tertiary);">
+      {alertConfigs.filter(a => a.enabled).length} active
+    </span>
+  </div>
 
-	{#if activeTab === 'active'}
-		<div class="flex flex-col gap-3">
-			{#each activeAlerts as alert, i}
-				<div class="flex items-center justify-between rounded-lg p-4" style="background: oklch(0.14 0.010 260); border: 1px solid oklch(0.20 0.008 260);">
-					<div class="flex-1">
-						<div class="flex items-center gap-2">
-							<h3 class="text-sm font-semibold">{alert.name}</h3>
-							<span class="rounded-full px-2 py-0.5 text-[10px] font-mono" style="background: oklch(0.20 0.014 260); color: oklch(0.72 0.008 260);">Strength ≥ {alert.minStrength}</span>
-						</div>
-						<p class="mt-1 text-xs" style="color: oklch(0.52 0.006 260);">{alert.description}</p>
-					</div>
-					<button onclick={() => toggles[i] = !toggles[i]} class="relative h-5 w-9 rounded-full transition-colors" style="background: {toggles[i] ? 'oklch(0.72 0.19 155)' : 'oklch(0.28 0.010 260)'};">
-						<span class="absolute top-0.5 h-4 w-4 rounded-full bg-white transition-transform" style="left: {toggles[i] ? '18px' : '2px'};"></span>
-					</button>
-				</div>
-			{/each}
-		</div>
-	{:else}
-		<div class="flex flex-col gap-2">
-			{#each alertHistory as alert}
-				<div class="flex items-center gap-3 rounded-lg px-4 py-3" style="background: oklch(0.14 0.010 260); border-left: 3px solid {alert.direction === 'bullish' ? 'oklch(0.72 0.19 155)' : 'oklch(0.65 0.22 25)'}; opacity: {alert.isRead ? 0.7 : 1};">
-					<div class="flex-1">
-						<div class="flex items-center gap-2">
-							<span class="font-mono text-sm font-semibold tracking-wider">{alert.symbol}</span>
-							<span class="text-xs" style="color: oklch(0.52 0.006 260);">{alert.signalName}</span>
-						</div>
-						<div class="mt-1 flex items-center gap-2 font-mono text-xs">
-							<span style="color: {alert.direction === 'bullish' ? 'oklch(0.72 0.19 155)' : 'oklch(0.65 0.22 25)'};">${alert.price.toFixed(2)}</span>
-							<span style="color: oklch(0.52 0.006 260);">{formatTime(alert.timestamp)}</span>
-						</div>
-					</div>
-					<div class="flex items-center gap-1">
-						{#each Array(5) as _, j}
-							<span class="text-[8px]" style="color: {j < alert.strength ? (alert.direction === 'bullish' ? 'oklch(0.72 0.19 155)' : 'oklch(0.65 0.22 25)') : 'oklch(0.28 0.010 260)'};">●</span>
-						{/each}
-					</div>
-				</div>
-			{/each}
-		</div>
-	{/if}
+  <div class="p-5 space-y-6">
+    <!-- Active Alerts Section -->
+    <div class="space-y-3">
+      <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Active Alerts</h2>
+      <div class="space-y-2">
+        {#each alertConfigs as config (config.id)}
+          <div class="panel p-4 flex items-center gap-4">
+            <!-- Status indicator -->
+            <div
+              class="w-2 h-2 rounded-full shrink-0"
+              style="background: {config.enabled ? 'var(--bullish)' : 'var(--text-disabled)'};"
+            ></div>
+
+            <!-- Info -->
+            <div class="flex-1 min-w-0">
+              <div class="text-sm font-medium" style="color: var(--text-primary);">{config.name}</div>
+              <div class="text-xs mt-0.5" style="color: var(--text-tertiary);">{config.description}</div>
+            </div>
+
+            <!-- Toggle -->
+            <button
+              type="button"
+              role="switch"
+              aria-checked={config.enabled}
+              onclick={() => toggleAlert(config.id)}
+              class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200"
+              style="background: {config.enabled ? 'oklch(0.55 0.15 145)' : 'oklch(0.24 0 0)'};"
+            >
+              <span
+                class="inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200"
+                style="transform: translateX({config.enabled ? '20px' : '2px'});"
+              ></span>
+            </button>
+          </div>
+        {/each}
+      </div>
+    </div>
+
+    <!-- Alert History Section -->
+    <div class="space-y-3">
+      <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Alert History</h2>
+      <div class="space-y-2">
+        {#each alertHistory as alert (alert.id)}
+          <div
+            class="panel px-4 py-3 flex items-start gap-3"
+            style="border-left: 3px solid {typeColor(alert.type)};"
+          >
+            <!-- Direction dot -->
+            <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" style="background: {typeColor(alert.type)};"></div>
+
+            <!-- Content -->
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm font-bold font-mono" style="color: var(--text-primary);">{alert.symbol}</span>
+                <span
+                  class="text-[10px] font-semibold uppercase rounded-full px-2 py-0.5"
+                  style="background: {typeBg(alert.type)}; color: {typeColor(alert.type)};
+                         border: 1px solid {typeBorder(alert.type)};"
+                >
+                  {alert.type}
+                </span>
+              </div>
+              <p class="text-xs mt-1" style="color: var(--text-secondary);">{alert.message}</p>
+            </div>
+
+            <!-- Timestamp -->
+            <span class="text-[11px] font-mono shrink-0" style="color: var(--text-tertiary);">{alert.time}</span>
+          </div>
+        {/each}
+      </div>
+    </div>
+  </div>
 </div>

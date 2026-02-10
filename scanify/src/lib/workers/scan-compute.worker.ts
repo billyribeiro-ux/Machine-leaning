@@ -1,9 +1,13 @@
 // ---------------------------------------------------------------------------
-// Scan compute worker — off-main-thread technical indicator calculation
+// Scan Compute Worker — off-main-thread technical indicator calculation
+// Scanify trading scanner
 //
 // Receives price / volume data arrays and returns computed indicator values.
-// All implementations are pure functions operating on Float64Array-compatible
-// number arrays.
+// All implementations are pure functions operating on number arrays.
+//
+// Message-based API:
+//   Receives:  { type: 'compute', indicator, data, params }
+//   Returns:   { type: 'result', indicator, result }
 // ---------------------------------------------------------------------------
 
 /// <reference lib="webworker" />
@@ -240,8 +244,7 @@ function computeBollingerBands(
 /**
  * Volume Weighted Average Price (VWAP).
  *
- * Cumulative (price * volume) / cumulative volume.  Typically reset daily
- * by the caller.
+ * Cumulative (price * volume) / cumulative volume.
  */
 function computeVWAP(prices: number[], volumes: number[]): number[] {
   const length = Math.min(prices.length, volumes.length);
@@ -272,47 +275,50 @@ interface ComputeMessage {
   indicator: string;
   data: number[];
   params: Record<string, number | number[]>;
+  requestId?: string;
 }
 
-self.onmessage = (event: MessageEvent) => {
-  const msg = event.data as ComputeMessage;
+self.onmessage = (event: MessageEvent<ComputeMessage>): void => {
+  const msg = event.data;
   if (msg.type !== 'compute') return;
 
-  const { indicator, data, params } = msg;
+  const { indicator, data, params, requestId } = msg;
   let result: unknown;
+
+  const startTime = performance.now();
 
   switch (indicator) {
     case 'sma':
-      result = computeSMA(data, params.period as number);
+      result = computeSMA(data, params['period'] as number);
       break;
 
     case 'ema':
-      result = computeEMA(data, params.period as number);
+      result = computeEMA(data, params['period'] as number);
       break;
 
     case 'rsi':
-      result = computeRSI(data, params.period as number);
+      result = computeRSI(data, (params['period'] as number) ?? 14);
       break;
 
     case 'macd':
       result = computeMACD(
         data,
-        (params.fast as number) ?? 12,
-        (params.slow as number) ?? 26,
-        (params.signal as number) ?? 9,
+        (params['fast'] as number) ?? 12,
+        (params['slow'] as number) ?? 26,
+        (params['signal'] as number) ?? 9,
       );
       break;
 
     case 'bollinger':
       result = computeBollingerBands(
         data,
-        (params.period as number) ?? 20,
-        (params.stddev as number) ?? 2,
+        (params['period'] as number) ?? 20,
+        (params['stddev'] as number) ?? 2,
       );
       break;
 
     case 'vwap':
-      result = computeVWAP(data, params.volumes as number[]);
+      result = computeVWAP(data, params['volumes'] as number[]);
       break;
 
     default:
@@ -321,7 +327,15 @@ self.onmessage = (event: MessageEvent) => {
       break;
   }
 
-  self.postMessage({ type: 'result', indicator, result });
+  const elapsed = performance.now() - startTime;
+
+  self.postMessage({
+    type: 'result',
+    indicator,
+    result,
+    requestId: requestId ?? null,
+    computeTimeMs: elapsed,
+  });
 };
 
 export {};
