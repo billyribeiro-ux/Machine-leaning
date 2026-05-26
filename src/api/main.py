@@ -10,6 +10,7 @@ Production-ready FastAPI application with:
 """
 
 import os
+import threading
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -31,12 +32,14 @@ from src.api.middleware.rate_limit import RateLimitMiddleware
 
 # Scanner engine reference (set externally)
 _scanner_engine = None
+_engine_lock = threading.Lock()
 
 
 def set_scanner_engine(engine):
     """Set the scanner engine for API access"""
     global _scanner_engine
-    _scanner_engine = engine
+    with _engine_lock:
+        _scanner_engine = engine
 
     # Propagate to modules
     from src.api.routes import signals, alerts, status, admin
@@ -59,8 +62,9 @@ async def lifespan(app: FastAPI):
     await manager.start_heartbeat(interval=30)
 
     # Initialize scanner if configured
-    if _scanner_engine:
-        print("📡 Scanner engine connected")
+    with _engine_lock:
+        if _scanner_engine:
+            print("📡 Scanner engine connected")
 
     yield
 

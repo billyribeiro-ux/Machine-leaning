@@ -209,7 +209,7 @@ class HiddenMarkovModel:
                 probs[k] = stats.multivariate_normal.pdf(
                     obs, mean=self.means[k], cov=self.covars[k]
                 )
-            except:
+            except Exception:
                 probs[k] = 1e-10
 
         return probs + 1e-10
@@ -379,7 +379,7 @@ class GaussianMixtureRegime:
                         data, mean=self.means[k], cov=self.covars[k]
                     )
                 )
-            except:
+            except Exception:
                 log_resp[:, k] = -1000
 
         # Normalize

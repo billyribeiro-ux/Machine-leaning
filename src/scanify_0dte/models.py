@@ -68,6 +68,8 @@ class ExitReason(str, Enum):
     VIX_SPIKE = "VIX_SPIKE"
     MANUAL = "MANUAL"
     BREAK_EVEN = "BREAK_EVEN"
+    CIRCUIT_BREAKER = "CIRCUIT_BREAKER"
+    EXPIRATION = "EXPIRATION"
 
 
 class TimeZoneType(str, Enum):

@@ -778,7 +778,7 @@ class BacktestValidator:
 
         gross_gains = np.sum(returns[returns > 0])
         gross_losses = abs(np.sum(returns[returns < 0]))
-        profit_factor = gross_gains / gross_losses if gross_losses > 0 else float('inf')
+        profit_factor = min(gross_gains / gross_losses, 999.9) if gross_losses > 0 else 999.9
 
         net_returns = self.cost_model.apply_costs(returns, turnover)
         net_std = np.std(net_returns)
@@ -827,6 +827,7 @@ class BacktestValidator:
             fake_oos = np.vstack([oos_returns] + [oos_returns + rng.normal(0, 0.001, len(oos_returns)) for _ in range(n_strategies - 1)])
             pbo = probability_of_overfitting(fake_is, fake_oos)
         except Exception:
+            logger.warning("PBO computation failed, using default 0.5", exc_info=True)
             pbo = 0.5
 
         return BacktestValidation(

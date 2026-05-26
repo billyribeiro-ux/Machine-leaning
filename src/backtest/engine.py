@@ -984,7 +984,7 @@ class BacktestEngine:
         gross_profit = sum(t.net_pnl for t in winners)
         gross_loss = abs(sum(t.net_pnl for t in losers))
 
-        profit_factor = gross_profit / gross_loss if gross_loss > 0 else float('inf')
+        profit_factor = min(gross_profit / gross_loss, 999.9) if gross_loss > 0 else 999.9
 
         avg_win = np.mean([t.net_pnl for t in winners]) if winners else 0
         avg_loss = np.mean([t.net_pnl for t in losers]) if losers else 0

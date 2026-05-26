@@ -12,7 +12,7 @@
   let commandBarOpen = $state(false);
 
   /** Derive the active route segment from the current URL path. */
-  let activeRoute = $derived(() => {
+  let activeRoute = $derived.by(() => {
     const path = page.url.pathname;
     // Extract the first segment after /(app)/
     const segments = path.split('/').filter(Boolean);

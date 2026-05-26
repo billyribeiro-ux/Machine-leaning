@@ -178,8 +178,8 @@ function createWebSocketStore() {
       for (const handler of channelHandlers) {
         try {
           handler(msg);
-        } catch {
-          // Swallow handler errors
+        } catch (e) {
+          console.error('WebSocket handler error:', e);
         }
       }
     }
@@ -190,8 +190,8 @@ function createWebSocketStore() {
       for (const handler of wildcardHandlers) {
         try {
           handler(msg);
-        } catch {
-          // Swallow handler errors
+        } catch (e) {
+          console.error('WebSocket handler error:', e);
         }
       }
     }

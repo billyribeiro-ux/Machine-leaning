@@ -18,7 +18,12 @@ from src.api.auth.tiers import SubscriptionTier
 
 
 # Configuration - MUST use environment variables in production
-SECRET_KEY = os.getenv("SCANIFY_SECRET_KEY", "dev-secret-key-change-in-production")
+SECRET_KEY = os.getenv("SCANIFY_SECRET_KEY", "")
+if not SECRET_KEY:
+    import warnings
+    warnings.warn("SCANIFY_SECRET_KEY not set — using random key (sessions won't persist across restarts)", stacklevel=2)
+    import secrets
+    SECRET_KEY = secrets.token_urlsafe(32)
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 REFRESH_TOKEN_EXPIRE_DAYS = 30
