@@ -9,7 +9,7 @@ from typing import Optional, List
 from enum import Enum
 
 from fastapi import APIRouter, HTTPException, status, Depends, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.api.auth.jwt import get_current_active_user, require_tier, User
 from src.api.auth.tiers import SubscriptionTier, check_tier_access
@@ -45,7 +45,7 @@ class AlertResponse(BaseModel):
     created_at: datetime
     expires_at: Optional[datetime] = None
     read: bool = False
-    metadata: dict = {}
+    metadata: dict = Field(default_factory=dict)
 
 
 class AlertPreferences(BaseModel):
@@ -54,9 +54,11 @@ class AlertPreferences(BaseModel):
     push_alerts: bool = True
     sms_alerts: bool = False
     min_confidence: float = 70.0
-    alert_types: List[AlertType] = [AlertType.SIGNAL]
-    priority_filter: List[AlertPriority] = [AlertPriority.CRITICAL, AlertPriority.HIGH]
-    symbols_watchlist: List[str] = []
+    alert_types: List[AlertType] = Field(default_factory=lambda: [AlertType.SIGNAL])
+    priority_filter: List[AlertPriority] = Field(
+        default_factory=lambda: [AlertPriority.CRITICAL, AlertPriority.HIGH]
+    )
+    symbols_watchlist: List[str] = Field(default_factory=list)
     quiet_hours_start: Optional[str] = None  # "22:00"
     quiet_hours_end: Optional[str] = None    # "08:00"
 

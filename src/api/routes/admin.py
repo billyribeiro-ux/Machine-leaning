@@ -218,7 +218,7 @@ async def get_recent_logs(
 
 @router.delete("/cache")
 async def clear_cache(
-    cache_type: str = Query("all", regex="^(all|signals|alerts|users)$"),
+    cache_type: str = Query("all", pattern="^(all|signals|alerts|users)$"),
     admin_user: User = Depends(get_admin_user),
 ):
     """Clear application cache (admin only)"""

@@ -64,6 +64,7 @@ class WebSocketManager:
         self.all_connections: list[Connection] = []
         self._heartbeat_task: Optional[asyncio.Task] = None
         self._scanner_engine = None
+        self._lock = asyncio.Lock()
 
     def set_scanner_engine(self, engine):
         """Set scanner engine for alert callbacks"""
@@ -100,30 +101,28 @@ class WebSocketManager:
             )
 
         # Check connection limits
-        user_connections = self.connections.get(user_id, [])
-        max_connections = 3 if tier == SubscriptionTier.PRO else 10
-        if len(user_connections) >= max_connections:
-            await websocket.close(code=4029, reason="Connection limit reached")
-            raise HTTPException(
-                status_code=429,
-                detail=f"Maximum {max_connections} connections allowed",
+        async with self._lock:
+            user_connections = self.connections.get(user_id, [])
+            max_connections = 3 if tier == SubscriptionTier.PRO else 10
+            if len(user_connections) >= max_connections:
+                await websocket.close(code=4029, reason="Connection limit reached")
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"Maximum {max_connections} connections allowed",
+                )
+
+            await websocket.accept()
+
+            connection = Connection(
+                websocket=websocket,
+                user_id=user_id,
+                tier=tier,
             )
 
-        # Accept connection
-        await websocket.accept()
-
-        # Create connection object
-        connection = Connection(
-            websocket=websocket,
-            user_id=user_id,
-            tier=tier,
-        )
-
-        # Store connection
-        if user_id not in self.connections:
-            self.connections[user_id] = []
-        self.connections[user_id].append(connection)
-        self.all_connections.append(connection)
+            if user_id not in self.connections:
+                self.connections[user_id] = []
+            self.connections[user_id].append(connection)
+            self.all_connections.append(connection)
 
         # Send welcome message
         await self._send(connection, {
@@ -138,18 +137,19 @@ class WebSocketManager:
 
     async def disconnect(self, connection: Connection):
         """Remove a connection"""
-        user_id = connection.user_id
+        async with self._lock:
+            user_id = connection.user_id
 
-        if user_id in self.connections:
-            self.connections[user_id] = [
-                c for c in self.connections[user_id]
-                if c.websocket != connection.websocket
-            ]
-            if not self.connections[user_id]:
-                del self.connections[user_id]
+            if user_id in self.connections:
+                self.connections[user_id] = [
+                    c for c in self.connections[user_id]
+                    if c.websocket != connection.websocket
+                ]
+                if not self.connections[user_id]:
+                    del self.connections[user_id]
 
-        if connection in self.all_connections:
-            self.all_connections.remove(connection)
+            if connection in self.all_connections:
+                self.all_connections.remove(connection)
 
     async def _send(self, connection: Connection, data: dict):
         """Send data to a single connection"""

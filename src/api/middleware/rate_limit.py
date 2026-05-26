@@ -30,15 +30,27 @@ class RateLimiter:
     Uses in-memory storage. For production at scale, use Redis.
     """
 
-    def __init__(self, window_seconds: int = 3600):
+    def __init__(self, window_seconds: int = 3600, max_entries: int = 100_000):
         self.window_seconds = window_seconds
+        self._max_entries = max_entries
         self.states: dict[str, RateLimitState] = defaultdict(RateLimitState)
+        self._access_order: dict[str, float] = {}
 
     def _clean_old_requests(self, state: RateLimitState) -> None:
         """Remove requests outside the current window"""
         current_time = time.time()
         cutoff = current_time - self.window_seconds
         state.requests = [t for t in state.requests if t > cutoff]
+
+    def _evict_stale_entries(self) -> None:
+        """Remove entries that haven't been accessed within the window to bound memory."""
+        if len(self.states) <= self._max_entries:
+            return
+        cutoff = time.time() - self.window_seconds
+        stale = [k for k, ts in self._access_order.items() if ts < cutoff]
+        for k in stale:
+            self.states.pop(k, None)
+            self._access_order.pop(k, None)
 
     def check_rate_limit(
         self,
@@ -56,6 +68,9 @@ class RateLimiter:
         # Unlimited for admin/elite with -1
         if limit == -1:
             return True, -1, 0
+
+        self._access_order[identifier] = time.time()
+        self._evict_stale_entries()
 
         state = self.states[identifier]
         self._clean_old_requests(state)

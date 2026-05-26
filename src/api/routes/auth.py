@@ -55,11 +55,11 @@ class PasswordChangeRequest(BaseModel):
 class UserProfile(BaseModel):
     id: str
     email: str
-    username: Optional[str]
+    username: Optional[str] = None
     tier: SubscriptionTier
     tier_name: str
     is_active: bool
-    created_at: Optional[datetime]
+    created_at: Optional[datetime] = None
     features: dict
 
 
@@ -79,6 +79,23 @@ def _verify_password(password: str, stored_hash: str) -> bool:
     return secrets.compare_digest(dk.hex(), dk_hex)
 
 
+def _validate_password_strength(password: str) -> None:
+    """Enforce minimum password complexity. Raises HTTPException on failure."""
+    if len(password) < 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 10 characters",
+        )
+    has_upper = any(c.isupper() for c in password)
+    has_lower = any(c.islower() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    if not (has_upper and has_lower and has_digit):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain uppercase, lowercase, and a digit",
+        )
+
+
 def _generate_user_id() -> str:
     """Generate unique user ID"""
     return f"user_{secrets.token_hex(12)}"
@@ -91,6 +108,7 @@ async def register(request: RegisterRequest):
 
     New users start on the FREE tier.
     """
+    _validate_password_strength(request.password)
     email = request.email.lower()
 
     # Check if user already exists
@@ -158,8 +176,7 @@ async def login(request: LoginRequest):
         )
 
     # Verify password
-    password_hash = _hash_password(request.password)
-    if password_hash != user_data["password_hash"]:
+    if not _verify_password(request.password, user_data["password_hash"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
@@ -300,12 +317,13 @@ async def change_password(
         )
 
     # Verify current password
-    current_hash = _hash_password(request.current_password)
-    if current_hash != user_data["password_hash"]:
+    if not _verify_password(request.current_password, user_data["password_hash"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Current password is incorrect",
         )
+
+    _validate_password_strength(request.new_password)
 
     # Update password
     user_data["password_hash"] = _hash_password(request.new_password)

@@ -668,8 +668,8 @@ async def get_scanner_status(
         logger.exception("Error getting scanner status: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve scanner status: {exc}",
-        )
+            detail="Failed to retrieve scanner status",
+        ) from exc
 
     return ScanifyStatusResponse(
         is_running=status_data.get("is_running", False),
@@ -720,8 +720,8 @@ async def start_scanner(
         logger.exception("Failed to start scanner: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to start scanner: {exc}",
-        )
+            detail="Failed to start scanner",
+        ) from exc
 
 
 @router.post("/stop", response_model=ScanifyControlResponse)
@@ -756,8 +756,8 @@ async def stop_scanner(
         logger.exception("Failed to stop scanner: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to stop scanner: {exc}",
-        )
+            detail="Failed to stop scanner",
+        ) from exc
 
 
 @router.get("/health", response_model=ScanifyHealthResponse)
@@ -1356,8 +1356,8 @@ async def get_market_internals(
         logger.exception("Error fetching market internals: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch market internals: {exc}",
-        )
+            detail="Failed to fetch market internals",
+        ) from exc
 
     if internals is None:
         raise HTTPException(
@@ -1631,8 +1631,8 @@ async def run_manual_calibration(
         logger.exception("Manual calibration failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Calibration failed: {exc}",
-        )
+            detail="Calibration failed",
+        ) from exc
 
 
 @router.get("/calibration/weights", response_model=FactorWeightsResponse)
@@ -1702,8 +1702,8 @@ async def get_dashboard(
         logger.exception("Error building dashboard data: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to build dashboard data: {exc}",
-        )
+            detail="Failed to build dashboard data",
+        ) from exc
 
     # Build status sub-object
     status_data = dashboard_data.get("status", {})

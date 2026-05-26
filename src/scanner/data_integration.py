@@ -14,15 +14,19 @@ Provides unified data access with caching and real-time support.
 Author: Revolution Alpha Engine
 """
 
-import numpy as np
-import pandas as pd
+import logging
+import threading
+from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any, Union, Callable
 from datetime import datetime, timedelta
 from enum import Enum
-from abc import ABC, abstractmethod
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+import numpy as np
+import pandas as pd
+
+logger = logging.getLogger(__name__)
 import warnings
 
 warnings.filterwarnings('ignore')
@@ -353,7 +357,7 @@ class UniversalScannerDataProvider(BaseScannerDataProvider):
                 try:
                     results[symbol] = future.result()
                 except Exception as e:
-                    print(f"Error fetching {symbol}: {e}")
+                    logger.warning("Error fetching %s: %s", symbol, e)
                     results[symbol] = ScannerDataPackage(
                         symbol=symbol,
                         scanner_type=config.scanner_type,

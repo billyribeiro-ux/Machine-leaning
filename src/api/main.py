@@ -6,18 +6,22 @@ Production-ready FastAPI application with:
 - WebSocket real-time streaming
 - JWT authentication with tier-based access
 - Rate limiting middleware
+- Request correlation IDs and structured logging
 - CORS configuration
 """
 
+import logging
 import os
 import threading
+import uuid
 from contextlib import asynccontextmanager
-from typing import Optional
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, WebSocket, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from src.api.routes import (
     signals_router,
@@ -28,20 +32,25 @@ from src.api.routes import (
 )
 from src.api.websocket.handlers import manager, websocket_endpoint
 from src.api.middleware.rate_limit import RateLimitMiddleware
+from src.api.middleware.request_context import (
+    RequestContextMiddleware,
+    install_request_id_filter,
+    request_id_var,
+)
 
+logger = logging.getLogger("revolution.api")
 
-# Scanner engine reference (set externally)
 _scanner_engine = None
 _engine_lock = threading.Lock()
+_start_time = datetime.now(timezone.utc)
 
 
-def set_scanner_engine(engine):
+def set_scanner_engine(engine) -> None:
     """Set the scanner engine for API access"""
     global _scanner_engine
     with _engine_lock:
         _scanner_engine = engine
 
-    # Propagate to modules
     from src.api.routes import signals, alerts, status, admin
     from src.api.websocket import handlers
 
@@ -52,24 +61,36 @@ def set_scanner_engine(engine):
     handlers.manager.set_scanner_engine(engine)
 
 
+class HealthResponse(BaseModel):
+    status: str
+    service: str
+    version: str
+    uptime_seconds: int
+    timestamp: str
+    checks: dict
+
+
+class ErrorResponse(BaseModel):
+    error: str
+    detail: str
+    request_id: str
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler"""
-    # Startup
-    print("🚀 Scanify API starting...")
+    install_request_id_filter()
+    logger.info("Scanify API starting")
 
-    # Start WebSocket heartbeat
     await manager.start_heartbeat(interval=30)
 
-    # Initialize scanner if configured
     with _engine_lock:
         if _scanner_engine:
-            print("📡 Scanner engine connected")
+            logger.info("Scanner engine connected")
 
     yield
 
-    # Shutdown
-    print("👋 Scanify API shutting down...")
+    logger.info("Scanify API shutting down")
 
 
 def create_app(
@@ -77,31 +98,12 @@ def create_app(
     version: str = "1.0.0",
     debug: bool = False,
 ) -> FastAPI:
-    """
-    Create and configure the FastAPI application.
-
-    Args:
-        title: API title for documentation
-        version: API version
-        debug: Enable debug mode
-
-    Returns:
-        Configured FastAPI application
-    """
-
     app = FastAPI(
         title=title,
         description="""
 # Scanify Trading Scanner API
 
 Real-time trading signals and alerts powered by ML.
-
-## Features
-
-- **Real-time Signals**: Get trading signals from multiple scanners
-- **WebSocket Streaming**: Live signal updates for PRO+ tiers
-- **Alert Management**: Custom alerts and notifications
-- **Tier-based Access**: Different features per subscription level
 
 ## Authentication
 
@@ -115,15 +117,14 @@ Authorization: Bearer <your_jwt_token>
 
 | Tier | Requests/Hour | WebSocket |
 |------|--------------|-----------|
-| Free | 60 | ❌ |
-| Basic | 500 | ❌ |
-| Pro | 5,000 | ✅ |
-| Elite | 50,000 | ✅ |
+| Free | 60 | No |
+| Basic | 500 | No |
+| Pro | 5,000 | Yes |
+| Elite | 50,000 | Yes |
 
 ## WebSocket
 
 Connect to `/ws/signals?token=<jwt_token>` for real-time updates.
-
 Requires PRO tier or higher.
         """,
         version=version,
@@ -133,16 +134,16 @@ Requires PRO tier or higher.
         lifespan=lifespan,
     )
 
-    # CORS configuration
+    # CORS
     allowed_origins = os.getenv("SCANIFY_CORS_ORIGINS", "").split(",")
     if not allowed_origins or allowed_origins == [""]:
         allowed_origins = [
-            "http://localhost:3000",      # Next.js dev
-            "http://localhost:5173",      # Vite dev
-            "http://localhost:1420",      # Tauri dev
-            "https://scanify.app",        # Production
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:1420",
+            "https://scanify.app",
             "https://www.scanify.app",
-            "tauri://localhost",          # Tauri production
+            "tauri://localhost",
         ]
 
     app.add_middleware(
@@ -151,45 +152,71 @@ Requires PRO tier or higher.
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
-        expose_headers=["X-RateLimit-Remaining", "X-RateLimit-Reset"],
+        expose_headers=[
+            "X-RateLimit-Remaining",
+            "X-RateLimit-Reset",
+            "X-Request-ID",
+            "X-Response-Time",
+        ],
     )
 
-    # GZip compression
     app.add_middleware(GZipMiddleware, minimum_size=1000)
-
-    # Rate limiting
     app.add_middleware(RateLimitMiddleware)
+    app.add_middleware(RequestContextMiddleware)
 
-    # Register routers
+    # Routers
     app.include_router(auth_router, prefix="/api")
     app.include_router(signals_router, prefix="/api")
     app.include_router(alerts_router, prefix="/api")
     app.include_router(status_router, prefix="/api")
     app.include_router(admin_router, prefix="/api")
 
-    # WebSocket endpoint
     @app.websocket("/ws/signals")
     async def ws_signals(
         websocket: WebSocket,
         token: str = Query(..., description="JWT access token"),
     ):
-        """
-        WebSocket endpoint for real-time signal streaming.
-
-        Requires PRO tier or higher.
-        """
         await websocket_endpoint(websocket, token)
 
-    # Health check (outside /api prefix for load balancers)
-    @app.get("/health")
+    @app.get("/health", response_model=HealthResponse)
     async def health():
-        """Basic health check"""
-        return {"status": "healthy", "service": "scanify-api"}
+        """Deep health check with dependency status"""
+        uptime = int((datetime.now(timezone.utc) - _start_time).total_seconds())
+        checks: dict = {}
 
-    # Root redirect
+        with _engine_lock:
+            engine_ok = _scanner_engine is not None
+        checks["scanner_engine"] = "ok" if engine_ok else "unavailable"
+
+        ws_stats = manager.get_stats()
+        checks["websocket"] = "ok"
+        checks["websocket_connections"] = ws_stats.get("total_connections", 0)
+
+        overall = "healthy" if engine_ok else "degraded"
+
+        return HealthResponse(
+            status=overall,
+            service="scanify-api",
+            version=version,
+            uptime_seconds=uptime,
+            timestamp=datetime.now(timezone.utc).isoformat(),
+            checks=checks,
+        )
+
+    @app.get("/readiness")
+    async def readiness():
+        """Readiness probe — returns 503 until scanner engine is attached"""
+        with _engine_lock:
+            ready = _scanner_engine is not None
+        if not ready:
+            return JSONResponse(
+                status_code=503,
+                content={"status": "not_ready"},
+            )
+        return {"status": "ready"}
+
     @app.get("/")
     async def root():
-        """API root - redirect to docs"""
         return JSONResponse(
             content={
                 "message": "Welcome to Scanify API",
@@ -199,21 +226,23 @@ Requires PRO tier or higher.
             }
         )
 
-    # Global exception handler
     @app.exception_handler(Exception)
     async def global_exception_handler(request, exc):
+        rid = request_id_var.get("-")
+        logger.exception("Unhandled exception [request_id=%s]", rid)
         return JSONResponse(
             status_code=500,
             content={
-                "error": "Internal server error",
+                "error": "internal_server_error",
                 "detail": str(exc) if debug else "An unexpected error occurred",
+                "request_id": rid,
             },
+            headers={"X-Request-ID": rid},
         )
 
     return app
 
 
-# Default app instance
 app = create_app(
     debug=os.getenv("SCANIFY_DEBUG", "false").lower() == "true",
 )

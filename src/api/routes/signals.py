@@ -9,7 +9,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, status, Depends, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.api.auth.jwt import (
     get_current_active_user,
@@ -37,11 +37,11 @@ class SignalResponse(BaseModel):
     confidence: float
     entry_price: Optional[float] = None
     stop_loss: Optional[float] = None
-    targets: List[float] = []
+    targets: List[float] = Field(default_factory=list)
     risk_reward: Optional[float] = None
     timeframe: str
     timestamp: datetime
-    metadata: dict = {}
+    metadata: dict = Field(default_factory=dict)
 
     # Tier-restricted fields
     is_delayed: bool = False
@@ -331,7 +331,7 @@ async def get_signal_history(
 
 @router.post("/export")
 async def export_signals(
-    format: str = Query("csv", regex="^(csv|json|xlsx)$"),
+    format: str = Query("csv", pattern="^(csv|json|xlsx)$"),
     current_user: User = Depends(require_tier(SubscriptionTier.PRO)),
 ):
     """
