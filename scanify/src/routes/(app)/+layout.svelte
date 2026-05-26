@@ -43,7 +43,7 @@
 
 <AppShell>
   {#snippet nav()}
-    <NavRail activeRoute={activeRoute()} onnavigate={handleNavigate} />
+    <NavRail activeRoute={activeRoute} onnavigate={handleNavigate} />
   {/snippet}
 
   {#snippet main()}
