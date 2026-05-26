@@ -847,7 +847,7 @@ class DailyCalibrator:
             return current_stop
 
         entries = np.array([t.entry_price for t in trades], dtype=np.float64)
-        drawdowns = np.array([getattr(t, "max_drawdown", 0.0) or 0.0 for t in trades], dtype=np.float64)
+        drawdowns = np.array([abs(t.max_loss_during_trade) if t.max_loss_during_trade else 0.0 for t in trades], dtype=np.float64)
         pnls = np.array([(t.pnl_dollars or 0.0) for t in trades], dtype=np.float64)
 
         # Compute drawdown as fraction of entry price.

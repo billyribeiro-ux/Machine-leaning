@@ -752,16 +752,16 @@ class DirectionalOTMScanner:
 
         # --- Direction & strength ----------------------------------------
         if composite > self.strong_threshold:
-            direction = TradeDirection.BULLISH
+            direction = TradeDirection.BULL
             is_strong = True
         elif composite > self.entry_threshold:
-            direction = TradeDirection.BULLISH
+            direction = TradeDirection.BULL
             is_strong = False
         elif composite < -self.strong_threshold:
-            direction = TradeDirection.BEARISH
+            direction = TradeDirection.BEAR
             is_strong = True
         elif composite < -self.entry_threshold:
-            direction = TradeDirection.BEARISH
+            direction = TradeDirection.BEAR
             is_strong = False
         else:
             direction = TradeDirection.NEUTRAL
@@ -912,7 +912,7 @@ class DirectionalOTMScanner:
 
         # -- Determine option side ----------------------------------------
         option_side: OptionSide = (
-            OptionSide.CALL if direction == TradeDirection.BULLISH
+            OptionSide.CALL if direction == TradeDirection.BULL
             else OptionSide.PUT
         )
 

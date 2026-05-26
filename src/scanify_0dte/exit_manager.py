@@ -489,7 +489,7 @@ class ExitManager:
 
         Returns:
             Tuple of ``(should_exit, exit_reason)``.  If ``should_exit`` is
-            ``False``, ``exit_reason`` is ``ExitReason.NONE`` (or a sentinel).
+            ``False``, ``exit_reason`` is ``None``.
         """
         entry = position.entry_price
         current = position.current_price
@@ -526,9 +526,9 @@ class ExitManager:
                 current,
                 entry,
             )
-            return True, ExitReason.BREAK_EVEN_STOP
+            return True, ExitReason.BREAK_EVEN
 
-        return False, ExitReason.NONE
+        return False, None
 
     def check_signal_reversal(
         self,
@@ -556,7 +556,7 @@ class ExitManager:
             return False
 
         # Bullish entry requires positive score to persist
-        if entry_direction == TradeDirection.BULLISH and current_score < 0:
+        if entry_direction == TradeDirection.BULL and current_score < 0:
             logger.warning(
                 "SIGNAL REVERSAL %s | was BULLISH, score now %.1f",
                 position.position_id[:8],
@@ -565,7 +565,7 @@ class ExitManager:
             return True
 
         # Bearish entry requires negative score to persist
-        if entry_direction == TradeDirection.BEARISH and current_score > 0:
+        if entry_direction == TradeDirection.BEAR and current_score > 0:
             logger.warning(
                 "SIGNAL REVERSAL %s | was BEARISH, score now %.1f",
                 position.position_id[:8],
@@ -610,7 +610,7 @@ class ExitManager:
         scan_type = getattr(signal, "scan_type", None)
 
         # Long call / bullish trades: exit if price drops below gamma flip
-        if entry_direction == TradeDirection.BULLISH:
+        if entry_direction == TradeDirection.BULL:
             if spx_price < gamma_flip:
                 logger.warning(
                     "GEX FLIP %s | BULLISH but SPX $%.2f < gamma_flip $%.2f",
@@ -621,7 +621,7 @@ class ExitManager:
                 return True
 
         # Long put / bearish trades: exit if price rises above gamma flip
-        if entry_direction == TradeDirection.BEARISH:
+        if entry_direction == TradeDirection.BEAR:
             if spx_price > gamma_flip:
                 logger.warning(
                     "GEX FLIP %s | BEARISH but SPX $%.2f > gamma_flip $%.2f",

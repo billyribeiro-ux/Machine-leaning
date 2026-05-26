@@ -706,7 +706,7 @@ class TestStopLoss:
         should_exit, reason = exit_manager.check_stop_loss(pos)
 
         assert should_exit is False
-        assert reason == _StubExitReason.NONE
+        assert reason is None
 
     def test_time_based_stop_30_percent_after_30_minutes(self, exit_manager):
         """Down 30%+ after 30 minutes should trigger TIME_STOP."""
