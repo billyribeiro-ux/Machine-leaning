@@ -66,7 +66,7 @@
     { id: 'sym-nvda',          label: 'NVDA',                 description: 'NVIDIA Corporation',              category: 'symbols',    icon: '$' },
     // Actions
     { id: 'act-new-scan',      label: 'New Scan',             description: 'Create a custom scan',            category: 'actions',    icon: '+',  shortcut: 'N' },
-    { id: 'act-export',        label: 'Export Data',          description: 'Export scan results to CSV',      category: 'actions',    icon: 'Ex' },
+    { id: 'act-export',        label: 'Export Data',          description: 'Export scan results to CSV',      category: 'actions',    icon: 'Ex', action: () => exportSignals('csv') },
     { id: 'act-clear-alerts',  label: 'Clear All Alerts',     description: 'Dismiss all active alerts',       category: 'actions',    icon: 'X' },
     { id: 'act-refresh',       label: 'Force Refresh',        description: 'Refresh all data connections',    category: 'actions',    icon: 'R',  shortcut: 'Shift+R' },
     // Settings
@@ -76,6 +76,35 @@
     { id: 'set-data',          label: 'Data Sources',         description: 'Manage data feed connections',    category: 'settings',   icon: 'db' },
     { id: 'set-keybinds',      label: 'Keyboard Shortcuts',   description: 'View and customize keybindings',  category: 'settings',   icon: 'kb', shortcut: '?' },
   ];
+
+  function exportSignals(format: 'csv' | 'json' | 'pdf'): void {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('scanify_token') : null;
+    const baseUrl = '/api/signals/export';
+    const params = new URLSearchParams({ format });
+    const url = `${baseUrl}?${params.toString()}`;
+
+    fetch(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+        const disposition = res.headers.get('Content-Disposition') ?? '';
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        const filename = match?.[1] ?? `scanify_export.${format}`;
+        return res.blob().then((blob) => ({ blob, filename }));
+      })
+      .then(({ blob, filename }) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      })
+      .catch((err) => {
+        console.error('Export error:', err);
+      });
+  }
 
   const recentIds = ['nav-scanner', 'scan-momentum', 'sym-spy', 'act-new-scan'];
 

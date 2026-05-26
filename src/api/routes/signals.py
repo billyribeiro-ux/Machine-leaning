@@ -5,10 +5,15 @@ Real-time and historical trading signals with tier-based access.
 """
 
 import asyncio
+import csv
+import io
+import json as json_module
+import logging
 from datetime import datetime, timezone, timedelta
 from typing import Optional, List
 
 from fastapi import APIRouter, HTTPException, status, Depends, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from src.api.auth.jwt import (
@@ -23,6 +28,8 @@ from src.api.auth.tiers import (
     get_signal_delay,
     get_max_symbols,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/signals", tags=["Signals"])
 
@@ -331,16 +338,219 @@ async def get_signal_history(
 
 @router.post("/export")
 async def export_signals(
-    format: str = Query("csv", pattern="^(csv|json|xlsx)$"),
+    format: str = Query("csv", pattern="^(csv|json|pdf)$"),
+    scanner_type: Optional[str] = None,
+    min_confidence: float = Query(0, ge=0, le=100),
     current_user: User = Depends(require_tier(SubscriptionTier.PRO)),
 ):
     """
-    Export signals to file.
+    Export signals as a downloadable file.
 
+    Supported formats: **csv**, **json**, **pdf**.
     Requires PRO tier or higher.
     """
-    return {
-        "message": "Export initiated",
-        "format": format,
-        "download_url": f"/api/signals/download/{format}",  # Would generate actual file
-    }
+    tier = current_user.tier
+
+    if _scanner_engine and hasattr(_scanner_engine, "last_results") and _scanner_engine.last_results:
+        raw_signals = []
+        for result in _scanner_engine.last_results.results:
+            raw_signals.append({
+                "symbol": result.symbol,
+                "scanner_type": result.scanner_type,
+                "direction": result.direction.value if hasattr(result.direction, "value") else str(result.direction),
+                "confidence": result.confidence,
+                "entry_price": result.entry_price,
+                "stop_loss": result.stop_loss,
+                "targets": result.targets or [],
+                "risk_reward": result.risk_reward,
+                "timeframe": result.timeframe.value if hasattr(result.timeframe, "value") else str(result.timeframe),
+                "timestamp": result.timestamp.isoformat() if hasattr(result.timestamp, "isoformat") else str(result.timestamp),
+            })
+    else:
+        raw_signals = _filter_signals_for_tier(_signals_cache, tier)
+
+    if scanner_type:
+        raw_signals = [s for s in raw_signals if s.get("scanner_type", "").lower() == scanner_type.lower()]
+    if min_confidence > 0:
+        raw_signals = [s for s in raw_signals if s.get("confidence", 0) >= min_confidence]
+
+    raw_signals.sort(
+        key=lambda x: (x.get("timestamp", ""), x.get("confidence", 0)),
+        reverse=True,
+    )
+
+    timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+
+    if format == "json":
+        content = json_module.dumps(raw_signals, indent=2, default=str)
+        return StreamingResponse(
+            io.BytesIO(content.encode()),
+            media_type="application/json",
+            headers={
+                "Content-Disposition": f'attachment; filename="scanify_signals_{timestamp_str}.json"'
+            },
+        )
+
+    if format == "csv":
+        return _build_csv_response(raw_signals, timestamp_str)
+
+    if format == "pdf":
+        return _build_pdf_response(raw_signals, timestamp_str)
+
+    raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
+
+
+def _build_csv_response(signals: list, timestamp_str: str) -> StreamingResponse:
+    """Build a CSV StreamingResponse from a list of signal dicts."""
+    fieldnames = [
+        "timestamp", "symbol", "scanner_type", "direction",
+        "confidence", "entry_price", "stop_loss", "targets",
+        "risk_reward", "timeframe",
+    ]
+
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore")
+    writer.writeheader()
+    for sig in signals:
+        row = dict(sig)
+        if isinstance(row.get("targets"), list):
+            row["targets"] = ";".join(str(t) for t in row["targets"])
+        writer.writerow(row)
+
+    return StreamingResponse(
+        io.BytesIO(buf.getvalue().encode()),
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename="scanify_signals_{timestamp_str}.csv"'
+        },
+    )
+
+
+def _build_pdf_response(signals: list, timestamp_str: str) -> StreamingResponse:
+    """Build a PDF report from signals using only the stdlib.
+
+    Generates a minimal but valid PDF with a signals table.  No third-party
+    PDF library is required.
+    """
+    lines: list[str] = []
+    lines.append(f"SCANIFY Signal Export  |  {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
+    lines.append(f"Total signals: {len(signals)}")
+    lines.append("")
+    lines.append(f"{'Symbol':<8} {'Scanner':<14} {'Dir':<7} {'Conf':>6} {'Entry':>10} {'Stop':>10} {'R:R':>6} {'Time'}")
+    lines.append("-" * 90)
+    for sig in signals:
+        symbol = str(sig.get("symbol", ""))[:8]
+        scanner = str(sig.get("scanner_type", ""))[:14]
+        direction = str(sig.get("direction", ""))[:7]
+        confidence = sig.get("confidence", 0)
+        entry = sig.get("entry_price")
+        stop = sig.get("stop_loss")
+        rr = sig.get("risk_reward")
+        ts = str(sig.get("timestamp", ""))[:19]
+        entry_str = f"{entry:>10.2f}" if entry is not None else f"{'N/A':>10}"
+        stop_str = f"{stop:>10.2f}" if stop is not None else f"{'N/A':>10}"
+        rr_str = f"{rr:>6.2f}" if rr is not None else f"{'N/A':>6}"
+        lines.append(f"{symbol:<8} {scanner:<14} {direction:<7} {confidence:>6.1f} {entry_str} {stop_str} {rr_str} {ts}")
+
+    text = "\n".join(lines)
+    pdf_bytes = _text_to_pdf(text)
+
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'attachment; filename="scanify_signals_{timestamp_str}.pdf"'
+        },
+    )
+
+
+def _text_to_pdf(text: str) -> bytes:
+    """Convert plain text to a minimal valid PDF (no third-party deps).
+
+    Uses a fixed-width Courier font so tabular data aligns properly.
+    """
+    text_lines = text.split("\n")
+    font_size = 9
+    leading = font_size + 3
+    margin_x = 40
+    margin_y = 40
+    page_w = 842  # A4 landscape width in points
+    page_h = 595  # A4 landscape height in points
+    usable_h = page_h - 2 * margin_y
+    lines_per_page = int(usable_h / leading)
+
+    pages: list[list[str]] = []
+    for i in range(0, len(text_lines), lines_per_page):
+        pages.append(text_lines[i : i + lines_per_page])
+
+    objects: list[bytes] = []
+    offsets: list[int] = []
+    current_offset = 0
+
+    def add_object(data: bytes) -> int:
+        nonlocal current_offset
+        offsets.append(current_offset)
+        objects.append(data)
+        current_offset += len(data)
+        return len(objects)
+
+    header = b"%PDF-1.4\n"
+    current_offset = len(header)
+
+    # 1 - Catalog
+    add_object(b"1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n")
+
+    # 2 - Pages (placeholder, will rewrite)
+    pages_obj_index = len(objects)
+    kids = " ".join(f"{i + 4} 0 R" for i in range(len(pages)))
+    add_object(f"2 0 obj\n<< /Type /Pages /Kids [{kids}] /Count {len(pages)} >>\nendobj\n".encode())
+
+    # 3 - Font
+    add_object(b"3 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>\nendobj\n")
+
+    # Page objects + stream objects
+    next_obj_num = 4
+    for page_lines in pages:
+        page_obj_num = next_obj_num
+        stream_obj_num = next_obj_num + 1
+        next_obj_num += 2
+
+        # Build text stream
+        stream_parts = [f"BT\n/F1 {font_size} Tf\n"]
+        y = page_h - margin_y
+        for line in page_lines:
+            safe = line.replace("\\", "\\\\").replace("(", "\\(").replace(")", "\\)")
+            stream_parts.append(f"1 0 0 1 {margin_x} {y} Tm\n({safe}) Tj\n")
+            y -= leading
+        stream_parts.append("ET\n")
+        stream_data = "".join(stream_parts).encode()
+
+        add_object(
+            f"{page_obj_num} 0 obj\n"
+            f"<< /Type /Page /Parent 2 0 R "
+            f"/MediaBox [0 0 {page_w} {page_h}] "
+            f"/Contents {stream_obj_num} 0 R "
+            f"/Resources << /Font << /F1 3 0 R >> >> >>\n"
+            f"endobj\n".encode()
+        )
+        add_object(
+            f"{stream_obj_num} 0 obj\n"
+            f"<< /Length {len(stream_data)} >>\n"
+            f"stream\n".encode()
+            + stream_data
+            + b"\nendstream\nendobj\n"
+        )
+
+    # Cross-reference table
+    xref_offset = len(header) + sum(len(o) for o in objects)
+    xref_lines = [f"xref\n0 {len(objects) + 1}\n0000000000 65535 f \n"]
+    running = len(header)
+    for obj in objects:
+        xref_lines.append(f"{running:010d} 00000 n \n")
+        running += len(obj)
+    xref_lines.append(
+        f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\n"
+        f"startxref\n{xref_offset}\n%%EOF\n"
+    )
+
+    return header + b"".join(objects) + "".join(xref_lines).encode()

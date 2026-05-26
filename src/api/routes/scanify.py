@@ -9,11 +9,15 @@ All endpoints use the ``/api/scanify`` prefix and follow the project's
 established patterns for authentication, response models, and error handling.
 """
 
+import csv
+import io
+import json as json_module
 import logging
 from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from src.api.auth.jwt import (
@@ -1209,6 +1213,94 @@ async def get_trade_history(
         winning=len(winning),
         losing=len(losing),
     )
+
+
+@router.get("/trades/export")
+async def export_trades(
+    format: str = Query("csv", pattern="^(csv|json|pdf)$"),
+    current_user: User = Depends(require_tier(SubscriptionTier.PRO)),
+):
+    """
+    Export trades as a downloadable file (CSV, JSON, or PDF).
+
+    Requires PRO tier or higher.
+    """
+    orch = _get_orchestrator()
+    closed = getattr(orch, "_closed_positions", [])
+    trades = [_serialize_trade(t) for t in closed]
+
+    timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+
+    if format == "json":
+        content = json_module.dumps(trades, indent=2, default=str)
+        return StreamingResponse(
+            io.BytesIO(content.encode()),
+            media_type="application/json",
+            headers={
+                "Content-Disposition": f'attachment; filename="scanify_trades_{timestamp_str}.json"'
+            },
+        )
+
+    if format == "csv":
+        fieldnames = [
+            "timestamp", "symbol", "direction", "entry_price", "exit_price",
+            "pnl", "pnl_percent", "stop_loss", "targets", "exit_reason",
+            "scanner_type", "confidence",
+        ]
+        buf = io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        for t in trades:
+            row = dict(t)
+            if isinstance(row.get("targets"), list):
+                row["targets"] = ";".join(str(v) for v in row["targets"])
+            writer.writerow(row)
+
+        return StreamingResponse(
+            io.BytesIO(buf.getvalue().encode()),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f'attachment; filename="scanify_trades_{timestamp_str}.csv"'
+            },
+        )
+
+    if format == "pdf":
+        lines: list[str] = []
+        lines.append(f"SCANIFY Trade Export  |  {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
+        lines.append(f"Total trades: {len(trades)}")
+        lines.append("")
+        lines.append(
+            f"{'Symbol':<8} {'Dir':<7} {'Entry':>10} {'Exit':>10} "
+            f"{'P&L':>10} {'P&L%':>7} {'Exit Reason'}"
+        )
+        lines.append("-" * 75)
+        for t in trades:
+            symbol = str(t.get("symbol", ""))[:8]
+            direction = str(t.get("direction", ""))[:7]
+            entry = t.get("entry_price")
+            exit_p = t.get("exit_price")
+            pnl = t.get("pnl", 0)
+            pnl_pct = t.get("pnl_percent", 0)
+            reason = str(t.get("exit_reason", ""))
+            e_str = f"{entry:>10.2f}" if entry is not None else f"{'N/A':>10}"
+            x_str = f"{exit_p:>10.2f}" if exit_p is not None else f"{'N/A':>10}"
+            lines.append(
+                f"{symbol:<8} {direction:<7} {e_str} {x_str} "
+                f"{pnl:>10.2f} {pnl_pct:>6.1f}% {reason}"
+            )
+
+        from src.api.routes.signals import _text_to_pdf
+
+        pdf_bytes = _text_to_pdf("\n".join(lines))
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="scanify_trades_{timestamp_str}.pdf"'
+            },
+        )
+
+    raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
 
 
 @router.get("/pnl", response_model=PnLSummaryResponse)
