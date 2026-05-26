@@ -74,6 +74,7 @@ from .cross_asset_scanner import CrossAssetScanner
 from .sentiment_scanner import SentimentAlphaScanner
 from .vwap_scanner import VWAPDeviationScanner
 from .liquidity_scanner import LiquidityShockScanner
+from .precision_alpha import PrecisionAlphaScanner
 
 logger = logging.getLogger(__name__)
 
@@ -218,6 +219,9 @@ class ScannerEngine:
         self.register_scanner(SentimentAlphaScanner(config=self.scanner_config))
         self.register_scanner(VWAPDeviationScanner(config=self.scanner_config))
         self.register_scanner(LiquidityShockScanner(config=self.scanner_config))
+
+        # Phase 5 — Precision Alpha (unified 8-dimension day-trading engine)
+        self.register_scanner(PrecisionAlphaScanner(config=self.scanner_config))
 
         # Meta-scanners (combine signals from above)
         composite = CompositeAlphaScanner(config=self.scanner_config)

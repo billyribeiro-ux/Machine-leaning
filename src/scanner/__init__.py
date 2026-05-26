@@ -155,6 +155,9 @@ from .cross_asset_scanner import CrossAssetScanner
 from .sentiment_scanner import SentimentAlphaScanner
 from .vwap_scanner import VWAPDeviationScanner
 from .liquidity_scanner import LiquidityShockScanner
+# Phase 5 — Precision Alpha (unified day-trading engine)
+from .precision_alpha import PrecisionAlphaScanner
+
 from .scanner_backtest import (
     ScannerBacktestEngine,
     ScannerBacktestResult,
@@ -294,6 +297,8 @@ __all__ = [
     "SentimentAlphaScanner",
     "VWAPDeviationScanner",
     "LiquidityShockScanner",
+    # Phase 5 — Precision Alpha
+    "PrecisionAlphaScanner",
     # Universal Backtest Framework
     "ScannerBacktestEngine",
     "ScannerBacktestResult",
