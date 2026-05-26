@@ -66,6 +66,15 @@ from .skew_intelligence import SkewIntelligenceScanner
 from .vix_intelligence import VIXDeepIntelligenceScanner
 from .gaps_power_scanner import GapsPowerScanner
 
+# Phase 4 scanners — institutional integration + new SOTA
+from .mtf_scanner import MultiTimeframeScanner
+from .dark_pool_scanner import DarkPoolScanner
+from .order_flow_scanner import OrderFlowImbalanceScanner
+from .cross_asset_scanner import CrossAssetScanner
+from .sentiment_scanner import SentimentAlphaScanner
+from .vwap_scanner import VWAPDeviationScanner
+from .liquidity_scanner import LiquidityShockScanner
+
 logger = logging.getLogger(__name__)
 
 
@@ -200,6 +209,15 @@ class ScannerEngine:
         self.register_scanner(SkewIntelligenceScanner(config=self.scanner_config))
         self.register_scanner(VIXDeepIntelligenceScanner(config=self.scanner_config))
         self.register_scanner(GapsPowerScanner(config=self.scanner_config))
+
+        # Phase 4 — Institutional integration + SOTA scanners
+        self.register_scanner(MultiTimeframeScanner(config=self.scanner_config))
+        self.register_scanner(DarkPoolScanner(config=self.scanner_config))
+        self.register_scanner(OrderFlowImbalanceScanner(config=self.scanner_config))
+        self.register_scanner(CrossAssetScanner(config=self.scanner_config))
+        self.register_scanner(SentimentAlphaScanner(config=self.scanner_config))
+        self.register_scanner(VWAPDeviationScanner(config=self.scanner_config))
+        self.register_scanner(LiquidityShockScanner(config=self.scanner_config))
 
         # Meta-scanners (combine signals from above)
         composite = CompositeAlphaScanner(config=self.scanner_config)

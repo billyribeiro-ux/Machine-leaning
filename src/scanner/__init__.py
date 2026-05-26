@@ -147,6 +147,14 @@ from .ml_adaptive_scanner import AdaptiveScannerFramework
 from .skew_intelligence import SkewIntelligenceScanner
 from .vix_intelligence import VIXDeepIntelligenceScanner
 from .gaps_power_scanner import GapsPowerScanner
+
+# Phase 4 — Institutional Integration + SOTA Scanners
+from .dark_pool_scanner import DarkPoolScanner
+from .order_flow_scanner import OrderFlowImbalanceScanner
+from .cross_asset_scanner import CrossAssetScanner
+from .sentiment_scanner import SentimentAlphaScanner
+from .vwap_scanner import VWAPDeviationScanner
+from .liquidity_scanner import LiquidityShockScanner
 from .scanner_backtest import (
     ScannerBacktestEngine,
     ScannerBacktestResult,
@@ -279,6 +287,13 @@ __all__ = [
     "SkewIntelligenceScanner",
     "VIXDeepIntelligenceScanner",
     "GapsPowerScanner",
+    # Phase 4 — Institutional + SOTA Scanners
+    "DarkPoolScanner",
+    "OrderFlowImbalanceScanner",
+    "CrossAssetScanner",
+    "SentimentAlphaScanner",
+    "VWAPDeviationScanner",
+    "LiquidityShockScanner",
     # Universal Backtest Framework
     "ScannerBacktestEngine",
     "ScannerBacktestResult",
