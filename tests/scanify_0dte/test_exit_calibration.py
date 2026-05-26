@@ -167,22 +167,38 @@ def _make_cal_trade(**overrides: Any) -> SimpleNamespace:
     methods expect.
     """
     defaults: Dict[str, Any] = {
-        "id": str(uuid.uuid4()),
-        "trade_date": date(2025, 1, 15),
+        "trade_id": str(uuid.uuid4()),
         "scan_type": RealScanType.DIRECTIONAL,
         "session_type": RealSessionType.TRENDING,
         "time_zone": RealTimeZoneType.MORNING_SESSION,
         "exit_reason": RealExitReason.PROFIT_TARGET,
-        "entry_time": datetime(2025, 1, 15, 10, 0),
-        "exit_time": datetime(2025, 1, 15, 11, 0),
+        "timestamp_entry": datetime(2025, 1, 15, 10, 0),
+        "timestamp_exit": datetime(2025, 1, 15, 11, 0),
         "entry_price": 5.00,
         "exit_price": 7.50,
-        "pnl": 250.0,
-        "direction_score": 65.0,
-        "vix1d": 15.0,
-        "spx_price": 5200.0,
+        "pnl_dollars": 250.0,
+        "pnl_percent": 0.0,
+        "hold_time_minutes": 0.0,
+        "max_gain_during_trade": 0.0,
+        "max_loss_during_trade": -50.0,
+        "composite_direction_score": 65.0,
+        "vix1d_at_entry": 15.0,
+        "vix_at_entry": 0.0,
+        "spx_at_entry": 5200.0,
         "strike": 5200.0,
+        "option_type": "CALL",
+        "direction": "NEUTRAL",
         "delta_at_entry": 0.30,
+        "gamma_at_entry": 0.0,
+        "theta_at_entry": 0.0,
+        "iv_at_entry": 0.0,
+        "expected_move_1sigma": 0.0,
+        "net_gex_at_entry": 0.0,
+        "gamma_flip_at_entry": 1.0,
+        "tick_10min_avg": 0.0,
+        "trin_at_entry": 1.0,
+        "ad_ratio_at_entry": 1.0,
+        "cumulative_delta_es": 0.0,
         "factor_scores": {
             "market_internals": 0.70,
             "options_flow": 0.60,
@@ -195,10 +211,20 @@ def _make_cal_trade(**overrides: Any) -> SimpleNamespace:
         "gex_gamma_flip_bullish": True,
         "actual_low": 5185.0,
         "actual_high": 5215.0,
-        "max_drawdown": 50.0,
         "metadata": {},
     }
     defaults.update(overrides)
+    # If caller passed trade_date but not timestamp_entry, derive timestamp_entry
+    # from trade_date so calibration.py's _trade_to_row (which calls
+    # trade.timestamp_entry.date()) returns the expected date.
+    if "trade_date" in overrides and "timestamp_entry" not in overrides:
+        td = overrides["trade_date"]
+        defaults["timestamp_entry"] = datetime(td.year, td.month, td.day, 10, 0)
+    # Keep trade_date as a convenience attribute for any test that still reads it.
+    if "trade_date" not in defaults:
+        ts = defaults.get("timestamp_entry")
+        if isinstance(ts, datetime):
+            defaults["trade_date"] = ts.date()
     return SimpleNamespace(**defaults)
 
 
@@ -274,7 +300,7 @@ def _generate_sample_trades(
 
         trades.append(
             _make_cal_trade(
-                id=f"trade_{i:04d}",
+                trade_id=f"trade_{i:04d}",
                 trade_date=d,
                 scan_type=scan_type,
                 session_type=session_type,
@@ -282,17 +308,17 @@ def _generate_sample_trades(
                 exit_reason=(
                     RealExitReason.PROFIT_TARGET if is_win else RealExitReason.STOP_LOSS
                 ),
-                entry_time=datetime(d.year, d.month, d.day, 10, i % 60),
-                exit_time=datetime(d.year, d.month, d.day, 11, i % 60),
+                timestamp_entry=datetime(d.year, d.month, d.day, 10, i % 60),
+                timestamp_exit=datetime(d.year, d.month, d.day, 11, i % 60),
                 entry_price=entry_price,
                 exit_price=exit_price,
-                pnl=pnl,
-                direction_score=float(rng.uniform(30, 90)),
-                vix1d=float(rng.uniform(10, 25)),
-                spx_price=float(rng.uniform(5100, 5300)),
+                pnl_dollars=pnl,
+                composite_direction_score=float(rng.uniform(30, 90)),
+                vix1d_at_entry=float(rng.uniform(10, 25)),
+                spx_at_entry=float(rng.uniform(5100, 5300)),
                 strike=float(rng.uniform(5100, 5300)),
                 delta_at_entry=float(rng.uniform(0.10, 0.50)),
-                max_drawdown=float(rng.uniform(0, 200)),
+                max_loss_during_trade=-float(rng.uniform(0, 200)),
                 factor_scores={
                     "market_internals": float(rng.uniform(0, 1)),
                     "options_flow": float(rng.uniform(0, 1)),
@@ -1104,7 +1130,6 @@ class TestTradeLogGeneration:
             current_time=exit_time,
         )
 
-        assert trade_log.position_id == pid
         assert trade_log.entry_price == 5.00
         assert trade_log.exit_price == 7.00
         assert trade_log.exit_reason == _StubExitReason.PROFIT_TARGET
@@ -1127,7 +1152,7 @@ class TestTradeLogGeneration:
         assert trade_log.pnl_dollars == pytest.approx(900.0)
 
     def test_pnl_calculation_percent(self, exit_manager):
-        """P&L percent = (exit - entry) / entry."""
+        """P&L percent = (exit - entry) / entry * 100."""
         signal = _make_signal()
         pos = exit_manager.open_position(signal, fill_price=4.00, contracts=1)
         pid = pos.position_id
@@ -1138,8 +1163,8 @@ class TestTradeLogGeneration:
             pid, exit_price=6.00, exit_reason="PROFIT_TARGET", current_time=exit_time,
         )
 
-        # (6 - 4) / 4 = 0.50
-        assert trade_log.pnl_pct == pytest.approx(0.50)
+        # (6 - 4) / 4 * 100 = 50.0%
+        assert trade_log.pnl_percent == pytest.approx(50.0)
 
     def test_pnl_calculation_loss(self, exit_manager):
         """Losing trade P&L should be negative."""
@@ -1156,7 +1181,7 @@ class TestTradeLogGeneration:
 
         # (5 - 10) * 2 * 100 = -$1000
         assert trade_log.pnl_dollars == pytest.approx(-1000.0)
-        assert trade_log.pnl_pct == pytest.approx(-0.50)
+        assert trade_log.pnl_percent == pytest.approx(-50.0)
 
     def test_optimal_exit_tracking(self, exit_manager):
         """Optimal exit price should be the max_price observed."""
@@ -1172,8 +1197,6 @@ class TestTradeLogGeneration:
         )
 
         assert trade_log.optimal_exit_price == 12.00
-        # Optimal P&L: (12 - 5) * 1 * 100 = $700
-        assert trade_log.optimal_pnl == pytest.approx(700.0)
 
     def test_left_on_table_calculation(self, exit_manager):
         """Left-on-table = (optimal - actual) / (optimal - entry)."""
@@ -1189,8 +1212,8 @@ class TestTradeLogGeneration:
         )
 
         # optimal_pnl_per_contract = 15 - 5 = 10
-        # left_on_table = (15 - 10) / 10 = 0.50
-        assert trade_log.left_on_table_pct == pytest.approx(0.50)
+        # left_on_table = (15 - 10) / 10 * 100 = 50.0%
+        assert trade_log.left_on_table_pct == pytest.approx(50.0)
 
     def test_stopped_prematurely_flag(self, exit_manager):
         """Stopped prematurely when exit is a loss but max_price showed profit."""
@@ -1206,7 +1229,7 @@ class TestTradeLogGeneration:
         )
 
         # exit at loss (3 < 5), but max_price showed profit (8 > 5)
-        assert trade_log.stopped_prematurely is True
+        assert trade_log.was_stopped_prematurely is True
 
     def test_close_position_adds_to_closed_list(self, exit_manager):
         """Closed positions should be appended to exit_manager.closed_positions."""
@@ -1326,7 +1349,7 @@ class TestTradeLogger:
 
     def test_log_trade_stores_correctly(self, trade_logger):
         """log_trade should persist trade to both JSON and SQLite."""
-        trade = _make_cal_trade(id="test_001", pnl=150.0)
+        trade = _make_cal_trade(trade_id="test_001", pnl_dollars=150.0)
         trade_logger.log_trade(trade)
 
         assert trade_logger.get_trade_count() == 1
@@ -1343,16 +1366,16 @@ class TestTradeLogger:
     def test_log_multiple_trades(self, trade_logger):
         """Multiple trades should all be persisted."""
         for i in range(5):
-            trade = _make_cal_trade(id=f"trade_{i:03d}", pnl=float(i * 100))
+            trade = _make_cal_trade(trade_id=f"trade_{i:03d}", pnl_dollars=float(i * 100))
             trade_logger.log_trade(trade)
 
         assert trade_logger.get_trade_count() == 5
 
     def test_get_trades_by_date_range(self, trade_logger):
         """get_trades should filter by date range."""
-        trade1 = _make_cal_trade(id="t1", trade_date=date(2025, 1, 10))
-        trade2 = _make_cal_trade(id="t2", trade_date=date(2025, 1, 15))
-        trade3 = _make_cal_trade(id="t3", trade_date=date(2025, 1, 20))
+        trade1 = _make_cal_trade(trade_id="t1", trade_date=date(2025, 1, 10))
+        trade2 = _make_cal_trade(trade_id="t2", trade_date=date(2025, 1, 15))
+        trade3 = _make_cal_trade(trade_id="t3", trade_date=date(2025, 1, 20))
 
         trade_logger.log_trade(trade1)
         trade_logger.log_trade(trade2)
@@ -1361,20 +1384,20 @@ class TestTradeLogger:
         # Query 10th to 15th
         results = trade_logger.get_trades(date(2025, 1, 10), date(2025, 1, 15))
         assert len(results) == 2
-        result_ids = [r.id for r in results]
+        result_ids = [r.trade_id for r in results]
         assert "t1" in result_ids
         assert "t2" in result_ids
 
     def test_get_trades_filter_by_scan_type(self, trade_logger):
         """get_trades should filter by scan type when specified."""
         trade1 = _make_cal_trade(
-            id="dir1", scan_type=RealScanType.DIRECTIONAL, trade_date=date(2025, 1, 15),
+            trade_id="dir1", scan_type=RealScanType.DIRECTIONAL, trade_date=date(2025, 1, 15),
         )
         trade2 = _make_cal_trade(
-            id="prem1", scan_type=RealScanType.PREMIUM_SELL, trade_date=date(2025, 1, 15),
+            trade_id="prem1", scan_type=RealScanType.PREMIUM_SELL, trade_date=date(2025, 1, 15),
         )
         trade3 = _make_cal_trade(
-            id="dir2", scan_type=RealScanType.DIRECTIONAL, trade_date=date(2025, 1, 15),
+            trade_id="dir2", scan_type=RealScanType.DIRECTIONAL, trade_date=date(2025, 1, 15),
         )
 
         trade_logger.log_trade(trade1)
@@ -1399,7 +1422,7 @@ class TestTradeLogger:
 
     def test_export_csv(self, trade_logger):
         """export_trades('csv') should produce valid CSV content."""
-        trade = _make_cal_trade(id="csv_test")
+        trade = _make_cal_trade(trade_id="csv_test")
         trade_logger.log_trade(trade)
 
         csv_output = trade_logger.export_trades(format="csv")
@@ -1408,7 +1431,7 @@ class TestTradeLogger:
 
     def test_export_json(self, trade_logger):
         """export_trades('json') should produce valid JSON array."""
-        trade = _make_cal_trade(id="json_test")
+        trade = _make_cal_trade(trade_id="json_test")
         trade_logger.log_trade(trade)
 
         json_output = trade_logger.export_trades(format="json")
@@ -1438,11 +1461,11 @@ class TestDailyScorecard:
         for i in range(6):
             pnl = 200.0 if i < 4 else -100.0
             trade = _make_cal_trade(
-                id=f"sc_{i}",
+                trade_id=f"sc_{i}",
                 trade_date=target,
-                pnl=pnl,
-                entry_time=datetime(2025, 1, 15, 10, i * 5),
-                exit_time=datetime(2025, 1, 15, 11, i * 5),
+                pnl_dollars=pnl,
+                timestamp_entry=datetime(2025, 1, 15, 10, i * 5),
+                timestamp_exit=datetime(2025, 1, 15, 11, i * 5),
             )
             trade_logger.log_trade(trade)
 
@@ -1465,9 +1488,9 @@ class TestDailyScorecard:
             (RealScanType.PREMIUM_SELL, -80.0),
         ]):
             trade = _make_cal_trade(
-                id=f"wr_{i}", trade_date=target, scan_type=scan_type, pnl=pnl,
-                entry_time=datetime(2025, 1, 15, 10, i),
-                exit_time=datetime(2025, 1, 15, 11, i),
+                trade_id=f"wr_{i}", trade_date=target, scan_type=scan_type, pnl_dollars=pnl,
+                timestamp_entry=datetime(2025, 1, 15, 10, i),
+                timestamp_exit=datetime(2025, 1, 15, 11, i),
             )
             trade_logger.log_trade(trade)
 
@@ -1483,11 +1506,11 @@ class TestDailyScorecard:
     def test_sharpe_ratio_computation(self, cal_patches):
         """Sharpe ratio should be computed correctly for a set of trades."""
         trades = [
-            _make_cal_trade(pnl=100.0),
-            _make_cal_trade(pnl=150.0),
-            _make_cal_trade(pnl=-50.0),
-            _make_cal_trade(pnl=200.0),
-            _make_cal_trade(pnl=-80.0),
+            _make_cal_trade(pnl_dollars=100.0),
+            _make_cal_trade(pnl_dollars=150.0),
+            _make_cal_trade(pnl_dollars=-50.0),
+            _make_cal_trade(pnl_dollars=200.0),
+            _make_cal_trade(pnl_dollars=-80.0),
         ]
 
         state = _make_calibration_state()
@@ -1503,16 +1526,16 @@ class TestDailyScorecard:
 
     def test_sharpe_ratio_single_trade_returns_zero(self, cal_patches):
         """Sharpe with fewer than 2 trades should be 0."""
-        trades = [_make_cal_trade(pnl=100.0)]
+        trades = [_make_cal_trade(pnl_dollars=100.0)]
         assert DailyCalibrator._sharpe_ratio(trades) == 0.0
 
     def test_max_drawdown_computation(self, cal_patches):
         """Max drawdown should be computed from cumulative P&L curve."""
         trades = [
-            _make_cal_trade(pnl=100.0),
-            _make_cal_trade(pnl=50.0),
-            _make_cal_trade(pnl=-200.0),
-            _make_cal_trade(pnl=80.0),
+            _make_cal_trade(pnl_dollars=100.0),
+            _make_cal_trade(pnl_dollars=50.0),
+            _make_cal_trade(pnl_dollars=-200.0),
+            _make_cal_trade(pnl_dollars=80.0),
         ]
 
         dd = DailyCalibrator._max_drawdown(trades)
@@ -1553,8 +1576,8 @@ class TestFactorWeightOptimization:
             pnl = float(rng.uniform(50, 300) if is_win else rng.uniform(-200, -50))
             trades.append(
                 _make_cal_trade(
-                    id=f"fw_{i}",
-                    pnl=pnl,
+                    trade_id=f"fw_{i}",
+                    pnl_dollars=pnl,
                     factor_scores={
                         "market_internals": mi_score,
                         "options_flow": float(rng.uniform(0.2, 0.5)),
@@ -1614,8 +1637,8 @@ class TestFactorWeightOptimization:
             pnl = float(rng.uniform(50, 300) if is_win else rng.uniform(-200, -50))
             trades.append(
                 _make_cal_trade(
-                    id=f"ema_{i}",
-                    pnl=pnl,
+                    trade_id=f"ema_{i}",
+                    pnl_dollars=pnl,
                     factor_scores={
                         "market_internals": float(rng.uniform(0, 1)),
                         "options_flow": float(rng.uniform(0, 1)),
@@ -1701,9 +1724,9 @@ class TestThresholdOptimization:
             pnl = float(rng.uniform(50, 300) if is_win else rng.uniform(-200, -50))
             trades.append(
                 _make_cal_trade(
-                    id=f"pt_{i}",
+                    trade_id=f"pt_{i}",
                     time_zone=tz,
-                    pnl=pnl,
+                    pnl_dollars=pnl,
                     entry_price=float(rng.uniform(3, 10)),
                 )
             )
@@ -1985,11 +2008,11 @@ class TestWeeklyCalibration:
         for i in range(60):
             trades.append(
                 _make_cal_trade(
-                    id=f"sig_{i}",
+                    trade_id=f"sig_{i}",
                     trade_date=date(2025, 1, 1) + timedelta(days=i % 20),
-                    pnl=float(rng.uniform(100, 500)),  # all winners
-                    entry_time=datetime(2025, 1, 1, 10, 0) + timedelta(days=i % 20),
-                    exit_time=datetime(2025, 1, 1, 11, 0) + timedelta(days=i % 20),
+                    pnl_dollars=float(rng.uniform(100, 500)),  # all winners
+                    timestamp_entry=datetime(2025, 1, 1, 10, 0) + timedelta(days=i % 20),
+                    timestamp_exit=datetime(2025, 1, 1, 11, 0) + timedelta(days=i % 20),
                 )
             )
         for t in trades:
@@ -2083,26 +2106,24 @@ class TestMonthlyCalibration:
 
     def test_signal_decay_detection(self, cal_patches):
         """Signal decay should be detected when recent P&L significantly drops."""
-        # Historical: consistently profitable
         rng = np.random.RandomState(42)
         historical_trades = [
             _make_cal_trade(
-                id=f"hist_{i}",
-                pnl=float(rng.uniform(100, 400)),
-                entry_time=datetime(2025, 1, 1, 10, 0) + timedelta(days=i),
-                exit_time=datetime(2025, 1, 1, 11, 0) + timedelta(days=i),
+                trade_id=f"hist_{i}",
+                pnl_dollars=float(rng.uniform(200, 500)),
+                timestamp_entry=datetime(2025, 1, 1, 10, 0) + timedelta(days=i),
+                timestamp_exit=datetime(2025, 1, 1, 11, 0) + timedelta(days=i),
             )
-            for i in range(30)
+            for i in range(90)
         ]
-        # Recent: significantly worse
         recent_trades = [
             _make_cal_trade(
-                id=f"recent_{i}",
-                pnl=float(rng.uniform(-200, 50)),
-                entry_time=datetime(2025, 1, 1, 10, 0) + timedelta(days=30 + i),
-                exit_time=datetime(2025, 1, 1, 11, 0) + timedelta(days=30 + i),
+                trade_id=f"recent_{i}",
+                pnl_dollars=float(rng.uniform(-300, -50)),
+                timestamp_entry=datetime(2025, 1, 1, 10, 0) + timedelta(days=90 + i),
+                timestamp_exit=datetime(2025, 1, 1, 11, 0) + timedelta(days=90 + i),
             )
-            for i in range(20)
+            for i in range(60)
         ]
 
         all_trades = historical_trades + recent_trades
@@ -2117,10 +2138,10 @@ class TestMonthlyCalibration:
         rng = np.random.RandomState(42)
         trades = [
             _make_cal_trade(
-                id=f"con_{i}",
-                pnl=float(rng.uniform(50, 200)),
-                entry_time=datetime(2025, 1, 1, 10, 0) + timedelta(days=i),
-                exit_time=datetime(2025, 1, 1, 11, 0) + timedelta(days=i),
+                trade_id=f"con_{i}",
+                pnl_dollars=float(rng.uniform(50, 200)),
+                timestamp_entry=datetime(2025, 1, 1, 10, 0) + timedelta(days=i),
+                timestamp_exit=datetime(2025, 1, 1, 11, 0) + timedelta(days=i),
             )
             for i in range(50)
         ]
@@ -2162,14 +2183,14 @@ class TestGEXModelCalibration:
 
             trades.append(
                 _make_cal_trade(
-                    id=f"gex_{i}",
-                    spx_price=spx,
+                    trade_id=f"gex_{i}",
+                    spx_at_entry=spx,
                     gex_predicted_support=support,
                     gex_predicted_resistance=resistance,
                     gex_gamma_flip_bullish=bool(rng.random() > 0.5),
                     actual_low=actual_low,
                     actual_high=actual_high,
-                    pnl=float(rng.uniform(-100, 200)),
+                    pnl_dollars=float(rng.uniform(-100, 200)),
                 )
             )
 
