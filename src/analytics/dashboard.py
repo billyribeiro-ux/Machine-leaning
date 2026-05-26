@@ -547,7 +547,7 @@ class RiskSettingsMenu:
                 new_val = max(min_val, min(max_val, new_val))
                 setattr(self.config, attr, new_val)
                 self.console.print(f"  ✓ Set to {new_val}", style="green")
-            except:
+            except Exception:
                 self.console.print(f"  Keeping {current}", style="dim")
 
         self.console.print("\n[bold green]Settings updated![/bold green]")
