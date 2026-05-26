@@ -76,7 +76,7 @@
   ];
 
   // ---- Filtered + sorted results ----
-  let filteredResults = $derived(() => {
+  let filteredResults = $derived.by(() => {
     let results = mockResults;
     if (directionFilter !== 'all') {
       results = results.filter(r => r.direction === directionFilter);
@@ -150,7 +150,7 @@
     <div class="flex items-center gap-3">
       <h1 class="text-lg font-bold" style="color: var(--text-primary);">Scanner</h1>
       <span class="text-xs font-mono" style="color: var(--text-tertiary);">
-        {filteredResults().length} signals &bull; Updated 2s ago
+        {filteredResults.length} signals &bull; Updated 2s ago
       </span>
     </div>
     <div class="flex items-center gap-2">

@@ -35,7 +35,7 @@
 
 	let filter = $state<FilterMode>('all');
 
-	let filteredAlerts = $derived(() => {
+	let filteredAlerts = $derived.by(() => {
 		let result = alerts;
 		switch (filter) {
 			case 'unread':
@@ -132,7 +132,7 @@
 
 	<!-- Alert List -->
 	<div class="flex-1 overflow-y-auto scrollbar-thin">
-		{#if filteredAlerts().length === 0}
+		{#if filteredAlerts.length === 0}
 			<div class="flex flex-col items-center justify-center gap-2 py-16 text-[oklch(0.45_0_0)]">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
@@ -152,7 +152,7 @@
 			</div>
 		{:else}
 			<div class="flex flex-col">
-				{#each filteredAlerts() as alert, idx (alert.id)}
+				{#each filteredAlerts as alert, idx (alert.id)}
 					{@const config = directionConfig[alert.signal.direction]}
 					<button
 						type="button"

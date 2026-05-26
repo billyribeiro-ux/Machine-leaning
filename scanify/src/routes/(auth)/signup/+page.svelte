@@ -8,7 +8,7 @@
   let errorMessage = $state('');
 
   let passwordsMatch = $derived(password === confirmPassword || confirmPassword === '');
-  let passwordStrength = $derived(() => {
+  let passwordStrength = $derived.by(() => {
     if (password.length === 0) return 0;
     let score = 0;
     if (password.length >= 8) score++;
@@ -18,7 +18,7 @@
     return score;
   });
 
-  let strengthLabel = $derived(() => {
+  let strengthLabel = $derived.by(() => {
     const s = passwordStrength();
     if (s === 0) return '';
     if (s === 1) return 'Weak';
@@ -27,7 +27,7 @@
     return 'Strong';
   });
 
-  let strengthColor = $derived(() => {
+  let strengthColor = $derived.by(() => {
     const s = passwordStrength();
     if (s <= 1) return 'var(--bearish)';
     if (s === 2) return 'var(--warning)';

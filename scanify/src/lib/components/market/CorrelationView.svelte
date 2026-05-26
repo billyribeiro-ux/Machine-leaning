@@ -24,7 +24,7 @@
   let selectedTimeframe = $state<Timeframe>('1M');
   let searchQuery = $state('');
 
-  let filteredIndices = $derived(() => {
+  let filteredIndices = $derived.by(() => {
     if (!searchQuery.trim()) return symbols.map((_, i) => i);
     const q = searchQuery.toUpperCase().trim();
     return symbols
@@ -33,10 +33,10 @@
       .map(({ i }) => i);
   });
 
-  let filteredSymbols = $derived(filteredIndices().map((i) => symbols[i]));
+  let filteredSymbols = $derived(filteredIndices.map((i) => symbols[i]));
 
-  let filteredData = $derived(() => {
-    const indices = filteredIndices();
+  let filteredData = $derived.by(() => {
+    const indices = filteredIndices;
     return indices.map((r) => indices.map((c) => data[r]?.[c] ?? (r === c ? 1 : 0)));
   });
 </script>
@@ -102,7 +102,7 @@
     {#if filteredSymbols.length > 0}
       <CorrelationMatrix
         symbols={filteredSymbols}
-        correlations={filteredData()}
+        correlations={filteredData}
         height={Math.min(500, Math.max(250, filteredSymbols.length * 40 + 80))}
       />
     {:else}

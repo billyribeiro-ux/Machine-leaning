@@ -103,7 +103,7 @@
   }
 
   // ---- Derived: filtered results ----
-  let filteredResults = $derived<CommandItem[]>(() => {
+  let filteredResults = $derived.by(() => {
     if (!query.trim()) {
       // Show recent items when query is empty
       return commands.filter((cmd) => recentIds.includes(cmd.id));
@@ -117,8 +117,8 @@
   });
 
   // ---- Derived: grouped results (for display) ----
-  let groupedResults = $derived(() => {
-    const results = filteredResults();
+  let groupedResults = $derived.by(() => {
+    const results = filteredResults;
     const groups: { category: CommandCategory; label: string; items: CommandItem[] }[] = [];
 
     for (const cat of categoryOrder) {
@@ -135,8 +135,8 @@
   });
 
   // ---- Derived: flat list for keyboard navigation index ----
-  let flatResults = $derived(() => {
-    return groupedResults().flatMap((g) => g.items);
+  let flatResults = $derived.by(() => {
+    return groupedResults.flatMap((g) => g.items);
   });
 
   // ---- Reset state when opened/closed ----
@@ -153,7 +153,7 @@
 
   // Clamp selectedIndex when results change
   $effect(() => {
-    const results = flatResults();
+    const results = flatResults;
     if (selectedIndex >= results.length) {
       selectedIndex = Math.max(0, results.length - 1);
     }
@@ -174,7 +174,7 @@
 
   // ---- Command bar keyboard navigation ----
   function handleKeydown(e: KeyboardEvent): void {
-    const results = flatResults();
+    const results = flatResults;
 
     switch (e.key) {
       case 'ArrowDown':
@@ -219,7 +219,7 @@
 
   // Track flat index for each item across groups
   function getFlatIndex(category: CommandCategory, itemIndex: number): number {
-    const groups = groupedResults();
+    const groups = groupedResults;
     let offset = 0;
     for (const g of groups) {
       if (g.category === category) {
@@ -268,7 +268,7 @@
 
     <!-- Results -->
     <div class="command-bar__results">
-      {#if flatResults().length === 0}
+      {#if flatResults.length === 0}
         <div class="command-bar__empty">
           No results found for "{query}"
         </div>
@@ -276,7 +276,7 @@
         {#if !query.trim()}
           <div class="command-bar__section-label">Recent</div>
         {/if}
-        {#each groupedResults() as group (group.category)}
+        {#each groupedResults as group (group.category)}
           {#if query.trim()}
             <div class="command-bar__section-label">{group.label}</div>
           {/if}

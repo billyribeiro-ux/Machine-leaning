@@ -21,7 +21,7 @@
 		md: 'text-sm'
 	};
 
-	let tsMs = $derived(() => {
+	let tsMs = $derived.by(() => {
 		if (timestamp instanceof Date) return timestamp.getTime();
 		if (typeof timestamp === 'number') {
 			return timestamp < 1e12 ? timestamp * 1000 : timestamp;
@@ -29,8 +29,8 @@
 		return Date.now();
 	});
 
-	let relativeText = $derived(() => {
-		const diff = Math.max(0, now - tsMs());
+	let relativeText = $derived.by(() => {
+		const diff = Math.max(0, now - tsMs);
 		const seconds = Math.floor(diff / 1000);
 
 		if (seconds < 60) return seconds + 's ago';
@@ -45,22 +45,22 @@
 		return days + 'd ago';
 	});
 
-	let absoluteText = $derived(() => {
-		const date = new Date(tsMs());
+	let absoluteText = $derived.by(() => {
+		const date = new Date(tsMs);
 		const h = String(date.getHours()).padStart(2, '0');
 		const m = String(date.getMinutes()).padStart(2, '0');
 		const s = String(date.getSeconds()).padStart(2, '0');
 		return h + ':' + m + ':' + s;
 	});
 
-	let displayText = $derived(() => {
-		if (format === 'absolute') return absoluteText();
-		if (format === 'both') return absoluteText() + ' (' + relativeText() + ')';
-		return relativeText();
+	let displayText = $derived.by(() => {
+		if (format === 'absolute') return absoluteText;
+		if (format === 'both') return absoluteText + ' (' + relativeText + ')';
+		return relativeText;
 	});
 
 	$effect(() => {
-		const diff = now - tsMs();
+		const diff = now - tsMs;
 		let interval: number;
 
 		if (diff < 60_000) {
@@ -88,7 +88,7 @@
 <span
 	class="inline-block whitespace-nowrap font-mono tabular-nums text-[oklch(0.48_0_0)] {sizeClasses[size]} {className}"
 	style="font-variant-numeric: tabular-nums;"
-	title={new Date(tsMs()).toISOString()}
+	title={new Date(tsMs).toISOString()}
 >
-	{displayText()}
+	{displayText}
 </span>

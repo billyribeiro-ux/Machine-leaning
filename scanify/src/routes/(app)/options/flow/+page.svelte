@@ -30,7 +30,7 @@
   let callPutRatio = $derived(putCount > 0 ? (callCount / putCount).toFixed(2) : 'N/A');
   let sweepCount = $derived(allFlowItems.filter(i => i.isSweep).length);
 
-  let filteredItems = $derived(() => {
+  let filteredItems = $derived.by(() => {
     let items = allFlowItems;
     if (typeFilter === 'calls') items = items.filter(i => i.type === 'call');
     if (typeFilter === 'puts') items = items.filter(i => i.type === 'put');
@@ -82,7 +82,7 @@
     <div class="w-px h-8" style="background: var(--border-subtle);"></div>
     <div class="flex flex-col">
       <span class="text-[10px] uppercase tracking-wider" style="color: var(--text-tertiary);">Count</span>
-      <span class="text-sm font-bold font-mono" style="color: var(--text-primary);">{filteredItems().length}</span>
+      <span class="text-sm font-bold font-mono" style="color: var(--text-primary);">{filteredItems.length}</span>
     </div>
   </div>
 
@@ -120,5 +120,5 @@
   </div>
 
   <!-- Flow Feed -->
-  <FlowFeed items={filteredItems()} class="flex-1 min-h-0" />
+  <FlowFeed items={filteredItems} class="flex-1 min-h-0" />
 </div>

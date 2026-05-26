@@ -77,7 +77,7 @@
 		onsave?.(config);
 	}
 
-	let isValid = $derived(() => {
+	let isValid = $derived.by(() => {
 		return (
 			config.name.trim().length > 0 &&
 			config.category !== '' &&
@@ -262,10 +262,10 @@
 		<button
 			type="button"
 			class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150
-				{isValid()
+				{isValid
 					? 'bg-[var(--accent)] text-white hover:bg-[var(--accent-bright)] shadow-sm cursor-pointer'
 					: 'bg-[var(--bg-overlay)] text-[var(--text-disabled)] cursor-not-allowed'}"
-			disabled={!isValid()}
+			disabled={!isValid}
 			onclick={handleSave}
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

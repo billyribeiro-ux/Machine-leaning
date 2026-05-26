@@ -19,13 +19,13 @@
 		lg: 'text-base'
 	};
 
-	let colorClass = $derived(() => {
+	let colorClass = $derived.by(() => {
 		if (value > 0) return 'text-[oklch(0.72_0.14_145)]';
 		if (value < 0) return 'text-[oklch(0.72_0.16_25)]';
 		return 'text-[oklch(0.60_0_0)]';
 	});
 
-	let formatted = $derived(() => {
+	let formatted = $derived.by(() => {
 		if (value == null || isNaN(value)) return '--%';
 		const abs = Math.abs(value).toFixed(2);
 		if (!signed) return abs + '%';
@@ -36,8 +36,8 @@
 </script>
 
 <span
-	class="inline-block text-right font-mono tabular-nums {sizeClasses[size]} {colorClass()} {className}"
+	class="inline-block text-right font-mono tabular-nums {sizeClasses[size]} {colorClass} {className}"
 	style="font-variant-numeric: tabular-nums;"
 >
-	{formatted()}
+	{formatted}
 </span>

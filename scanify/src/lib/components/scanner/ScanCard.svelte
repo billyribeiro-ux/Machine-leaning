@@ -96,7 +96,7 @@
 	}
 
 	// Sparkline SVG path computation
-	let sparklinePath = $derived(() => {
+	let sparklinePath = $derived.by(() => {
 		const data = result.sparklineData;
 		if (!data || data.length < 2) return '';
 		const w = 120;
@@ -114,7 +114,7 @@
 			.join(' ');
 	});
 
-	let sparklineColor = $derived(() => {
+	let sparklineColor = $derived.by(() => {
 		const data = result.sparklineData;
 		if (!data || data.length < 2) return 'var(--text-tertiary)';
 		const last = data[data.length - 1] ?? 0;
@@ -168,13 +168,13 @@
 	</div>
 
 	<!-- Sparkline -->
-	{#if sparklinePath()}
+	{#if sparklinePath}
 		<div class="mt-2.5">
 			<svg width="120" height="32" viewBox="0 0 120 32" class="w-full" preserveAspectRatio="none" role="img" aria-label="Price trend">
 				<path
-					d={sparklinePath()}
+					d={sparklinePath}
 					fill="none"
-					stroke={sparklineColor()}
+					stroke={sparklineColor}
 					stroke-width="1.5"
 					stroke-linecap="round"
 					stroke-linejoin="round"

@@ -26,7 +26,7 @@
   let sortBy = $state<SortKey>('shortPercent');
   let sortDir = $state<'asc' | 'desc'>('desc');
 
-  let sorted = $derived(() => {
+  let sorted = $derived.by(() => {
     const copy = [...data];
     copy.sort((a, b) => {
       let cmp = 0;
@@ -146,7 +146,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each sorted() as entry, idx (entry.symbol + idx)}
+        {#each sorted as entry, idx (entry.symbol + idx)}
           <tr
             class="border-b border-[var(--border-subtle)] transition-colors duration-75 hover:bg-[var(--hover-overlay)]
               {rowHighlight(entry.shortPercent)}"

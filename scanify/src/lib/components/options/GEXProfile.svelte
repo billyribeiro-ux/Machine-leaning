@@ -43,7 +43,7 @@
     sortedData.length > 0 ? Math.max(...sortedData.map((d) => Math.abs(d.gex)), 0.001) : 1
   );
 
-  let currentPriceIdx = $derived(() => {
+  let currentPriceIdx = $derived.by(() => {
     if (currentPrice == null || sortedData.length === 0) return -1;
     let closest = 0;
     let minDist = Math.abs(sortedData[0].strike - currentPrice);
@@ -161,7 +161,7 @@
       <!-- Bars -->
       {#each sortedData as entry, idx (entry.strike)}
         {@const y = PADDING_TOP + idx * ROW_HEIGHT}
-        {@const isCurrentPrice = currentPriceIdx() === idx}
+        {@const isCurrentPrice = currentPriceIdx === idx}
         {@const isHovered = hoveredIdx === idx}
 
         <!-- Row background for current price -->
@@ -228,8 +228,8 @@
       {/each}
 
       <!-- Current price marker line -->
-      {#if currentPriceIdx() >= 0}
-        {@const cpY = PADDING_TOP + currentPriceIdx() * ROW_HEIGHT + ROW_HEIGHT / 2}
+      {#if currentPriceIdx >= 0}
+        {@const cpY = PADDING_TOP + currentPriceIdx * ROW_HEIGHT + ROW_HEIGHT / 2}
         <line
           x1={LABEL_WIDTH}
           y1={cpY}
