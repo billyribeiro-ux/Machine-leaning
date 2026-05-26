@@ -5,7 +5,7 @@ Institutional-grade options flow scanner for detecting unusual activity,
 alpha flow positioning, and high-probability setups.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Literal
 from dataclasses import dataclass, field
 import logging
@@ -78,7 +78,7 @@ class OptionContract:
     @property
     def days_to_expiry(self) -> int:
         """Days until expiration."""
-        return max(0, (self.expiration - datetime.utcnow()).days)
+        return max(0, (self.expiration - datetime.now(timezone.utc)).days)
 
     @property
     def volume_oi_ratio(self) -> float:
@@ -107,7 +107,7 @@ class OptionsChain:
     iv_rank: Optional[float] = None
     iv_percentile: Optional[float] = None
     historical_iv: Optional[float] = None
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def calls(self) -> list[OptionContract]:
@@ -731,7 +731,7 @@ class GammaExposureScanner(BaseScanner[OptionsScanResult]):
             entry_price=underlying_price,
             targets=[w["strike"] for w in walls[:3]],
             strike=nearest_wall["strike"],
-            expiration=datetime.utcnow() + timedelta(days=7),  # Placeholder
+            expiration=datetime.now(timezone.utc) + timedelta(days=7),  # Placeholder
             option_type="CALL",  # N/A for gamma scanner
             underlying_price=underlying_price,
             metadata={

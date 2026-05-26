@@ -22,11 +22,14 @@ Dependencies:
 Author: SCANIFY Engine
 """
 
+import logging
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
 from datetime import datetime, time
 from typing import Dict, List, Optional, Tuple, Union
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -363,6 +366,8 @@ class BlackScholes0DTE:
     @staticmethod
     def _clamp_T(T: float) -> float:
         """Ensure T is at least MIN_T to avoid division by zero."""
+        if T < MIN_T:
+            logger.warning("Time T=%f clamped to MIN_T=%f", T, MIN_T)
         return max(T, MIN_T)
 
     def d1(

@@ -19,7 +19,7 @@ import torch.nn.functional as F
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import deque
 from enum import Enum
 import logging
@@ -623,7 +623,7 @@ class OrderBookPredictor:
 
         return LOBPrediction(
             symbol="",
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             predicted_mid_change=outputs["magnitude"][0, 0].item(),
             predicted_direction=predicted_direction,
             confidence=direction_probs.max().item(),

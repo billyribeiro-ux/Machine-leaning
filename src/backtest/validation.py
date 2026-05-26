@@ -20,7 +20,7 @@ from scipy import stats
 from scipy.special import comb
 from typing import Optional, List, Dict, Tuple, Any, Callable
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 import logging
 import warnings
@@ -832,8 +832,8 @@ class BacktestValidator:
 
         return BacktestValidation(
             scan_name=scan_name,
-            test_period_start=datetime.utcnow(),
-            test_period_end=datetime.utcnow(),
+            test_period_start=datetime.now(timezone.utc),
+            test_period_end=datetime.now(timezone.utc),
             total_signals=int(np.sum(np.abs(signals) > 0)),
             winning_signals=int(winning),
             losing_signals=int(losing),

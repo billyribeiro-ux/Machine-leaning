@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple, Any, Union
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 import logging
 
@@ -260,7 +260,7 @@ class MarketInternalsAnalyzer:
         put_call: float,
     ) -> MarketInternals:
         """Analyze all market internals."""
-        internals = MarketInternals(timestamp=datetime.utcnow())
+        internals = MarketInternals(timestamp=datetime.now(timezone.utc))
 
         # TRIN Analysis
         internals.trin = trin
@@ -611,7 +611,7 @@ class IndexModel:
             symbol=self.symbol,
             direction=direction,
             confidence=confidence,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             entry_price=current_price,
             stop_loss=stop_loss,
             target_1=target_1,

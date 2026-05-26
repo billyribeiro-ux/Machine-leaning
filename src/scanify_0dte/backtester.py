@@ -695,8 +695,7 @@ class BacktestEngine:
                 for pos in list(self._active_positions):
                     trade_log = self._force_close_position(
                         pos, chain_snapshot, current_minute,
-                        ExitReason.CIRCUIT_BREAKER if hasattr(ExitReason, "CIRCUIT_BREAKER")
-                        else ExitReason.STOP_LOSS,
+                        ExitReason.CIRCUIT_BREAKER,
                         is_high_vol,
                     )
                     day_trades.append(trade_log)
@@ -767,8 +766,7 @@ class BacktestEngine:
             for pos in list(self._active_positions):
                 trade_log = self._force_close_position(
                     pos, eod_chain, market_close_dt,
-                    ExitReason.TIME_STOP if hasattr(ExitReason, "TIME_STOP")
-                    else ExitReason.EXPIRATION,
+                    ExitReason.TIME_STOP,
                     is_high_vol=False,
                 )
                 day_trades.append(trade_log)

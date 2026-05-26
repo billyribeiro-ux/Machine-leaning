@@ -13,7 +13,7 @@ Institutional-grade order flow and market microstructure analysis:
 import numpy as np
 from typing import Optional, List, Dict, Tuple, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import deque
 from enum import Enum
 import logging
@@ -492,7 +492,7 @@ class OrderFlowAnalyzer:
 
     def calculate_metrics(self, period_seconds: int = 60) -> OrderFlowMetrics:
         """Calculate order flow metrics for given period."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         cutoff = now - timedelta(seconds=period_seconds)
 
         metrics = OrderFlowMetrics(
@@ -623,7 +623,7 @@ class OrderFlowAnalyzer:
 
         return {
             'symbol': self.symbol,
-            'timestamp': datetime.utcnow(),
+            'timestamp': datetime.now(timezone.utc),
             'metrics_1m': metrics_1m,
             'metrics_5m': metrics_5m,
             'metrics_15m': metrics_15m,

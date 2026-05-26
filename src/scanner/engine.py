@@ -5,7 +5,7 @@ Central orchestration engine for running multiple scanners concurrently.
 Provides unified interface, result aggregation, alerting, and caching.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Callable, Awaitable, Any
 from dataclasses import dataclass, field
 from collections import defaultdict
@@ -332,7 +332,7 @@ class ScannerEngine:
 
     async def _run_scan_cycle(self) -> ScannerBatchResult:
         """Run a complete scan cycle with all enabled scanners."""
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         batch_id = str(uuid.uuid4())
 
         self._logger.info(f"Starting scan cycle {batch_id}")
@@ -401,7 +401,7 @@ class ScannerEngine:
         # Update cache
         self._update_cache(ranked_results)
 
-        elapsed = (datetime.utcnow() - start_time).total_seconds()
+        elapsed = (datetime.now(timezone.utc) - start_time).total_seconds()
         self._logger.info(
             f"Scan cycle {batch_id} complete: "
             f"{len(ranked_results)} signals in {elapsed:.2f}s"
@@ -467,8 +467,8 @@ class ScannerEngine:
                 symbols_scanned=len(context.universe),
                 signals_found=0,
                 high_confidence_signals=0,
-                started_at=datetime.utcnow(),
-                completed_at=datetime.utcnow(),
+                started_at=datetime.now(timezone.utc),
+                completed_at=datetime.now(timezone.utc),
                 errors=[str(e)]
             )
 
@@ -532,7 +532,7 @@ class ScannerEngine:
 
     async def _process_alerts(self, batch_result: ScannerBatchResult) -> None:
         """Process results and generate alerts for high-confidence signals."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         for result in batch_result.results:
             # Check confidence threshold
@@ -605,7 +605,7 @@ class ScannerEngine:
 
     def _update_cache(self, results: list[ScanResult]) -> None:
         """Update result cache."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         ttl = timedelta(seconds=self.config.cache_ttl_seconds)
 
         # Add new results
@@ -625,7 +625,7 @@ class ScannerEngine:
         if symbol in self._result_cache:
             result, timestamp = self._result_cache[symbol]
             ttl = timedelta(seconds=self.config.cache_ttl_seconds)
-            if datetime.utcnow() - timestamp <= ttl:
+            if datetime.now(timezone.utc) - timestamp <= ttl:
                 return result
         return None
 

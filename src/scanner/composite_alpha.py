@@ -16,7 +16,7 @@ high-conviction signal.
 import numpy as np
 from typing import Optional, List, Dict, Tuple, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 import logging
 import uuid
@@ -262,7 +262,7 @@ class AlphaDecayManager:
 
     def record_ic(self, scan_name: str, ic: float, timestamp: Optional[datetime] = None):
         """Record an information coefficient observation."""
-        ts = timestamp or datetime.utcnow()
+        ts = timestamp or datetime.now(timezone.utc)
         self._ic_history[scan_name].append((ts, ic))
         if len(self._ic_history[scan_name]) > self.decay_window:
             self._ic_history[scan_name] = self._ic_history[scan_name][-self.decay_window:]

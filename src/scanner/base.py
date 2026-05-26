@@ -6,7 +6,7 @@ Provides the foundation for all specific scanner implementations.
 """
 
 from abc import ABC, abstractmethod
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, TypeVar, Generic, AsyncIterator
 from dataclasses import dataclass, field
 import asyncio
@@ -166,7 +166,7 @@ class ScanContext:
         """Factory method to create a new scan context."""
         return cls(
             scan_id=str(uuid.uuid4()),
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             market_regime=market_regime,
             config=config,
             universe=universe
@@ -250,7 +250,7 @@ class BaseScanner(ABC, Generic[T]):
         Default implementation filters by minimum confidence.
         """
         self._is_running = False
-        self._last_scan_time = datetime.utcnow()
+        self._last_scan_time = datetime.now(timezone.utc)
         self._scan_count += 1
 
         # Filter by minimum confidence
@@ -276,7 +276,7 @@ class BaseScanner(ABC, Generic[T]):
         Returns:
             Tuple of (results list, scanner summary)
         """
-        start_time = datetime.utcnow()
+        start_time = datetime.now(timezone.utc)
         errors: list[str] = []
         results: list[T] = []
 
@@ -303,7 +303,7 @@ class BaseScanner(ABC, Generic[T]):
             errors.append(str(e))
             self._is_running = False
 
-        end_time = datetime.utcnow()
+        end_time = datetime.now(timezone.utc)
 
         summary = ScannerSummary(
             scanner_name=self.name,
@@ -581,7 +581,7 @@ class CompositeScanner(BaseScanner[ScanResult]):
                     stop_loss=best.stop_loss,
                     targets=best.targets,
                     risk_reward=best.risk_reward,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                     metadata={
                         "scanner_count": len(symbol_results),
                         "source_scanners": [r.scanner_type for r in symbol_results],

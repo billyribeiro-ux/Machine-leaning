@@ -32,7 +32,7 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass, field
-from datetime import datetime, time
+from datetime import datetime, time, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -1204,7 +1204,7 @@ class PremiumSellingScanner:
             direction=TradeDirection.NEUTRAL,
             confidence=confidence,
             spx_price=spx_price,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             metadata=metadata,
         )
 

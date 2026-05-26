@@ -26,7 +26,7 @@ References:
 import numpy as np
 from typing import Optional, List, Tuple, Dict, Any
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 import logging
 import uuid
@@ -292,7 +292,7 @@ class MarketStructureAnalyzer:
                         break_type="BOS",
                         direction="bullish",
                         price_level=float(closes[idx]),
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(timezone.utc),
                         confidence=round(confidence, 4),
                         swing_high=target_level,
                         swing_low=swing_lows[-1].price if swing_lows else None,
@@ -312,7 +312,7 @@ class MarketStructureAnalyzer:
                         break_type="BOS",
                         direction="bearish",
                         price_level=float(closes[idx]),
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(timezone.utc),
                         confidence=round(confidence, 4),
                         swing_high=swing_highs[-1].price if swing_highs else None,
                         swing_low=target_level,
@@ -371,7 +371,7 @@ class MarketStructureAnalyzer:
                         break_type="CHoCH",
                         direction="bullish",
                         price_level=float(closes[idx]),
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(timezone.utc),
                         confidence=round(confidence, 4),
                         swing_high=target_level,
                         swing_low=swing_lows[-1].price if swing_lows else None,
@@ -391,7 +391,7 @@ class MarketStructureAnalyzer:
                         break_type="CHoCH",
                         direction="bearish",
                         price_level=float(closes[idx]),
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(timezone.utc),
                         confidence=round(confidence, 4),
                         swing_high=swing_highs[-1].price if swing_highs else None,
                         swing_low=target_level,
@@ -481,7 +481,7 @@ class FVGDetector:
                     lower_bound=lower,
                     midpoint=round(midpoint, 6),
                     size_pct=round(size_pct * 100, 4),
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                     filled=filled,
                     fill_percentage=round(fill_pct, 2),
                 ))
@@ -506,7 +506,7 @@ class FVGDetector:
                     lower_bound=lower,
                     midpoint=round(midpoint, 6),
                     size_pct=round(size_pct * 100, 4),
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                     filled=filled,
                     fill_percentage=round(fill_pct, 2),
                 ))
@@ -657,7 +657,7 @@ class OrderBlockDetector:
                         block_type="bullish",
                         upper_bound=float(highs[i]),
                         lower_bound=float(lows[i]),
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(timezone.utc),
                         strength=round(strength, 4),
                         tested=tested,
                         mitigated=mitigated,
@@ -684,7 +684,7 @@ class OrderBlockDetector:
                         block_type="bearish",
                         upper_bound=float(highs[i]),
                         lower_bound=float(lows[i]),
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(timezone.utc),
                         strength=round(strength, 4),
                         tested=tested,
                         mitigated=mitigated,
@@ -903,7 +903,7 @@ class LiquiditySweepDetector:
                             level_swept=float(level),
                             sweep_depth=round(sweep_depth, 6),
                             recovery_speed=round(recovery_speed, 4),
-                            timestamp=datetime.utcnow(),
+                            timestamp=datetime.now(timezone.utc),
                             volume_spike=vol_spike,
                         ))
                         break  # One sweep per level
@@ -931,7 +931,7 @@ class LiquiditySweepDetector:
                             level_swept=float(level),
                             sweep_depth=round(sweep_depth, 6),
                             recovery_speed=round(recovery_speed, 4),
-                            timestamp=datetime.utcnow(),
+                            timestamp=datetime.now(timezone.utc),
                             volume_spike=vol_spike,
                         ))
                         break

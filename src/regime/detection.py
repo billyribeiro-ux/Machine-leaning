@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from scipy import stats
 from scipy.special import logsumexp
 import warnings
@@ -48,7 +48,7 @@ class RegimeState:
     transition_probability: float  # Probability of regime change
     volatility_percentile: float
     trend_strength: float
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def is_high_conviction(self) -> bool:
@@ -631,7 +631,7 @@ class RegimeDetector:
                 self._transitions.append(RegimeTransition(
                     from_regime=self._current_regime,
                     to_regime=regime,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(timezone.utc),
                     confidence=max_prob,
                     trigger="model_detection" if not is_change else "change_point"
                 ))

@@ -21,7 +21,7 @@ from torch_geometric.data import Data, Batch
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 import logging
 from collections import defaultdict
@@ -623,7 +623,7 @@ class MarketGraphEngine:
             )
 
         predictions = {}
-        timestamp = datetime.utcnow()
+        timestamp = datetime.now(timezone.utc)
 
         for idx in range(len(self.graph_builder.nodes)):
             symbol = self.graph_builder.idx_to_symbol[idx]

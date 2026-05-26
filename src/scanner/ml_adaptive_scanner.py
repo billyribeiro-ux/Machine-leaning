@@ -30,7 +30,7 @@ import logging
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -709,7 +709,7 @@ class ScanPerformanceMonitor:
             Market regime label at the time the signal was generated.
         """
         self._records[scan_name].append((prediction, actual_outcome))
-        self._timestamps[scan_name].append(datetime.utcnow())
+        self._timestamps[scan_name].append(datetime.now(timezone.utc))
         if regime is not None:
             self._regime_records[scan_name][regime].append(
                 (prediction, actual_outcome)
@@ -1542,7 +1542,7 @@ class AdaptiveScannerFramework(BaseScanner[AdvancedScanResult]):
             # Update tracker.
             tracker = self._trackers[name]
             tracker.current_accuracy = acc
-            tracker.last_updated = datetime.utcnow()
+            tracker.last_updated = datetime.now(timezone.utc)
 
         # (c) Detect concept drift. ------------------------------------
         for idx, name in enumerate(self._scan_names):
@@ -1555,7 +1555,7 @@ class AdaptiveScannerFramework(BaseScanner[AdvancedScanResult]):
                 tracker = self._trackers[name]
                 tracker.drift_detected = drift_detected
                 tracker.drift_magnitude = magnitude
-                tracker.last_drift_check = datetime.utcnow()
+                tracker.last_drift_check = datetime.now(timezone.utc)
 
                 if drift_detected:
                     self._logger.info(

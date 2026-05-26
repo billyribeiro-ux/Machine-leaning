@@ -6,7 +6,7 @@ Supports options flow, squeeze detection, momentum, and reversal patterns.
 """
 
 from pydantic import BaseModel, Field, field_validator
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Literal, Any
 from enum import Enum
 
@@ -82,7 +82,7 @@ class ScanResult(BaseModel):
     stop_loss: Optional[float] = Field(None, gt=0, description="Suggested stop loss")
     targets: list[float] = Field(default_factory=list, description="Price targets")
     risk_reward: Optional[float] = Field(None, description="Risk/reward ratio")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Scan timestamp")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Scan timestamp")
     timeframe: TimeFrame = Field(default=TimeFrame.M5, description="Analysis timeframe")
     metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
@@ -140,7 +140,7 @@ class OptionsScanResult(ScanResult):
     @property
     def days_to_expiry(self) -> int:
         """Calculate days until expiration."""
-        return max(0, (self.expiration - datetime.utcnow()).days)
+        return max(0, (self.expiration - datetime.now(timezone.utc)).days)
 
     @property
     def is_itm(self) -> bool:
@@ -285,7 +285,7 @@ class ScanAlert(BaseModel):
     scan_result: ScanResult = Field(..., description="Associated scan result")
     priority: AlertPriority = Field(..., description="Alert priority")
     message: str = Field(..., description="Alert message")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     acknowledged: bool = Field(default=False, description="Whether alert was acknowledged")
     expires_at: Optional[datetime] = Field(None, description="Alert expiration time")
 
@@ -294,7 +294,7 @@ class ScanAlert(BaseModel):
         """Check if alert has expired."""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
 
 
 # =============================================================================
@@ -331,7 +331,7 @@ class ScannerBatchResult(BaseModel):
     results: list[ScanResult] = Field(default_factory=list, description="Scan results")
     summaries: list[ScannerSummary] = Field(default_factory=list, description="Scanner summaries")
     market_regime: MarketRegime = Field(..., description="Detected market regime")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def total_signals(self) -> int:

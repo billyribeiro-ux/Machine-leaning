@@ -32,7 +32,7 @@ from __future__ import annotations
 import logging
 import math
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
@@ -1573,7 +1573,7 @@ class FlowClassifier:
             }
 
         # Filter by window
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         cutoff = now - timedelta(minutes=window_minutes)
         windowed: list[dict] = []
         for t in trades:
@@ -1737,7 +1737,7 @@ class FlowClassifier:
                         return datetime.fromisoformat(ts)
                     except (ValueError, TypeError):
                         pass
-                return datetime.utcnow()
+                return datetime.now(timezone.utc)
 
             sorted_trades = sorted(group_trades, key=_parse_ts)
 

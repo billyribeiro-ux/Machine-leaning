@@ -7,7 +7,7 @@ Institutional-grade scanner for detecting squeeze conditions:
 - Delta Squeeze: Rapid delta hedging creating feedback loops
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 from dataclasses import dataclass, field
 import logging
@@ -45,7 +45,7 @@ class ShortInterestData:
     utilization: float  # Percentage of available shares on loan
     ftd_count: int = 0  # Fail-to-deliver shares
     ftd_value: float = 0  # FTD dollar value
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def is_heavily_shorted(self) -> bool:
@@ -109,7 +109,7 @@ class GammaExposureData:
     gamma_walls: list[dict]  # Price levels with significant gamma
     zero_gamma_level: Optional[float] = None  # Price where gamma flips
     gamma_tilt: float = 0  # Positive = bullish bias, negative = bearish
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def is_gamma_squeeze_setup(self) -> bool:

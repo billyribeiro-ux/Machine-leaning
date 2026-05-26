@@ -12,8 +12,6 @@ NOTE ON INTERFACE MISMATCHES
 ----------------------------
 There are known field-name mismatches between models.py and how exit_manager.py
 and calibration.py consume those models.  For example:
-    - exit_manager references TradeDirection.BULLISH (model defines BULL)
-    - exit_manager references ExitReason.BREAK_EVEN_STOP (model defines BREAK_EVEN)
     - exit_manager constructs TradeLog with fields that differ from the Pydantic schema
     - calibration.py constructs DailyScoreCard with 'date' (model uses 'trading_date')
     - calibration.py constructs TradeLog with fields like 'id', 'pnl' (model uses 'trade_id', 'pnl_dollars')
@@ -71,7 +69,7 @@ from src.scanify_0dte.calibration import (
 
 
 class _StubExitReason:
-    """ExitReason replacement including members only exit_manager.py uses."""
+    """ExitReason replacement matching real ExitReason enum from models.py."""
 
     PROFIT_TARGET = "PROFIT_TARGET"
     STOP_LOSS = "STOP_LOSS"
@@ -81,21 +79,16 @@ class _StubExitReason:
     VIX_SPIKE = "VIX_SPIKE"
     MANUAL = "MANUAL"
     BREAK_EVEN = "BREAK_EVEN"
-    # -- Members that exit_manager.py uses but the real enum lacks --
-    BREAK_EVEN_STOP = "BREAK_EVEN_STOP"
-    TIME_BASED_STOP = "TIME_BASED_STOP"
-    NONE = "NONE"
+    CIRCUIT_BREAKER = "CIRCUIT_BREAKER"
+    EXPIRATION = "EXPIRATION"
 
 
 class _StubTradeDirection:
-    """TradeDirection replacement with BULLISH / BEARISH aliases."""
+    """TradeDirection replacement matching real TradeDirection enum from models.py."""
 
     BULL = "BULL"
     BEAR = "BEAR"
     NEUTRAL = "NEUTRAL"
-    # -- Aliases that exit_manager.py references --
-    BULLISH = "BULL"
-    BEARISH = "BEAR"
 
 
 class _StubScanType:
@@ -716,7 +709,7 @@ class TestStopLoss:
         assert reason == _StubExitReason.NONE
 
     def test_time_based_stop_30_percent_after_30_minutes(self, exit_manager):
-        """Down 30%+ after 30 minutes should trigger TIME_BASED_STOP."""
+        """Down 30%+ after 30 minutes should trigger TIME_STOP."""
         signal = _make_signal()
         pos = exit_manager.open_position(signal, fill_price=10.00, contracts=1)
         pos.current_price = 7.00  # 30% loss
@@ -727,7 +720,7 @@ class TestStopLoss:
             should_exit, reason = exit_manager.check_stop_loss(pos)
 
         assert should_exit is True
-        assert reason == _StubExitReason.TIME_BASED_STOP
+        assert reason == _StubExitReason.TIME_STOP
 
     def test_time_based_stop_not_triggered_under_30_minutes(self, exit_manager):
         """Down 30% but held less than 30 minutes should NOT trigger time stop."""
@@ -762,7 +755,7 @@ class TestStopLoss:
         should_exit, reason = exit_manager.check_stop_loss(pos)
 
         assert should_exit is True
-        assert reason == _StubExitReason.BREAK_EVEN_STOP
+        assert reason == _StubExitReason.BREAK_EVEN
 
     def test_half_off_at_100_percent_gain(self, exit_manager):
         """At 100% gain with 4 contracts, half should be closed."""

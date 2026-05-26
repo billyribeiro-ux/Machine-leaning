@@ -35,7 +35,7 @@ import logging
 import os
 import uuid
 import yaml
-from datetime import datetime, date, timedelta
+from datetime import datetime, date, timedelta, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -669,7 +669,7 @@ class ScanifyIntegration:
             "source": "scanify_0dte",
             "scan_type": signal.scan_type.value,
             "direction_confidence": signal.direction_score.confidence,
-            "submitted_at": datetime.utcnow().isoformat(),
+            "submitted_at": datetime.now(timezone.utc).isoformat(),
         }
 
         result: Dict[str, Any] = {
@@ -1128,11 +1128,11 @@ class ScanifyAlertBridge:
             try:
                 timestamp = datetime.fromisoformat(timestamp_raw)
             except ValueError:
-                timestamp = datetime.utcnow()
+                timestamp = datetime.now(timezone.utc)
         elif isinstance(timestamp_raw, datetime):
             timestamp = timestamp_raw
         else:
-            timestamp = datetime.utcnow()
+            timestamp = datetime.now(timezone.utc)
 
         # Construct a minimal ScanResult for the alert if a signal is attached
         scan_result_dict: Optional[Dict[str, Any]] = None
@@ -1230,7 +1230,7 @@ class ScanifyAlertBridge:
             Webhook-ready payload with ``event``, ``data``, ``timestamp``,
             and ``source`` keys.
         """
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
 
         if isinstance(signal, ScanSignal):
             payload: Dict[str, Any] = {

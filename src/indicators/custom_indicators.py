@@ -21,7 +21,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple, Any, Callable, Union
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from abc import ABC, abstractmethod
 import logging
@@ -914,7 +914,7 @@ class CustomIndicatorSystem:
         confidence = max(buy_score, sell_score)
 
         return CombinedSignal(
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             direction=direction,
             strength=strength,
             confidence=confidence,

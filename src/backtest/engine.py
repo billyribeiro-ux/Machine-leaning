@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from typing import Optional, List, Dict, Tuple, Any, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from collections import defaultdict
 import logging
@@ -187,7 +187,7 @@ class Trade:
     position_value: float = 0
 
     # Timing
-    entry_time: datetime = field(default_factory=datetime.utcnow)
+    entry_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     exit_time: Optional[datetime] = None
 
     # P&L

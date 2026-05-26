@@ -29,7 +29,7 @@ import os
 import shutil
 import sqlite3
 from contextlib import contextmanager
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Generator, Optional
 
@@ -1049,7 +1049,7 @@ class ScanifyDatabase:
         Expected keys in *alert*: ``level``, ``message``.
         Optional keys: ``category``, ``timestamp``, ``data``.
         """
-        ts = alert.get("timestamp", datetime.utcnow().isoformat())
+        ts = alert.get("timestamp", datetime.now(timezone.utc).isoformat())
         if isinstance(ts, datetime):
             ts = ts.isoformat()
         alert_date = ts[:10]  # YYYY-MM-DD prefix
@@ -1478,7 +1478,7 @@ class DataExporter:
             "export_metadata": {
                 "start_date": start_str,
                 "end_date": end_str,
-                "export_timestamp": datetime.utcnow().isoformat(),
+                "export_timestamp": datetime.now(timezone.utc).isoformat(),
                 "trade_count": len(trades_data),
                 "signal_count": len(filtered_signals),
                 "metric_days": len(metrics),

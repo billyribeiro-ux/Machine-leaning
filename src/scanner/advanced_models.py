@@ -14,7 +14,7 @@ Implements the standardized scan output with:
 """
 
 from pydantic import BaseModel, Field, field_validator
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Literal, Any, Dict, List
 from enum import Enum
 import numpy as np
@@ -94,7 +94,7 @@ class AdvancedScanResult(BaseModel):
     scan_id: str = Field(..., description="Unique scan identifier")
     scan_name: str = Field(..., description="Human-readable scan name")
     category: ScanCategory = Field(..., description="A-J scan category")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="ISO 8601 timestamp")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="ISO 8601 timestamp")
     symbol: str = Field(..., description="Ticker symbol")
 
     # Signal Core
@@ -185,7 +185,7 @@ class AdvancedScanResult(BaseModel):
 class VolatilityEstimate(BaseModel):
     """Advanced volatility estimate using multiple estimators."""
     symbol: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Estimators
     close_to_close: float = Field(description="Simple close-to-close vol")
@@ -302,7 +302,7 @@ class IVSurface(BaseModel):
     """Full implied volatility surface."""
     symbol: str
     underlying_price: float
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     points: List[IVSurfacePoint] = Field(default_factory=list)
 
     # Surface analytics
@@ -326,7 +326,7 @@ class IVSurface(BaseModel):
 class GreeksExposure(BaseModel):
     """Aggregate Greeks exposure at a price level or for the market."""
     symbol: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Net exposures
     net_gamma: float = Field(description="Net gamma exposure in $")
@@ -359,7 +359,7 @@ class GreeksExposure(BaseModel):
 class FractalAnalysis(BaseModel):
     """Fractal analysis results."""
     symbol: str
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Hurst exponent
     hurst_exponent: float = Field(description="Hurst exponent (0-1)")
@@ -397,7 +397,7 @@ class FractalAnalysis(BaseModel):
 
 class BreadthSnapshot(BaseModel):
     """Market breadth snapshot."""
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Advance/Decline
     advancers: int = Field(description="Number of advancing issues")
@@ -486,7 +486,7 @@ class ScanPerformanceTracker(BaseModel):
     current_accuracy: float = 0.0
     rolling_sharpe: float = 0.0
     alpha_remaining: float = 1.0  # 1.0 = full alpha, decaying
-    last_updated: datetime = Field(default_factory=datetime.utcnow)
+    last_updated: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Adaptive weight
     base_weight: float = 1.0
@@ -497,7 +497,7 @@ class ScanPerformanceTracker(BaseModel):
     # Drift detection
     drift_detected: bool = False
     drift_magnitude: float = 0.0
-    last_drift_check: datetime = Field(default_factory=datetime.utcnow)
+    last_drift_check: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def hit_rate(self) -> float:

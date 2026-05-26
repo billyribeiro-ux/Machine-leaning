@@ -35,7 +35,7 @@ from __future__ import annotations
 import logging
 import math
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -359,7 +359,7 @@ class GEXEngine:
                 vol_trigger=spot,
                 charm_net_es_contracts=0.0,
                 vanna_net_exposure=0.0,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
         # Group quotes by strike
@@ -422,7 +422,7 @@ class GEXEngine:
                 vol_trigger=spot,
                 charm_net_es_contracts=0.0,
                 vanna_net_exposure=0.0,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
         # --- Derived levels ---
@@ -477,7 +477,7 @@ class GEXEngine:
             vol_trigger=vol_trigger,
             charm_net_es_contracts=charm_es,
             vanna_net_exposure=vanna_net,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
         )
 
     # ------------------------------------------------------------------
@@ -704,7 +704,7 @@ class GEXEngine:
             return 0.0
 
         last_ts, last_gex = gex_history[-1]
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         dt_minutes = (now - last_ts).total_seconds() / 60.0
 
         if dt_minutes < _EPSILON:
@@ -873,7 +873,7 @@ class GEXSignalGenerator:
 
     def _is_on_cooldown(self, signal_type: GEXSignalType) -> bool:
         """Return True if a signal of this type was emitted recently."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         for sig in reversed(self.signal_history):
             if sig.signal_type == signal_type:
                 elapsed = (now - sig.timestamp).total_seconds()
@@ -962,7 +962,7 @@ class GEXSignalGenerator:
             trigger_level=flip,
             target=target,
             stop=stop,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             metadata={
                 "spot": spot,
                 "prior_spot": prior_spot,
@@ -1039,7 +1039,7 @@ class GEXSignalGenerator:
                 trigger_level=call_wall,
                 target=target,
                 stop=stop,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 metadata={
                     "wall_type": "call",
                     "wall_strike": call_wall,
@@ -1079,7 +1079,7 @@ class GEXSignalGenerator:
                 trigger_level=put_wall,
                 target=target,
                 stop=stop,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 metadata={
                     "wall_type": "put",
                     "wall_strike": put_wall,
@@ -1165,7 +1165,7 @@ class GEXSignalGenerator:
             trigger_level=tz_upper if direction == "bullish" else tz_lower,
             target=target,
             stop=stop,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             metadata={
                 "tz_upper": tz_upper,
                 "tz_lower": tz_lower,
@@ -1250,7 +1250,7 @@ class GEXSignalGenerator:
             trigger_level=current_gex,
             target=None,
             stop=None,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             metadata={
                 "current_gex": current_gex,
                 "reference_gex": reference_gex,
@@ -1323,7 +1323,7 @@ class GEXSignalGenerator:
             trigger_level=es_contracts,
             target=None,
             stop=None,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             metadata={
                 "es_contracts": es_contracts,
                 "vanna_net": current_profile.vanna_net_exposure,
@@ -1411,7 +1411,7 @@ class GEXSignalGenerator:
             trigger_level=vanna_net,
             target=None,
             stop=None,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             metadata={
                 "vix1d_change_pct": vix1d_change_pct,
                 "vanna_net": vanna_net,
