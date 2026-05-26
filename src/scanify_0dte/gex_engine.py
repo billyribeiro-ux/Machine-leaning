@@ -67,6 +67,7 @@ _ES_MULTIPLIER: float = 50.0    # E-mini S&P 500 futures point value
 
 _EPSILON: float = 1e-12  # Guard against division by zero
 _MAX_GAMMA_CAP: float = 5.0  # Cap extreme near-expiry gamma values
+_MAX_SPEED_CAP: float = 1.0  # Cap extreme near-expiry speed (dGamma/dSpot) values
 _MIN_MINUTES_FOR_GREEKS: int = 1  # Floor for time input
 
 
@@ -80,6 +81,16 @@ def _safe_divide(numerator: float, denominator: float) -> float:
 def _clamp_gamma(raw_gamma: float) -> float:
     """Clamp gamma to a sane range for 0DTE (avoids blow-up near expiry)."""
     return max(-_MAX_GAMMA_CAP, min(_MAX_GAMMA_CAP, raw_gamma))
+
+
+def _clamp_speed(raw_speed: float) -> float:
+    """Clamp speed (dGamma/dSpot) to a sane range for 0DTE.
+
+    Speed is the third-order Greek and blows up even more violently than
+    gamma near expiry.  Without clamping, extreme values propagate into
+    net_speed on StrikeGEX and corrupt downstream GEX profile analysis.
+    """
+    return max(-_MAX_SPEED_CAP, min(_MAX_SPEED_CAP, raw_speed))
 
 
 # =========================================================================
@@ -287,9 +298,10 @@ class GEXEngine:
 
         # Speed (dGamma/dSpot)
         raw_speed = self.bs_calculator.speed(spot, strike, t, avg_iv, r, q)
+        speed = _clamp_speed(raw_speed)
         net_speed = (
-            -1.0 * raw_speed * call_oi * _CONTRACT_MULTIPLIER * spot
-            + 1.0 * raw_speed * put_oi * _CONTRACT_MULTIPLIER * spot
+            -1.0 * speed * call_oi * _CONTRACT_MULTIPLIER * spot
+            + 1.0 * speed * put_oi * _CONTRACT_MULTIPLIER * spot
         )
 
         return StrikeGEX(
