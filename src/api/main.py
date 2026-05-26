@@ -76,11 +76,27 @@ class ErrorResponse(BaseModel):
     request_id: str
 
 
+def _check_configuration() -> None:
+    """Log warnings for missing production configuration."""
+    issues = []
+    if not os.getenv("SCANIFY_SECRET_KEY"):
+        issues.append("SCANIFY_SECRET_KEY not set — JWT sessions won't persist across restarts")
+    if not os.getenv("SCANIFY_ADMIN_KEY"):
+        issues.append("SCANIFY_ADMIN_KEY not set — admin endpoints disabled")
+    if not any(os.getenv(k) for k in ("POLYGON_API_KEY", "ALPACA_API_KEY")):
+        issues.append("No data provider API key set — live scanning unavailable")
+    for issue in issues:
+        logger.warning("CONFIG: %s", issue)
+    if not issues:
+        logger.info("All configuration checks passed")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler"""
     install_request_id_filter()
     logger.info("Scanify API starting")
+    _check_configuration()
 
     await manager.start_heartbeat(interval=30)
 

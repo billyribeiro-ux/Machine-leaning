@@ -82,6 +82,16 @@ class AlertRule(CreateAlertRule):
     last_triggered: Optional[datetime] = None
 
 
+class AlertCountResponse(BaseModel):
+    total: int
+    unread: int
+    critical: int
+
+
+class MessageResponse(BaseModel):
+    message: str
+
+
 # In-memory stores
 _alerts_cache: List[dict] = []
 _user_preferences: dict[str, AlertPreferences] = {}
@@ -149,7 +159,7 @@ async def get_alerts(
     return [AlertResponse(**a) for a in alerts[start:end]]
 
 
-@router.get("/count")
+@router.get("/count", response_model=AlertCountResponse)
 async def get_alert_count(
     current_user: User = Depends(require_tier(SubscriptionTier.BASIC)),
 ):
@@ -166,7 +176,7 @@ async def get_alert_count(
     }
 
 
-@router.post("/{alert_id}/read")
+@router.post("/{alert_id}/read", response_model=MessageResponse)
 async def mark_alert_read(
     alert_id: str,
     current_user: User = Depends(require_tier(SubscriptionTier.BASIC)),
@@ -176,7 +186,7 @@ async def mark_alert_read(
     return {"message": "Alert marked as read", "alert_id": alert_id}
 
 
-@router.post("/read-all")
+@router.post("/read-all", response_model=MessageResponse)
 async def mark_all_alerts_read(
     current_user: User = Depends(require_tier(SubscriptionTier.BASIC)),
 ):
@@ -256,7 +266,7 @@ async def create_alert_rule(
     return new_rule
 
 
-@router.delete("/rules/{rule_id}")
+@router.delete("/rules/{rule_id}", response_model=MessageResponse)
 async def delete_alert_rule(
     rule_id: str,
     current_user: User = Depends(require_tier(SubscriptionTier.PRO)),

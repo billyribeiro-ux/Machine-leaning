@@ -52,6 +52,10 @@ class PasswordChangeRequest(BaseModel):
     new_password: str
 
 
+class MessageResponse(BaseModel):
+    message: str
+
+
 class UserProfile(BaseModel):
     id: str
     email: str
@@ -290,7 +294,7 @@ async def get_current_user_profile(
     )
 
 
-@router.post("/logout")
+@router.post("/logout", response_model=MessageResponse)
 async def logout(current_user: User = Depends(get_current_active_user)):
     """
     Logout current user.
@@ -301,7 +305,7 @@ async def logout(current_user: User = Depends(get_current_active_user)):
     return {"message": "Successfully logged out"}
 
 
-@router.post("/change-password")
+@router.post("/change-password", response_model=MessageResponse)
 async def change_password(
     request: PasswordChangeRequest,
     current_user: User = Depends(get_current_active_user),

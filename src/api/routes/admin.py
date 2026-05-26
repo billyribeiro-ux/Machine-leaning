@@ -47,6 +47,10 @@ class ScannerControl(BaseModel):
     action: str  # start, stop, pause, resume
 
 
+class MessageResponse(BaseModel):
+    message: str
+
+
 # Module state
 _scanner_engine = None
 
@@ -89,7 +93,7 @@ async def list_users(
     return users[start:end]
 
 
-@router.put("/users/{user_id}/tier")
+@router.put("/users/{user_id}/tier", response_model=MessageResponse)
 async def update_user_tier(
     user_id: str,
     tier: SubscriptionTier,
@@ -107,7 +111,7 @@ async def update_user_tier(
     raise HTTPException(status_code=404, detail="User not found")
 
 
-@router.put("/users/{user_id}/status")
+@router.put("/users/{user_id}/status", response_model=MessageResponse)
 async def update_user_status(
     user_id: str,
     is_active: bool,
