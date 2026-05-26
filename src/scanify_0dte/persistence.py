@@ -28,6 +28,7 @@ import logging
 import os
 import shutil
 import sqlite3
+import threading
 from contextlib import contextmanager
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -328,6 +329,7 @@ class ScanifyDatabase:
         self.db_path = db_path
         self._ensure_directory()
         self._conn: Optional[sqlite3.Connection] = None
+        self._lock = threading.Lock()
         if auto_create:
             self.initialize()
 
@@ -344,17 +346,18 @@ class ScanifyDatabase:
 
     def _get_connection(self) -> sqlite3.Connection:
         """Return (and lazily create) the database connection."""
-        if self._conn is None:
-            self._conn = sqlite3.connect(
-                self.db_path,
-                detect_types=sqlite3.PARSE_DECLTYPES,
-                check_same_thread=False,
-            )
-            self._conn.row_factory = sqlite3.Row
-            self._conn.execute("PRAGMA journal_mode=WAL;")
-            self._conn.execute("PRAGMA foreign_keys=ON;")
-            self._conn.execute("PRAGMA busy_timeout=5000;")
-        return self._conn
+        with self._lock:
+            if self._conn is None:
+                self._conn = sqlite3.connect(
+                    self.db_path,
+                    detect_types=sqlite3.PARSE_DECLTYPES,
+                    check_same_thread=False,
+                )
+                self._conn.row_factory = sqlite3.Row
+                self._conn.execute("PRAGMA journal_mode=WAL;")
+                self._conn.execute("PRAGMA foreign_keys=ON;")
+                self._conn.execute("PRAGMA busy_timeout=5000;")
+            return self._conn
 
     @contextmanager
     def _cursor(self) -> Generator[sqlite3.Cursor, None, None]:

@@ -50,13 +50,16 @@ class PositionRisk:
     @property
     def risk_level(self) -> RiskLevel:
         """Classify position risk."""
-        if self.var_95 / self.current_value > 0.1:
+        if self.current_value == 0:
             return RiskLevel.EXTREME
-        elif self.var_95 / self.current_value > 0.05:
+        ratio = self.var_95 / self.current_value
+        if ratio > 0.1:
+            return RiskLevel.EXTREME
+        elif ratio > 0.05:
             return RiskLevel.HIGH
-        elif self.var_95 / self.current_value > 0.02:
+        elif ratio > 0.02:
             return RiskLevel.MODERATE
-        elif self.var_95 / self.current_value > 0.01:
+        elif ratio > 0.01:
             return RiskLevel.LOW
         return RiskLevel.MINIMAL
 
@@ -212,8 +215,8 @@ class VaRCalculator:
     - Monte Carlo simulation
     """
 
-    def __init__(self, confidence_levels: List[float] = [0.95, 0.99]):
-        self.confidence_levels = confidence_levels
+    def __init__(self, confidence_levels: Optional[List[float]] = None):
+        self.confidence_levels = confidence_levels or [0.95, 0.99]
 
     def historical_var(
         self,

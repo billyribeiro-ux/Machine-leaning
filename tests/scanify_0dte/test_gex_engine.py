@@ -31,7 +31,7 @@ import sys
 import types
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 from unittest.mock import MagicMock, patch, PropertyMock
@@ -1912,14 +1912,14 @@ class TestComputeGEXMomentum:
 
     def test_positive_momentum(self):
         """GEX increasing -> positive momentum."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         history = [(now - timedelta(minutes=5), 5_000_000.0)]
         momentum = GEXEngine.compute_gex_momentum(10_000_000.0, history)
         assert momentum > 0
 
     def test_negative_momentum(self):
         """GEX decreasing -> negative momentum."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         history = [(now - timedelta(minutes=5), 10_000_000.0)]
         momentum = GEXEngine.compute_gex_momentum(5_000_000.0, history)
         assert momentum < 0
@@ -1986,7 +1986,7 @@ class TestSignalCooldown:
         assert sig1 is not None
 
         # Artificially age the signal timestamp beyond the cooldown window
-        sig1.timestamp = datetime.utcnow() - timedelta(seconds=130)
+        sig1.timestamp = datetime.now(timezone.utc) - timedelta(seconds=130)
 
         # Now try again -- should succeed since cooldown expired
         sig2 = gen.check_gamma_flip_crossover(

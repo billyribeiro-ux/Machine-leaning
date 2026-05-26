@@ -77,7 +77,7 @@ class ScanResult(BaseModel):
     symbol: str = Field(..., description="Ticker symbol")
     scanner_type: str = Field(..., description="Type of scanner that generated this result")
     direction: SignalDirection = Field(..., description="Trade direction")
-    confidence: float = Field(..., ge=0, le=100, description="Confidence score 0-100")
+    confidence: float = Field(..., description="Confidence score 0-100")
     entry_price: Optional[float] = Field(None, gt=0, description="Suggested entry price")
     stop_loss: Optional[float] = Field(None, gt=0, description="Suggested stop loss")
     targets: list[float] = Field(default_factory=list, description="Price targets")

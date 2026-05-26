@@ -442,7 +442,7 @@ class ScanifyStreamManager:
                 "type": ScanifyMessageType.ERROR.value,
                 "channel": "_system",
                 "timestamp": datetime.now(timezone.utc).isoformat(),
-                "data": {"error": "authentication_failed", "detail": str(exc)},
+                "data": {"error": "authentication_failed", "detail": "Invalid or expired token"},
             })
             await websocket.close(code=4001, reason="Invalid or expired token")
             raise WebSocketDisconnect(code=4001, reason="Invalid token")

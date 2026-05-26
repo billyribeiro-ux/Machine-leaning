@@ -64,9 +64,19 @@ class UserProfile(BaseModel):
 
 
 def _hash_password(password: str) -> str:
-    """Hash password with salt"""
-    salt = os.getenv("SCANIFY_PASSWORD_SALT", "dev-salt")
-    return hashlib.sha256(f"{password}{salt}".encode()).hexdigest()
+    """Hash password using PBKDF2 with per-user random salt."""
+    salt = secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), iterations=600_000)
+    return f"{salt}${dk.hex()}"
+
+
+def _verify_password(password: str, stored_hash: str) -> bool:
+    """Verify a password against a PBKDF2 hash."""
+    if "$" not in stored_hash:
+        return False
+    salt, dk_hex = stored_hash.split("$", 1)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), iterations=600_000)
+    return secrets.compare_digest(dk.hex(), dk_hex)
 
 
 def _generate_user_id() -> str:
@@ -312,8 +322,10 @@ async def admin_create_user(
     admin_key: str,
 ):
     """Create a user with specific tier (admin only)"""
-    expected_key = os.getenv("SCANIFY_ADMIN_KEY", "admin-dev-key")
-    if admin_key != expected_key:
+    expected_key = os.getenv("SCANIFY_ADMIN_KEY", "")
+    if not expected_key:
+        raise HTTPException(status_code=503, detail="Admin endpoint not configured")
+    if not secrets.compare_digest(admin_key, expected_key):
         raise HTTPException(status_code=403, detail="Invalid admin key")
 
     email = email.lower()
