@@ -1171,7 +1171,7 @@ class ExitManager:
             "avg_win": gross_wins / len(wins) if wins else 0.0,
             "avg_loss": -gross_losses / len(losses) if losses else 0.0,
             "profit_factor": (
-                gross_wins / gross_losses if gross_losses > 0 else float("inf")
+                min(gross_wins / gross_losses, 999.9) if gross_losses > 0 else 999.9
             ),
             "avg_hold_time_min": (
                 sum(hold_times) / len(hold_times) if hold_times else 0.0

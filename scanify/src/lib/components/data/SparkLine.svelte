@@ -17,7 +17,7 @@
 		class: className = ''
 	}: Props = $props();
 
-	let resolvedColor = $derived(() => {
+	let resolvedColor = $derived.by(() => {
 		if (color) return color;
 		if (!data || data.length < 2) return 'oklch(0.60 0 0)';
 		return data[data.length - 1] >= data[0]
@@ -25,7 +25,7 @@
 			: 'oklch(0.65 0.18 25)';
 	});
 
-	let pathD = $derived(() => {
+	let pathD = $derived.by(() => {
 		if (!data || data.length < 2) return '';
 
 		const min = Math.min(...data);
@@ -47,7 +47,7 @@
 			.join(' ');
 	});
 
-	let lastPoint = $derived(() => {
+	let lastPoint = $derived.by(() => {
 		if (!data || data.length < 2) return null;
 
 		const min = Math.min(...data);
@@ -74,27 +74,27 @@
 	role="img"
 	aria-label="Sparkline chart"
 >
-	{#if pathD()}
+	{#if pathD}
 		<path
-			d={pathD()}
+			d={pathD}
 			fill="none"
-			stroke={resolvedColor()}
+			stroke={resolvedColor}
 			stroke-width="1.5"
 			stroke-linecap="round"
 			stroke-linejoin="round"
 		/>
-		{#if showLastPoint && lastPoint()}
+		{#if showLastPoint && lastPoint}
 			<circle
-				cx={lastPoint()?.x}
-				cy={lastPoint()?.y}
+				cx={lastPoint?.x}
+				cy={lastPoint?.y}
 				r="2.5"
-				fill={resolvedColor()}
+				fill={resolvedColor}
 			/>
 			<circle
-				cx={lastPoint()?.x}
-				cy={lastPoint()?.y}
+				cx={lastPoint?.x}
+				cy={lastPoint?.y}
 				r="4"
-				fill={resolvedColor()}
+				fill={resolvedColor}
 				opacity="0.3"
 			/>
 		{/if}
