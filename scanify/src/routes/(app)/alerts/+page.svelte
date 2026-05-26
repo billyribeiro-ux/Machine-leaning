@@ -1,4 +1,6 @@
 <script lang="ts">
+  import ExportToolbar from '$lib/components/ui/ExportToolbar.svelte';
+
   let alertConfigs = $state([
     {
       id: 'ac1',
@@ -61,9 +63,13 @@
   <!-- Header -->
   <div class="flex items-center justify-between px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
     <h1 class="text-lg font-bold" style="color: var(--text-primary);">Alerts</h1>
-    <span class="text-xs font-mono" style="color: var(--text-tertiary);">
-      {alertConfigs.filter(a => a.enabled).length} active
-    </span>
+    <div class="flex items-center gap-3">
+      <ExportToolbar source="alerts" />
+      <div class="w-px h-5" style="background: var(--border-subtle);"></div>
+      <span class="text-xs font-mono" style="color: var(--text-tertiary);">
+        {alertConfigs.filter(a => a.enabled).length} active
+      </span>
+    </div>
   </div>
 
   <div class="p-5 space-y-6">

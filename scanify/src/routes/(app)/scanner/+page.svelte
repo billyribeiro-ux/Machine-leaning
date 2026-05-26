@@ -1,5 +1,6 @@
 <script lang="ts">
   import SparkLine from '$lib/components/data/SparkLine.svelte';
+  import ExportToolbar from '$lib/components/ui/ExportToolbar.svelte';
 
   // ---- Filter state ----
   let selectedPreset = $state('momentum');
@@ -153,9 +154,13 @@
         {filteredResults.length} signals &bull; Updated 2s ago
       </span>
     </div>
-    <div class="flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full signal-ping" style="background: var(--bullish);"></div>
-      <span class="text-xs" style="color: var(--bullish);">Live</span>
+    <div class="flex items-center gap-3">
+      <ExportToolbar source="scanner" />
+      <div class="w-px h-5" style="background: var(--border-subtle);"></div>
+      <div class="flex items-center gap-2">
+        <div class="w-2 h-2 rounded-full signal-ping" style="background: var(--bullish);"></div>
+        <span class="text-xs" style="color: var(--bullish);">Live</span>
+      </div>
     </div>
   </div>
 

@@ -3,6 +3,7 @@
   import InternalsBar from '$components/market/InternalsBar.svelte';
   import SentimentGauge from '$components/market/SentimentGauge.svelte';
   import SectorRotation from '$components/market/SectorRotation.svelte';
+  import ExportToolbar from '$lib/components/ui/ExportToolbar.svelte';
 
   const breadthData = {
     advancers: 1850,
@@ -36,9 +37,13 @@
   <!-- Header -->
   <div class="flex items-center justify-between px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
     <h1 class="text-lg font-bold" style="color: var(--text-primary);">Market Overview</h1>
-    <span class="text-xs font-mono" style="color: var(--text-tertiary);">
-      {new Date().toLocaleTimeString('en-US', { hour12: false })}
-    </span>
+    <div class="flex items-center gap-3">
+      <ExportToolbar source="market" />
+      <div class="w-px h-5" style="background: var(--border-subtle);"></div>
+      <span class="text-xs font-mono" style="color: var(--text-tertiary);">
+        {new Date().toLocaleTimeString('en-US', { hour12: false })}
+      </span>
+    </div>
   </div>
 
   <div class="p-5 space-y-5">

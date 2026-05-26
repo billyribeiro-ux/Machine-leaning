@@ -1,5 +1,6 @@
 <script lang="ts">
   import FlowFeed from '$components/options/FlowFeed.svelte';
+  import ExportToolbar from '$lib/components/ui/ExportToolbar.svelte';
 
   let typeFilter = $state<'all' | 'calls' | 'puts'>('all');
   let minPremium = $state('');
@@ -60,7 +61,11 @@
         <span class="text-xs" style="color: var(--bullish);">Live</span>
       </div>
     </div>
-    <a href="/options" class="text-xs" style="color: var(--text-tertiary);">Back to Options</a>
+    <div class="flex items-center gap-3">
+      <ExportToolbar source="options-flow" />
+      <div class="w-px h-5" style="background: var(--border-subtle);"></div>
+      <a href="/options" class="text-xs" style="color: var(--text-tertiary);">Back to Options</a>
+    </div>
   </div>
 
   <!-- Stats bar -->
