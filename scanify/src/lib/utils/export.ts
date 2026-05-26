@@ -2,6 +2,7 @@ export type ExportFormat = 'csv' | 'json' | 'pdf';
 
 export type ExportSource =
 	| 'scanner'
+	| 'precision-alpha'
 	| 'options-flow'
 	| 'institutional'
 	| 'market'
