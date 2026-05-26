@@ -19,7 +19,6 @@ from .engineering import (
     VolumeFeatures,
     TrendFeatures,
     StatisticalFeatures,
-    create_feature_engineer,
 )
 
 __all__ = [
@@ -30,7 +29,6 @@ __all__ = [
     "VolumeFeatures",
     "TrendFeatures",
     "StatisticalFeatures",
-    "create_feature_engineer",
 ]
 
 __version__ = "0.1.0"

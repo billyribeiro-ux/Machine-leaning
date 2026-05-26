@@ -14,11 +14,7 @@ from .engine import (
     BacktestEngine,
     Trade,
     TradeDiagnostic,
-    BacktestResult,
     BacktestConfig,
-    PerformanceMetrics,
-    DrawdownAnalysis,
-    create_backtest_engine,
 )
 
 from .validation import (
@@ -40,11 +36,7 @@ __all__ = [
     "BacktestEngine",
     "Trade",
     "TradeDiagnostic",
-    "BacktestResult",
     "BacktestConfig",
-    "PerformanceMetrics",
-    "DrawdownAnalysis",
-    "create_backtest_engine",
     # Validation framework
     "BacktestValidator",
     "WalkForwardOptimizer",

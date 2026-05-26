@@ -9,6 +9,8 @@ Comprehensive tests covering:
 2. API routes (GET/POST endpoints under /api/scanify)
 3. WebSocket streaming handler (ScanifyStreamManager)
 
+Requires: python-jose[cryptography] for JWT tests.
+
 Uses pytest, httpx (TestClient), and pytest-asyncio.
 """
 
@@ -26,29 +28,11 @@ import importlib.util
 import sys
 from unittest.mock import MagicMock as _MagicMock
 
-if "src.scanner" not in sys.modules:
-    # 1. Load src.scanner.models directly from file
-    _spec = importlib.util.spec_from_file_location(
-        "src.scanner.models",
-        "src/scanner/models.py",
-    )
-    _scanner_models = importlib.util.module_from_spec(_spec)
-    sys.modules["src.scanner.models"] = _scanner_models
-    _spec.loader.exec_module(_scanner_models)
-
-    # 2. Build a thin shim for the scanner package that exposes models + stubs
-    _scanner_pkg = _MagicMock()
-    _scanner_pkg.__path__ = ["src/scanner"]
-    _scanner_pkg.__package__ = "src.scanner"
-    _scanner_pkg.__name__ = "src.scanner"
-    _scanner_pkg.models = _scanner_models
-
-    # Re-export key names that downstream code expects on the package
-    for _attr in dir(_scanner_models):
-        if not _attr.startswith("_"):
-            setattr(_scanner_pkg, _attr, getattr(_scanner_models, _attr))
-
-    sys.modules["src.scanner"] = _scanner_pkg
+import pytest
+try:
+    import jose  # noqa: F401
+except Exception:
+    pytest.skip("python-jose[cryptography] required", allow_module_level=True)
 
 # ---------------------------------------------------------------------------
 

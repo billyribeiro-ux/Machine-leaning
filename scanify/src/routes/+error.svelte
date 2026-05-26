@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { page } from '$app/stores';
+  import { page } from '$app/state';
 </script>
 <div class="flex min-h-screen items-center justify-center" style="background: oklch(0.08 0.005 260); color: oklch(0.95 0.005 260);">
   <div class="text-center space-y-4">

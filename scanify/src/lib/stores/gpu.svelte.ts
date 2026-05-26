@@ -2,6 +2,8 @@
 // GPU capabilities store – Svelte 5 rune-based reactive state
 // ---------------------------------------------------------------------------
 
+import { browser } from '$app/environment';
+
 /** Discrete GPU performance tier. */
 export type GpuTier = 'low' | 'mid' | 'high' | 'ultra' | 'unsupported';
 
@@ -102,6 +104,7 @@ function defaultCapabilities(): GpuCapabilities {
 // ---------------------------------------------------------------------------
 
 async function probeWebGPU(): Promise<boolean> {
+  if (!browser) return false;
   try {
     if (!navigator.gpu) return false;
     const adapter = await navigator.gpu.requestAdapter();
@@ -136,6 +139,7 @@ function probeWebGL2(): {
     instanced: true,
   };
 
+  if (!browser) return result;
   try {
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl2');
@@ -168,6 +172,7 @@ function probeWebGL2(): {
 }
 
 function probeWebGL1(): boolean {
+  if (!browser) return false;
   try {
     const canvas = document.createElement('canvas');
     const gl = canvas.getContext('webgl');

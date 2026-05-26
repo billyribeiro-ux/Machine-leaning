@@ -19,8 +19,8 @@ from typing import (
 )
 from collections import defaultdict, deque
 
-from .base import BaseScanner, ScannerConfig, ScanContext
-from .models import ScanResult, MarketData, SignalDirection
+from .base import BaseScanner, ScannerConfig, ScanContext, MarketData
+from .models import ScanResult, SignalDirection
 from .advanced_models import (
     AdvancedScanResult,
     ScanCategory,

@@ -44,6 +44,8 @@ try:
 except ImportError:
     UniversalDataManager = None
     MLDataPipeline = None
+    FeatureEngineer = None
+    FeatureConfig = None
 
 
 class ScannerType(Enum):

@@ -20,6 +20,7 @@ from typing import Any, Optional
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     field_validator,
     model_validator,
@@ -1040,7 +1041,8 @@ class TradeLog(BaseModel):
 class DailyScoreCard(BaseModel):
     """End-of-day performance summary sliced across multiple dimensions."""
 
-    trading_date: date = Field(..., description="Trading date")
+    trading_date: date = Field(..., description="Trading date", alias="date")
+    total_trades: int = Field(0, description="Total trades for the day")
     win_rate_by_scan_type: dict[str, float] = Field(
         default_factory=dict,
         description="Win rate keyed by ScanType value",
@@ -1053,22 +1055,36 @@ class DailyScoreCard(BaseModel):
         default_factory=dict,
         description="Win rate keyed by SessionType value",
     )
-    win_rate_by_vix_regime: dict[str, float] = Field(
+    win_rate_by_vix1d_regime: dict[str, float] = Field(
         default_factory=dict,
-        description="Win rate keyed by VIX regime label",
+        description="Win rate keyed by VIX1D regime label",
     )
-    avg_pnl_by_category: dict[str, float] = Field(
+    avg_pnl_by_scan_type: dict[str, float] = Field(
         default_factory=dict,
-        description="Average PnL ($) keyed by category label",
+        description="Average PnL ($) keyed by ScanType value",
     )
-    sharpe_ratio_by_scan: dict[str, float] = Field(
+    avg_pnl_by_time_zone: dict[str, float] = Field(
+        default_factory=dict,
+        description="Average PnL ($) keyed by TimeZoneType value",
+    )
+    avg_pnl_by_session_type: dict[str, float] = Field(
+        default_factory=dict,
+        description="Average PnL ($) keyed by SessionType value",
+    )
+    avg_pnl_by_vix1d_regime: dict[str, float] = Field(
+        default_factory=dict,
+        description="Average PnL ($) keyed by VIX1D regime label",
+    )
+    sharpe_by_scan_type: dict[str, float] = Field(
         default_factory=dict,
         description="Intraday Sharpe ratio keyed by ScanType value",
     )
-    max_drawdown_by_scan: dict[str, float] = Field(
+    max_drawdown_by_scan_type: dict[str, float] = Field(
         default_factory=dict,
         description="Maximum drawdown ($) keyed by ScanType value",
     )
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class FactorWeights(BaseModel):

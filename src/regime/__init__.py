@@ -16,7 +16,6 @@ from .detection import (
     ChangePointDetector,
     RegimeState,
     RegimeTransition,
-    create_regime_detector,
 )
 
 __all__ = [
@@ -26,7 +25,6 @@ __all__ = [
     "ChangePointDetector",
     "RegimeState",
     "RegimeTransition",
-    "create_regime_detector",
 ]
 
 __version__ = "0.1.0"

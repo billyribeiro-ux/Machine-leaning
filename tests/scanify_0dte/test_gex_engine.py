@@ -95,9 +95,9 @@ class _OptionQuote:
         flow_direction: float = 0.0,
     ):
         self.strike = strike
-        self.side = side
-        self.iv = iv
-        self.oi = oi
+        self.option_type = side
+        self.implied_vol = iv
+        self.open_interest = oi
         self.volume = volume
         self.flow_direction = flow_direction
 
@@ -182,8 +182,7 @@ _SRC_DIR = os.path.abspath(
 if _SRC_DIR not in sys.path:
     sys.path.insert(0, _SRC_DIR)
 
-# Register a minimal scanify_0dte package WITHOUT executing __init__.py
-# (which imports every submodule and would fail on unresolved deps).
+# Register a minimal scanify_0dte package if not already present.
 _pkg_path = os.path.join(_SRC_DIR, "scanify_0dte")
 
 if "scanify_0dte" not in sys.modules or not hasattr(
@@ -194,16 +193,25 @@ if "scanify_0dte" not in sys.modules or not hasattr(
     _pkg.__package__ = "scanify_0dte"
     sys.modules["scanify_0dte"] = _pkg
 
-# Register mock models module
-_mock_models = types.ModuleType("scanify_0dte.models")
-_mock_models.StrikeGEX = _StrikeGEX
-_mock_models.GEXProfile = _GEXProfile
-_mock_models.GEXSignal = _GEXSignal
-_mock_models.GEXSignalType = _GEXSignalType
-_mock_models.OptionQuote = _OptionQuote
-_mock_models.OptionsChain = _OptionsChain
-_mock_models.OptionSide = _OptionSide
-sys.modules["scanify_0dte.models"] = _mock_models
+# Load the real models module first (preserving all classes for other tests),
+# then overlay our shim classes so gex_engine picks up the test versions.
+_real_models_path = os.path.join(_pkg_path, "models.py")
+if "scanify_0dte.models" not in sys.modules:
+    _spec = importlib.util.spec_from_file_location("scanify_0dte.models", _real_models_path)
+    _real_models = importlib.util.module_from_spec(_spec)
+    _real_models.__spec__ = _spec
+    sys.modules["scanify_0dte.models"] = _real_models
+    _spec.loader.exec_module(_real_models)
+
+# Overlay shim classes onto the models module for gex_engine compatibility
+_models_mod = sys.modules["scanify_0dte.models"]
+_models_mod.StrikeGEX = _StrikeGEX
+_models_mod.GEXProfile = _GEXProfile
+_models_mod.GEXSignal = _GEXSignal
+_models_mod.GEXSignalType = _GEXSignalType
+_models_mod.OptionQuote = _OptionQuote
+_models_mod.OptionsChain = _OptionsChain
+_models_mod.OptionSide = _OptionSide
 
 # Now import the real greeks_engine (has no model dependency)
 from scanify_0dte.greeks_engine import (  # noqa: E402
@@ -213,7 +221,7 @@ from scanify_0dte.greeks_engine import (  # noqa: E402
     normal_pdf,
 )
 
-# Now import gex_engine (picks up mock models + real greeks_engine)
+# Now import gex_engine (picks up shim models + real greeks_engine)
 from scanify_0dte.gex_engine import (  # noqa: E402
     GEXEngine,
     GEXSignalGenerator,

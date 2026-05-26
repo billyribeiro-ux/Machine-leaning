@@ -2,6 +2,8 @@
 // Auth store – Svelte 5 rune-based reactive state
 // ---------------------------------------------------------------------------
 
+import { browser } from '$app/environment';
+
 export interface User {
   id: string;
   email: string;
@@ -47,6 +49,7 @@ function createAuthStore() {
   // ---- helpers ----
 
   function setTokensFromStorage(): void {
+    if (!browser) return;
     try {
       const raw = localStorage.getItem('scanify:auth:tokens');
       if (raw) {
@@ -58,6 +61,7 @@ function createAuthStore() {
   }
 
   function persistTokens(pair: TokenPair | null): void {
+    if (!browser) return;
     if (pair) {
       localStorage.setItem('scanify:auth:tokens', JSON.stringify(pair));
     } else {

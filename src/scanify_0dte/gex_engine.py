@@ -377,7 +377,7 @@ class GEXEngine:
         # Group quotes by strike
         strike_map: Dict[float, Dict[str, OptionQuote]] = defaultdict(dict)
         for quote in chain.quotes:
-            side_key = "call" if quote.side == OptionSide.CALL else "put"
+            side_key = "call" if quote.option_type == OptionSide.CALL else "put"
             strike_map[quote.strike][side_key] = quote
 
         # Compute per-strike GEX
@@ -387,10 +387,10 @@ class GEXEngine:
             cq: Optional[OptionQuote] = data.get("call")
             pq: Optional[OptionQuote] = data.get("put")
 
-            call_iv = cq.iv if cq is not None else 0.0
-            put_iv = pq.iv if pq is not None else 0.0
-            call_oi = cq.oi if cq is not None else 0
-            put_oi = pq.oi if pq is not None else 0
+            call_iv = cq.implied_vol if cq is not None else 0.0
+            put_iv = pq.implied_vol if pq is not None else 0.0
+            call_oi = cq.open_interest if cq is not None else 0
+            put_oi = pq.open_interest if pq is not None else 0
             call_vol = cq.volume if cq is not None else 0
             put_vol = pq.volume if pq is not None else 0
 
@@ -586,10 +586,10 @@ class GEXEngine:
         put_oi_map: Dict[float, int] = defaultdict(int)
 
         for quote in chain.quotes:
-            if quote.side == OptionSide.CALL:
-                call_oi_map[quote.strike] += quote.oi
+            if quote.option_type == OptionSide.CALL:
+                call_oi_map[quote.strike] += quote.open_interest
             else:
-                put_oi_map[quote.strike] += quote.oi
+                put_oi_map[quote.strike] += quote.open_interest
 
         all_strikes = sorted(set(call_oi_map.keys()) | set(put_oi_map.keys()))
         if not all_strikes:

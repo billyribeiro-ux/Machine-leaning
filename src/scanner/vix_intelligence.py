@@ -25,8 +25,8 @@ from typing import Optional, Dict, List, Tuple, Any, Literal
 from collections import defaultdict, deque
 from enum import Enum
 
-from .base import BaseScanner, ScannerConfig, ScanContext
-from .models import ScanResult, ScanMode, SignalDirection, MarketData
+from .base import BaseScanner, ScannerConfig, ScanContext, MarketData
+from .models import ScanResult, ScanMode, SignalDirection
 from .advanced_models import (
     AdvancedScanResult,
     ScanCategory,

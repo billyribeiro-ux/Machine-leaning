@@ -147,7 +147,6 @@ from .stochastic import (
 
     # Monte Carlo
     MonteCarloEngine,
-    VarianceReduction,
 
     # Factory functions
     create_gbm,
@@ -172,8 +171,6 @@ from .derivatives import (
     # Numerical methods
     BinomialTree,
     FiniteDifference,
-    TreeMethod,
-    FDMethod,
 
     # Stochastic vol pricing
     HestonAnalytical,
@@ -190,7 +187,6 @@ from .derivatives import (
     # Enums and data classes
     OptionType,
     ExerciseStyle,
-    GreeksResult,
     PricingResult,
 
     # Factory functions
@@ -207,12 +203,6 @@ from .term_structure import (
     YieldCurve,
     NelsonSiegel,
     Svensson,
-    CurveInterpolation,
-
-    # Short-rate models
-    VasicekModel,
-    CIRModel,
-    HullWhiteModel,
 
     # Market models
     LIBORMarketModel,
@@ -221,16 +211,12 @@ from .term_structure import (
     InterestRateDerivatives,
 
     # Data classes
-    ForwardRate,
     SwapRate,
-    CapFloorPrice,
 
     # Factory functions
     create_yield_curve,
     create_vasicek,
-    create_cir_model,
     create_hull_white,
-    bootstrap_curve,
 )
 
 # =============================================================================
@@ -504,7 +490,6 @@ __all__ = [
     "VarianceGammaProcess",
     "FractionalBrownianMotion",
     "MonteCarloEngine",
-    "VarianceReduction",
     "create_gbm",
     "create_ou",
     "create_cir",
@@ -520,8 +505,6 @@ __all__ = [
     "Bachelier",
     "BinomialTree",
     "FiniteDifference",
-    "TreeMethod",
-    "FDMethod",
     "HestonAnalytical",
     "BarrierOption",
     "AsianOption",
@@ -530,7 +513,6 @@ __all__ = [
     "LocalVolatility",
     "OptionType",
     "ExerciseStyle",
-    "GreeksResult",
     "PricingResult",
     "price_european_option",
     "price_american_option",
@@ -540,20 +522,12 @@ __all__ = [
     "YieldCurve",
     "NelsonSiegel",
     "Svensson",
-    "CurveInterpolation",
-    "VasicekModel",
-    "CIRModel",
-    "HullWhiteModel",
     "LIBORMarketModel",
     "InterestRateDerivatives",
-    "ForwardRate",
     "SwapRate",
-    "CapFloorPrice",
     "create_yield_curve",
     "create_vasicek",
-    "create_cir_model",
     "create_hull_white",
-    "bootstrap_curve",
 
     # Credit Risk & VaR
     "ValueAtRisk",
