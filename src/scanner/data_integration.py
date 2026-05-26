@@ -243,9 +243,11 @@ class UniversalScannerDataProvider(BaseScannerDataProvider):
         self.feature_engineer = feature_engineer or FeatureEngineer()
         self.max_workers = max_workers
 
-        # Cache
+        # Cache with bounded size
         self._cache: Dict[str, ScannerDataPackage] = {}
         self._cache_timestamps: Dict[str, datetime] = {}
+        self._cache_lock = threading.Lock()
+        self._max_cache_entries = 10_000
 
     def get_data(
         self,
@@ -269,10 +271,12 @@ class UniversalScannerDataProvider(BaseScannerDataProvider):
         cache_key = f"{symbol}_{config.scanner_type.value}"
 
         # Check cache
-        if use_cache and cache_key in self._cache:
-            cache_time = self._cache_timestamps.get(cache_key)
-            if cache_time and (datetime.now() - cache_time).seconds < config.refresh_interval_seconds:
-                return self._cache[cache_key]
+        if use_cache:
+            with self._cache_lock:
+                if cache_key in self._cache:
+                    cache_time = self._cache_timestamps.get(cache_key)
+                    if cache_time and (datetime.now() - cache_time).seconds < config.refresh_interval_seconds:
+                        return self._cache[cache_key]
 
         # Initialize package
         package = ScannerDataPackage(
@@ -319,9 +323,14 @@ class UniversalScannerDataProvider(BaseScannerDataProvider):
             'data_points': len(package.ohlcv) if package.ohlcv is not None else 0
         }
 
-        # Cache
-        self._cache[cache_key] = package
-        self._cache_timestamps[cache_key] = datetime.now()
+        # Cache (bounded)
+        with self._cache_lock:
+            if len(self._cache) >= self._max_cache_entries:
+                oldest_key = min(self._cache_timestamps, key=self._cache_timestamps.get)
+                self._cache.pop(oldest_key, None)
+                self._cache_timestamps.pop(oldest_key, None)
+            self._cache[cache_key] = package
+            self._cache_timestamps[cache_key] = datetime.now()
 
         return package
 

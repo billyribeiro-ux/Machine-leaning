@@ -558,7 +558,7 @@ class ScanifyStreamManager:
         try:
             await conn.websocket.close(code=1000, reason="Disconnected")
         except Exception:
-            pass
+            logger.debug("WebSocket already closed during disconnect: conn=%s", conn.connection_id)
 
         # Notify callbacks
         for cb in self._on_disconnect_callbacks:
@@ -602,6 +602,7 @@ class ScanifyStreamManager:
             asyncio.create_task(self.disconnect(conn))
             return False
         except Exception:
+            logger.debug("Send failed for conn=%s, scheduling disconnect", conn.connection_id)
             asyncio.create_task(self.disconnect(conn))
             return False
 
@@ -1048,7 +1049,7 @@ class ScanifyStreamManager:
                     "data": {"reason": "server_shutdown"},
                 })
             except Exception:
-                pass
+                logger.debug("Failed to send goodbye to conn=%s during shutdown", conn.connection_id)
             await self.disconnect(conn)
 
         logger.info("ScanifyStreamManager shutdown complete")
@@ -1136,7 +1137,7 @@ async def scanify_websocket_endpoint(
         try:
             await websocket.close(code=1011, reason="Internal error")
         except Exception:
-            pass
+            logger.debug("Failed to close WebSocket after connect error")
         return
 
     try:
