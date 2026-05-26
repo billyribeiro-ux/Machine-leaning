@@ -546,7 +546,7 @@ class SoftActorCritic:
 
     def load(self, path: str):
         """Load agent state."""
-        state = torch.load(path, map_location=self.device)
+        state = torch.load(path, map_location=self.device, weights_only=True)
 
         self.actor.load_state_dict(state["actor"])
         self.critic.load_state_dict(state["critic"])
@@ -795,7 +795,7 @@ class PPOAgent:
 
     def load(self, path: str):
         """Load agent state."""
-        state = torch.load(path, map_location=self.device)
+        state = torch.load(path, map_location=self.device, weights_only=True)
         self.actor.load_state_dict(state["actor"])
         self.critic.load_state_dict(state["critic"])
         self.optimizer.load_state_dict(state["optimizer"])

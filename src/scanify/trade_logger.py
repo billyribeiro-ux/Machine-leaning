@@ -12,7 +12,7 @@ Implements:
 """
 
 from dataclasses import dataclass, field, asdict
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import Dict, List, Optional, Tuple
 import json
 import math
@@ -781,7 +781,7 @@ class CalibrationEngine:
             notes.append(f"REGIME CHANGE: {regime}")
 
         result = CalibrationResult(
-            timestamp=datetime.utcnow().isoformat(),
+            timestamp=datetime.now(timezone.utc).isoformat(),
             updated_weights=new_weights,
             updated_thresholds=new_thresholds,
             updated_profit_targets=new_targets,

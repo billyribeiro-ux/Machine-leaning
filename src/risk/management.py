@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from typing import Optional, List, Dict, Tuple, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 import logging
 from scipy import stats, optimize
@@ -50,13 +50,16 @@ class PositionRisk:
     @property
     def risk_level(self) -> RiskLevel:
         """Classify position risk."""
-        if self.var_95 / self.current_value > 0.1:
+        if self.current_value == 0:
             return RiskLevel.EXTREME
-        elif self.var_95 / self.current_value > 0.05:
+        ratio = self.var_95 / self.current_value
+        if ratio > 0.1:
+            return RiskLevel.EXTREME
+        elif ratio > 0.05:
             return RiskLevel.HIGH
-        elif self.var_95 / self.current_value > 0.02:
+        elif ratio > 0.02:
             return RiskLevel.MODERATE
-        elif self.var_95 / self.current_value > 0.01:
+        elif ratio > 0.01:
             return RiskLevel.LOW
         return RiskLevel.MINIMAL
 
@@ -212,8 +215,8 @@ class VaRCalculator:
     - Monte Carlo simulation
     """
 
-    def __init__(self, confidence_levels: List[float] = [0.95, 0.99]):
-        self.confidence_levels = confidence_levels
+    def __init__(self, confidence_levels: Optional[List[float]] = None):
+        self.confidence_levels = confidence_levels or [0.95, 0.99]
 
     def historical_var(
         self,
@@ -456,12 +459,12 @@ class DrawdownMonitor:
         current_dd = (self._peak - portfolio_value) / self._peak if self._peak > 0 else 0
 
         # Record history
-        self._drawdown_history.append((datetime.utcnow(), current_dd))
+        self._drawdown_history.append((datetime.now(timezone.utc), current_dd))
 
         # Check if entering drawdown
         if current_dd >= self.warning_threshold and not self._in_drawdown:
             self._in_drawdown = True
-            self._drawdown_start = datetime.utcnow()
+            self._drawdown_start = datetime.now(timezone.utc)
 
         # Determine risk multiplier
         if current_dd >= self.max_drawdown:
@@ -485,7 +488,7 @@ class DrawdownMonitor:
             'peak': self._peak,
             'trough': self._trough,
             'in_drawdown': self._in_drawdown,
-            'drawdown_duration': (datetime.utcnow() - self._drawdown_start).days if self._drawdown_start else 0,
+            'drawdown_duration': (datetime.now(timezone.utc) - self._drawdown_start).days if self._drawdown_start else 0,
             'risk_multiplier': risk_mult,
             'action': action,
             'breached_max': current_dd >= self.max_drawdown

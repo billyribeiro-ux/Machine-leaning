@@ -2029,7 +2029,7 @@ class ReportScheduler:
         # JSON output
         json_path = os.path.join(self._output_dir, f"{base_name}.json")
         json_content = json.dumps(report, indent=2, default=str)
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._write_file, json_path, json_content)
 
         # Text output

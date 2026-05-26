@@ -8,7 +8,7 @@
   let errorMessage = $state('');
 
   let passwordsMatch = $derived(password === confirmPassword || confirmPassword === '');
-  let passwordStrength = $derived(() => {
+  let passwordStrength = $derived.by(() => {
     if (password.length === 0) return 0;
     let score = 0;
     if (password.length >= 8) score++;
@@ -18,8 +18,8 @@
     return score;
   });
 
-  let strengthLabel = $derived(() => {
-    const s = passwordStrength();
+  let strengthLabel = $derived.by(() => {
+    const s = passwordStrength;
     if (s === 0) return '';
     if (s === 1) return 'Weak';
     if (s === 2) return 'Fair';
@@ -27,8 +27,8 @@
     return 'Strong';
   });
 
-  let strengthColor = $derived(() => {
-    const s = passwordStrength();
+  let strengthColor = $derived.by(() => {
+    const s = passwordStrength;
     if (s <= 1) return 'var(--bearish)';
     if (s === 2) return 'var(--warning)';
     if (s === 3) return 'var(--bullish-dim)';
@@ -147,11 +147,11 @@
                 {#each Array(4) as _, i}
                   <div
                     class="h-1 flex-1 rounded-full transition-all"
-                    style="background: {i < passwordStrength() ? strengthColor() : 'var(--bg-overlay)'};"
+                    style="background: {i < passwordStrength ? strengthColor : 'var(--bg-overlay)'};"
                   ></div>
                 {/each}
               </div>
-              <p class="text-xs" style="color: {strengthColor()};">{strengthLabel()}</p>
+              <p class="text-xs" style="color: {strengthColor};">{strengthLabel}</p>
             </div>
           {/if}
         </div>

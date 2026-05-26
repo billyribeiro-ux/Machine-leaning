@@ -42,18 +42,18 @@
 
 	let totalHeight = $derived(rows.length * rowHeight);
 
-	let visibleStart = $derived(() => {
+	let visibleStart = $derived.by(() => {
 		return Math.max(0, Math.floor(scrollTop / rowHeight) - overscan);
 	});
 
-	let visibleEnd = $derived(() => {
+	let visibleEnd = $derived.by(() => {
 		const maxVisible = Math.ceil(containerHeight / rowHeight) + overscan * 2;
-		return Math.min(rows.length, visibleStart() + maxVisible);
+		return Math.min(rows.length, visibleStart + maxVisible);
 	});
 
-	let visibleRows = $derived(() => {
-		const start = visibleStart();
-		const end = visibleEnd();
+	let visibleRows = $derived.by(() => {
+		const start = visibleStart;
+		const end = visibleEnd;
 		const result: { row: Record<string, unknown>; index: number; top: number }[] = [];
 		for (let i = start; i < end; i++) {
 			result.push({
@@ -182,7 +182,7 @@
 			class="relative"
 			style="height: {totalHeight}px; min-width: {totalWidth}px;"
 		>
-			{#each visibleRows() as { row, index, top } (index)}
+			{#each visibleRows as { row, index, top } (index)}
 				<div
 					class="absolute left-0 right-0 flex items-center border-b border-[oklch(0.18_0.005_270)] transition-colors duration-75
 						{index % 2 === 0 ? 'bg-[oklch(0.13_0.005_270)]' : 'bg-[oklch(0.14_0.003_270)]'}

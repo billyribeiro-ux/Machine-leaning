@@ -19,14 +19,14 @@ import numpy as np
 import math
 import uuid
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from typing import Optional, Dict, List, Tuple, Any, Literal
 from collections import defaultdict, deque
 from enum import Enum
 
-from .base import BaseScanner, ScannerConfig, ScanContext
-from .models import ScanResult, ScanMode, SignalDirection, MarketData
+from .base import BaseScanner, ScannerConfig, ScanContext, MarketData
+from .models import ScanResult, ScanMode, SignalDirection
 from .advanced_models import (
     AdvancedScanResult,
     ScanCategory,
@@ -127,7 +127,7 @@ class VIXOptionContract:
     @property
     def days_to_expiry(self) -> int:
         """Calendar days until expiration."""
-        return max(0, (self.expiration - datetime.utcnow()).days)
+        return max(0, (self.expiration - datetime.now(timezone.utc)).days)
 
 
 @dataclass
@@ -177,7 +177,7 @@ class VIXFullChain:
     """Complete VIX options chain across all expirations."""
     chains: List[VIXOptionsChain] = field(default_factory=list)
     vix_spot: float = 0.0
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def all_contracts(self) -> List[VIXOptionContract]:
@@ -205,7 +205,7 @@ class VIXFuturesContract:
     @property
     def days_to_expiry(self) -> int:
         """Calendar days to expiration."""
-        return max(0, (self.expiration - datetime.utcnow()).days)
+        return max(0, (self.expiration - datetime.now(timezone.utc)).days)
 
 
 @dataclass
@@ -213,7 +213,7 @@ class VIXFuturesCurve:
     """VIX futures term structure."""
     contracts: List[VIXFuturesContract] = field(default_factory=list)
     vix_spot: float = 0.0
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def front_month(self) -> Optional[VIXFuturesContract]:
@@ -527,7 +527,7 @@ class VIXOptionsChainTracker:
             put_oi = exp_chain.total_put_oi
 
             # Classify expiration as weekly or monthly
-            dte = max(0, (exp_chain.expiration - datetime.utcnow()).days)
+            dte = max(0, (exp_chain.expiration - datetime.now(timezone.utc)).days)
             if dte <= 7:
                 label = f"weekly_{exp_chain.expiration.strftime('%Y%m%d')}"
             else:
@@ -1497,7 +1497,7 @@ class VIXPatternRecognition:
         if event_calendar is None:
             event_calendar = self._generate_default_event_calendar()
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         upcoming_events = [
             e for e in event_calendar
             if 0 < (e.get("date", now) - now).days <= 10
@@ -1797,7 +1797,7 @@ class VIXPatternRecognition:
         Returns:
             List of event dictionaries with name and date.
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         events: List[Dict[str, Any]] = []
 
         # Approximate common macro events -- institutions hedge 5-10 days prior
@@ -1930,7 +1930,7 @@ class VIXDeepIntelligenceScanner(BaseScanner[AdvancedScanResult]):
             return False
 
         # Check freshness
-        age = (datetime.utcnow() - result.timestamp).total_seconds()
+        age = (datetime.now(timezone.utc) - result.timestamp).total_seconds()
         if age > 3600:
             return False
 

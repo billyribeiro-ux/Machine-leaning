@@ -2434,7 +2434,7 @@ class TestDailyScoreCard:
         sc = DailyScoreCard(
             trading_date=date(2025, 5, 15),
             win_rate_by_scan_type={"DIRECTIONAL": 0.65, "PREMIUM_SELL": 0.72},
-            avg_pnl_by_category={"DIRECTIONAL": 125.0, "PREMIUM_SELL": 85.0},
+            avg_pnl_by_scan_type={"DIRECTIONAL": 125.0, "PREMIUM_SELL": 85.0},
         )
         assert sc.win_rate_by_scan_type["DIRECTIONAL"] == 0.65
-        assert sc.avg_pnl_by_category["PREMIUM_SELL"] == 85.0
+        assert sc.avg_pnl_by_scan_type["PREMIUM_SELL"] == 85.0

@@ -11,14 +11,16 @@ This module provides:
 - Complete trade analysis
 """
 
+import logging
+import json
+from collections import deque
+from dataclasses import dataclass, field
+from datetime import datetime, time, timedelta
+from enum import Enum
+from typing import Any, Callable, Dict, List, Optional, Tuple
+
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any, Callable
-from enum import Enum
-from datetime import datetime, time, timedelta
-from collections import deque
-import json
 
 
 class ScannerMode(Enum):
@@ -299,8 +301,8 @@ class ZeroDTEScanner:
         for callback in self.alert_callbacks:
             try:
                 callback(result)
-            except Exception as e:
-                print(f"Alert callback error: {e}")
+            except Exception:
+                logging.getLogger(__name__).exception("Alert callback error")
 
     def _is_valid_trading_time(self, dt: Optional[datetime] = None) -> Tuple[bool, str]:
         """Check if current time is valid for trading."""

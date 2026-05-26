@@ -41,7 +41,7 @@ import time as _time_mod
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -477,7 +477,7 @@ class MarketReplayEngine:
 
                 # Build snapshot and invoke callback
                 snapshot = self._build_snapshot(tick)
-                timestamp = tick_dt if tick_dt else datetime.utcnow()
+                timestamp = tick_dt if tick_dt else datetime.now(timezone.utc)
 
                 if asyncio.iscoroutinefunction(callback):
                     await callback(timestamp, snapshot)
@@ -1519,7 +1519,7 @@ class SessionRecorder:
     -------
     >>> recorder = SessionRecorder(output_dir="data/replay")
     >>> session_id = recorder.start_recording()
-    >>> recorder.record_snapshot(datetime.utcnow(), {"spx_price": 6000.0})
+    >>> recorder.record_snapshot(datetime.now(timezone.utc), {"spx_price": 6000.0})
     >>> path = recorder.stop_recording()
     """
 
@@ -1594,7 +1594,7 @@ class SessionRecorder:
 
         self._session_id = session_id or f"session_{uuid.uuid4().hex[:12]}"
         self._snapshots = []
-        self._recording_start = datetime.utcnow()
+        self._recording_start = datetime.now(timezone.utc)
         self._recording_end = None
         self._is_recording = True
 
@@ -1651,7 +1651,7 @@ class SessionRecorder:
         if not self._is_recording:
             raise RuntimeError("No active recording to stop.")
 
-        self._recording_end = datetime.utcnow()
+        self._recording_end = datetime.now(timezone.utc)
         self._is_recording = False
 
         # Determine output path

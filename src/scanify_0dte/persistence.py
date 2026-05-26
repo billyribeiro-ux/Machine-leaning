@@ -28,8 +28,9 @@ import logging
 import os
 import shutil
 import sqlite3
+import threading
 from contextlib import contextmanager
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Generator, Optional
 
@@ -328,6 +329,7 @@ class ScanifyDatabase:
         self.db_path = db_path
         self._ensure_directory()
         self._conn: Optional[sqlite3.Connection] = None
+        self._lock = threading.Lock()
         if auto_create:
             self.initialize()
 
@@ -344,17 +346,18 @@ class ScanifyDatabase:
 
     def _get_connection(self) -> sqlite3.Connection:
         """Return (and lazily create) the database connection."""
-        if self._conn is None:
-            self._conn = sqlite3.connect(
-                self.db_path,
-                detect_types=sqlite3.PARSE_DECLTYPES,
-                check_same_thread=False,
-            )
-            self._conn.row_factory = sqlite3.Row
-            self._conn.execute("PRAGMA journal_mode=WAL;")
-            self._conn.execute("PRAGMA foreign_keys=ON;")
-            self._conn.execute("PRAGMA busy_timeout=5000;")
-        return self._conn
+        with self._lock:
+            if self._conn is None:
+                self._conn = sqlite3.connect(
+                    self.db_path,
+                    detect_types=sqlite3.PARSE_DECLTYPES,
+                    check_same_thread=False,
+                )
+                self._conn.row_factory = sqlite3.Row
+                self._conn.execute("PRAGMA journal_mode=WAL;")
+                self._conn.execute("PRAGMA foreign_keys=ON;")
+                self._conn.execute("PRAGMA busy_timeout=5000;")
+            return self._conn
 
     @contextmanager
     def _cursor(self) -> Generator[sqlite3.Cursor, None, None]:
@@ -1049,7 +1052,7 @@ class ScanifyDatabase:
         Expected keys in *alert*: ``level``, ``message``.
         Optional keys: ``category``, ``timestamp``, ``data``.
         """
-        ts = alert.get("timestamp", datetime.utcnow().isoformat())
+        ts = alert.get("timestamp", datetime.now(timezone.utc).isoformat())
         if isinstance(ts, datetime):
             ts = ts.isoformat()
         alert_date = ts[:10]  # YYYY-MM-DD prefix
@@ -1478,7 +1481,7 @@ class DataExporter:
             "export_metadata": {
                 "start_date": start_str,
                 "end_date": end_str,
-                "export_timestamp": datetime.utcnow().isoformat(),
+                "export_timestamp": datetime.now(timezone.utc).isoformat(),
                 "trade_count": len(trades_data),
                 "signal_count": len(filtered_signals),
                 "metric_days": len(metrics),

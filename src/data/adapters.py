@@ -24,17 +24,21 @@ Each adapter normalizes data to a standard schema that all scanners can consume.
 Author: Revolution Alpha Engine
 """
 
-import numpy as np
-import pandas as pd
+import json
+import logging
+import warnings
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any, Union, Callable
 from datetime import datetime, timedelta
 from enum import Enum
-import json
-import warnings
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+import numpy as np
+import pandas as pd
 
 warnings.filterwarnings('ignore')
+
+logger = logging.getLogger(__name__)
 
 
 class DataVendor(Enum):
@@ -840,7 +844,7 @@ class UniversalDataManager:
                     if not df.empty:
                         return df
                 except Exception as e:
-                    print(f"Warning: {v.value} failed for {symbol}: {e}")
+                    logger.warning("%s failed for %s: %s", v.value, symbol, e)
                     continue
 
         return pd.DataFrame()
@@ -861,7 +865,7 @@ class UniversalDataManager:
                     df = self.adapters[v].get_trades(symbol, start_time, end_time)
                     if not df.empty:
                         return df
-                except:
+                except Exception:
                     continue
 
         return pd.DataFrame()
@@ -882,7 +886,7 @@ class UniversalDataManager:
                     df = self.adapters[v].get_quotes(symbol, start_time, end_time)
                     if not df.empty:
                         return df
-                except:
+                except Exception:
                     continue
 
         return pd.DataFrame()
@@ -902,7 +906,7 @@ class UniversalDataManager:
                     df = self.adapters[v].get_options_chain(symbol, expiration)
                     if not df.empty:
                         return df
-                except:
+                except Exception:
                     continue
 
         return pd.DataFrame()
@@ -956,7 +960,7 @@ class UniversalDataManager:
                     df['_source'] = vendor.value
                     all_data.append(df)
 
-            except:
+            except Exception:
                 continue
 
         if not all_data:

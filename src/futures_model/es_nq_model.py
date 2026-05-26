@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple, Any, Union
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 import logging
 
@@ -458,7 +458,7 @@ class OrderFlowAnalyzer:
             interpretation += " [DIVERGENCE DETECTED]"
 
         return OrderFlowData(
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             delta=delta,
             cumulative_delta=self.cumulative_delta,
             delta_divergence=delta_divergence,
@@ -680,7 +680,7 @@ class FuturesModel:
             symbol=self.symbol,
             direction=direction,
             confidence=confidence,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             session=session,
             entry_price=current_price,
             stop_loss=stop_loss,

@@ -3,6 +3,8 @@
 // Persisted to localStorage
 // ---------------------------------------------------------------------------
 
+import { browser } from '$app/environment';
+
 /** Position and size of a panel in the workspace grid. */
 export interface PanelConfig {
   /** Unique panel identifier. */
@@ -163,6 +165,7 @@ function createLayoutStore() {
   // ---- persistence helpers ----
 
   function persistLayout(): void {
+    if (!browser) return;
     try {
       const serialized = JSON.stringify({
         panels: [...panels.entries()],
@@ -178,6 +181,7 @@ function createLayoutStore() {
   }
 
   function persistPresets(): void {
+    if (!browser) return;
     try {
       localStorage.setItem(PRESETS_KEY, JSON.stringify(presets));
     } catch {
@@ -186,6 +190,7 @@ function createLayoutStore() {
   }
 
   function loadFromStorage(): void {
+    if (!browser) return;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {

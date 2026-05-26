@@ -14,15 +14,19 @@ Provides unified data access with caching and real-time support.
 Author: Revolution Alpha Engine
 """
 
-import numpy as np
-import pandas as pd
+import logging
+import threading
+from abc import ABC, abstractmethod
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Tuple, Any, Union, Callable
 from datetime import datetime, timedelta
 from enum import Enum
-from abc import ABC, abstractmethod
-import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+
+import numpy as np
+import pandas as pd
+
+logger = logging.getLogger(__name__)
 import warnings
 
 warnings.filterwarnings('ignore')
@@ -44,6 +48,8 @@ try:
 except ImportError:
     UniversalDataManager = None
     MLDataPipeline = None
+    FeatureEngineer = None
+    FeatureConfig = None
 
 
 class ScannerType(Enum):
@@ -237,9 +243,11 @@ class UniversalScannerDataProvider(BaseScannerDataProvider):
         self.feature_engineer = feature_engineer or FeatureEngineer()
         self.max_workers = max_workers
 
-        # Cache
+        # Cache with bounded size
         self._cache: Dict[str, ScannerDataPackage] = {}
         self._cache_timestamps: Dict[str, datetime] = {}
+        self._cache_lock = threading.Lock()
+        self._max_cache_entries = 10_000
 
     def get_data(
         self,
@@ -263,10 +271,12 @@ class UniversalScannerDataProvider(BaseScannerDataProvider):
         cache_key = f"{symbol}_{config.scanner_type.value}"
 
         # Check cache
-        if use_cache and cache_key in self._cache:
-            cache_time = self._cache_timestamps.get(cache_key)
-            if cache_time and (datetime.now() - cache_time).seconds < config.refresh_interval_seconds:
-                return self._cache[cache_key]
+        if use_cache:
+            with self._cache_lock:
+                if cache_key in self._cache:
+                    cache_time = self._cache_timestamps.get(cache_key)
+                    if cache_time and (datetime.now() - cache_time).seconds < config.refresh_interval_seconds:
+                        return self._cache[cache_key]
 
         # Initialize package
         package = ScannerDataPackage(
@@ -313,9 +323,14 @@ class UniversalScannerDataProvider(BaseScannerDataProvider):
             'data_points': len(package.ohlcv) if package.ohlcv is not None else 0
         }
 
-        # Cache
-        self._cache[cache_key] = package
-        self._cache_timestamps[cache_key] = datetime.now()
+        # Cache (bounded)
+        with self._cache_lock:
+            if len(self._cache) >= self._max_cache_entries:
+                oldest_key = min(self._cache_timestamps, key=self._cache_timestamps.get)
+                self._cache.pop(oldest_key, None)
+                self._cache_timestamps.pop(oldest_key, None)
+            self._cache[cache_key] = package
+            self._cache_timestamps[cache_key] = datetime.now()
 
         return package
 
@@ -351,7 +366,7 @@ class UniversalScannerDataProvider(BaseScannerDataProvider):
                 try:
                     results[symbol] = future.result()
                 except Exception as e:
-                    print(f"Error fetching {symbol}: {e}")
+                    logger.warning("Error fetching %s: %s", symbol, e)
                     results[symbol] = ScannerDataPackage(
                         symbol=symbol,
                         scanner_type=config.scanner_type,

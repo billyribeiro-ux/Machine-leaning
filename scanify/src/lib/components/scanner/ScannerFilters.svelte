@@ -33,7 +33,7 @@
 		{ value: 'bearish', label: 'Bearish' },
 	];
 
-	let activeFilterCount = $derived(() => {
+	let activeFilterCount = $derived.by(() => {
 		let count = 0;
 		if (filters.category !== '') count++;
 		if (filters.direction !== 'all') count++;
@@ -167,7 +167,7 @@
 	<div class="flex-1"></div>
 
 	<!-- Clear all -->
-	{#if activeFilterCount() > 0}
+	{#if activeFilterCount > 0}
 		<button
 			type="button"
 			class="flex items-center gap-1.5 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-all duration-150 hover:border-[var(--border-strong)] hover:text-[var(--text-primary)]"
@@ -179,7 +179,7 @@
 			</svg>
 			Clear
 			<span class="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[var(--accent-bg)] text-[10px] font-semibold text-[var(--accent)]">
-				{activeFilterCount()}
+				{activeFilterCount}
 			</span>
 		</button>
 	{/if}

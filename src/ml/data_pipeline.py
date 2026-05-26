@@ -752,8 +752,8 @@ class DataStreamManager:
                         for callback in self._callbacks:
                             callback(symbol, data)
 
-                except Exception as e:
-                    print(f"Stream error for {symbol}: {e}")
+                except Exception:
+                    logging.getLogger(__name__).exception("Stream error for %s", symbol)
 
             time.sleep(self.config.update_interval_ms / 1000)
 

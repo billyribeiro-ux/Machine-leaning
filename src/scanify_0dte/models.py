@@ -14,12 +14,13 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field as dc_field
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from enum import Enum
 from typing import Any, Optional
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     field_validator,
     model_validator,
@@ -55,6 +56,8 @@ class TradeDirection(str, Enum):
     BULL = "BULL"
     BEAR = "BEAR"
     NEUTRAL = "NEUTRAL"
+    LONG_CALL = "LONG_CALL"
+    LONG_PUT = "LONG_PUT"
 
 
 class ExitReason(str, Enum):
@@ -68,6 +71,8 @@ class ExitReason(str, Enum):
     VIX_SPIKE = "VIX_SPIKE"
     MANUAL = "MANUAL"
     BREAK_EVEN = "BREAK_EVEN"
+    CIRCUIT_BREAKER = "CIRCUIT_BREAKER"
+    EXPIRATION = "EXPIRATION"
 
 
 class TimeZoneType(str, Enum):
@@ -161,7 +166,7 @@ class OptionQuote(BaseModel):
     vanna: float = Field(0.0, description="dDelta/dVol cross-greek")
     speed: float = Field(0.0, description="dGamma/dSpot third-order greek")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Quote capture time"
+        default_factory=lambda: datetime.now(timezone.utc), description="Quote capture time"
     )
 
     @field_validator("ask")
@@ -200,7 +205,7 @@ class OptionsChain(BaseModel):
         default_factory=list, description="All option quotes for this expiry"
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Snapshot capture time"
+        default_factory=lambda: datetime.now(timezone.utc), description="Snapshot capture time"
     )
 
     @property
@@ -253,7 +258,7 @@ class MarketInternals(BaseModel):
         description="ES futures cumulative delta (buys minus sells) on the day",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Capture time"
+        default_factory=lambda: datetime.now(timezone.utc), description="Capture time"
     )
 
     @property
@@ -299,7 +304,7 @@ class CrossAssetData(BaseModel):
     )
     es_volume: int = Field(..., ge=0, description="ES session volume")
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Capture time"
+        default_factory=lambda: datetime.now(timezone.utc), description="Capture time"
     )
 
     @property
@@ -335,7 +340,7 @@ class ESOrderBook(BaseModel):
         description="(bid_total - ask_total) / (bid_total + ask_total); >0 is bid-heavy",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Capture time"
+        default_factory=lambda: datetime.now(timezone.utc), description="Capture time"
     )
 
     @field_validator("imbalance_ratio")
@@ -428,7 +433,7 @@ class GEXProfile(BaseModel):
     """
 
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Profile computation time"
+        default_factory=lambda: datetime.now(timezone.utc), description="Profile computation time"
     )
     strikes: list[StrikeGEX] = Field(
         default_factory=list, description="Per-strike GEX breakdown"
@@ -515,7 +520,7 @@ class GEXSignal(BaseModel):
         ..., description="Category of the GEX signal"
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Signal generation time"
+        default_factory=lambda: datetime.now(timezone.utc), description="Signal generation time"
     )
     direction: TradeDirection = Field(
         ..., description="Implied directional bias"
@@ -616,7 +621,7 @@ class DirectionScore(BaseModel):
         description="Confidence in the signal (0-100)",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Scoring time"
+        default_factory=lambda: datetime.now(timezone.utc), description="Scoring time"
     )
 
     @field_validator("confidence")
@@ -726,7 +731,7 @@ class ScanSignal(BaseModel):
         ..., description="Detected session regime"
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow, description="Signal generation time"
+        default_factory=lambda: datetime.now(timezone.utc), description="Signal generation time"
     )
     metadata: dict[str, Any] = Field(
         default_factory=dict,
@@ -1038,7 +1043,8 @@ class TradeLog(BaseModel):
 class DailyScoreCard(BaseModel):
     """End-of-day performance summary sliced across multiple dimensions."""
 
-    trading_date: date = Field(..., description="Trading date")
+    trading_date: date = Field(..., description="Trading date", alias="date")
+    total_trades: int = Field(0, description="Total trades for the day")
     win_rate_by_scan_type: dict[str, float] = Field(
         default_factory=dict,
         description="Win rate keyed by ScanType value",
@@ -1051,22 +1057,36 @@ class DailyScoreCard(BaseModel):
         default_factory=dict,
         description="Win rate keyed by SessionType value",
     )
-    win_rate_by_vix_regime: dict[str, float] = Field(
+    win_rate_by_vix1d_regime: dict[str, float] = Field(
         default_factory=dict,
-        description="Win rate keyed by VIX regime label",
+        description="Win rate keyed by VIX1D regime label",
     )
-    avg_pnl_by_category: dict[str, float] = Field(
+    avg_pnl_by_scan_type: dict[str, float] = Field(
         default_factory=dict,
-        description="Average PnL ($) keyed by category label",
+        description="Average PnL ($) keyed by ScanType value",
     )
-    sharpe_ratio_by_scan: dict[str, float] = Field(
+    avg_pnl_by_time_zone: dict[str, float] = Field(
+        default_factory=dict,
+        description="Average PnL ($) keyed by TimeZoneType value",
+    )
+    avg_pnl_by_session_type: dict[str, float] = Field(
+        default_factory=dict,
+        description="Average PnL ($) keyed by SessionType value",
+    )
+    avg_pnl_by_vix1d_regime: dict[str, float] = Field(
+        default_factory=dict,
+        description="Average PnL ($) keyed by VIX1D regime label",
+    )
+    sharpe_by_scan_type: dict[str, float] = Field(
         default_factory=dict,
         description="Intraday Sharpe ratio keyed by ScanType value",
     )
-    max_drawdown_by_scan: dict[str, float] = Field(
+    max_drawdown_by_scan_type: dict[str, float] = Field(
         default_factory=dict,
         description="Maximum drawdown ($) keyed by ScanType value",
     )
+
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class FactorWeights(BaseModel):
@@ -1370,7 +1390,7 @@ class SessionSetup(BaseModel):
         description="Free-form pre-market risk commentary",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=lambda: datetime.now(timezone.utc),
         description="Time this setup was generated",
     )
 

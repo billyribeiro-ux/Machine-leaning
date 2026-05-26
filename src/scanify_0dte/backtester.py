@@ -508,7 +508,7 @@ class BacktestEngine:
         for trading_day in in_sample_days:
             day_trades = self.simulate_day(trading_day, scan_types)
             day_pnl = sum(
-                getattr(t, "realized_pnl", 0.0) for t in day_trades
+                getattr(t, "pnl_dollars", 0.0) or 0.0 for t in day_trades
             )
             self.daily_pnl[trading_day] = day_pnl
             self.trades.extend(day_trades)
@@ -525,7 +525,7 @@ class BacktestEngine:
         for trading_day in holdout_days:
             day_trades = self.simulate_day(trading_day, scan_types)
             day_pnl = sum(
-                getattr(t, "realized_pnl", 0.0) for t in day_trades
+                getattr(t, "pnl_dollars", 0.0) or 0.0 for t in day_trades
             )
             self.daily_pnl[trading_day] = day_pnl
             holdout_trades.extend(day_trades)
@@ -546,9 +546,9 @@ class BacktestEngine:
             ]
             temp_eq = holdout_equity_start
             for t in holdout_trades:
-                temp_eq += getattr(t, "realized_pnl", 0.0)
+                temp_eq += getattr(t, "pnl_dollars", 0.0) or 0.0
                 holdout_equity_curve.append((
-                    getattr(t, "exit_time", datetime.now()),
+                    getattr(t, "timestamp_exit", datetime.now()),
                     temp_eq,
                 ))
             holdout_metrics = self.compute_metrics(
@@ -676,7 +676,7 @@ class BacktestEngine:
                 day_trades.append(trade_log)
                 self.trade_logger.log_trade(trade_log)
 
-                realized = getattr(trade_log, "realized_pnl", 0.0)
+                realized = getattr(trade_log, "pnl_dollars", 0.0) or 0.0
                 if realized < 0:
                     self._daily_loss_accumulated += abs(realized)
 
@@ -695,8 +695,7 @@ class BacktestEngine:
                 for pos in list(self._active_positions):
                     trade_log = self._force_close_position(
                         pos, chain_snapshot, current_minute,
-                        ExitReason.CIRCUIT_BREAKER if hasattr(ExitReason, "CIRCUIT_BREAKER")
-                        else ExitReason.STOP_LOSS,
+                        ExitReason.CIRCUIT_BREAKER,
                         is_high_vol,
                     )
                     day_trades.append(trade_log)
@@ -767,8 +766,7 @@ class BacktestEngine:
             for pos in list(self._active_positions):
                 trade_log = self._force_close_position(
                     pos, eod_chain, market_close_dt,
-                    ExitReason.TIME_STOP if hasattr(ExitReason, "TIME_STOP")
-                    else ExitReason.EXPIRATION,
+                    ExitReason.TIME_STOP,
                     is_high_vol=False,
                 )
                 day_trades.append(trade_log)
@@ -778,7 +776,7 @@ class BacktestEngine:
             "Day %s complete: %d trades, P&L=$%.2f",
             dt,
             len(day_trades),
-            sum(getattr(t, "realized_pnl", 0.0) for t in day_trades),
+            sum(getattr(t, "pnl_dollars", 0.0) or 0.0 for t in day_trades),
         )
 
         return day_trades
@@ -1103,7 +1101,7 @@ class BacktestEngine:
 
         # --- Extract PnL array ---
         pnls = np.array([
-            getattr(t, "realized_pnl", 0.0) for t in trades
+            getattr(t, "pnl_dollars", 0.0) or 0.0 for t in trades
         ], dtype=np.float64)
 
         # --- Basic counts ---
@@ -1158,10 +1156,10 @@ class BacktestEngine:
         # --- Average holding time ---
         holding_times: list[float] = []
         for t in trades:
-            entry_time = getattr(t, "entry_time", None)
-            exit_time = getattr(t, "exit_time", None)
-            if entry_time is not None and exit_time is not None:
-                delta = (exit_time - entry_time).total_seconds() / 60.0
+            t_entry = getattr(t, "timestamp_entry", None)
+            t_exit = getattr(t, "timestamp_exit", None)
+            if t_entry is not None and t_exit is not None:
+                delta = (t_exit - t_entry).total_seconds() / 60.0
                 holding_times.append(delta)
         avg_holding_time = (
             float(np.mean(holding_times)) if holding_times else 0.0
@@ -1359,14 +1357,14 @@ class BacktestEngine:
             }
 
         scanner_pnl = sum(
-            getattr(t, "realized_pnl", 0.0) for t in trades
+            getattr(t, "pnl_dollars", 0.0) or 0.0 for t in trades
         )
 
         # Identify unique trading days from trades
         trading_days = sorted(set(
-            getattr(t, "entry_time", datetime.now()).date()
+            getattr(t, "timestamp_entry", datetime.now()).date()
             for t in trades
-            if getattr(t, "entry_time", None) is not None
+            if getattr(t, "timestamp_entry", None) is not None
         ))
 
         # --- Benchmark 1: Buy 10-delta OTM call daily ---
@@ -1400,9 +1398,9 @@ class BacktestEngine:
         scanner_daily_pnls = []
         day_pnl_map: dict[date, float] = defaultdict(float)
         for t in trades:
-            entry_dt = getattr(t, "entry_time", None)
+            entry_dt = getattr(t, "timestamp_entry", None)
             if entry_dt is not None:
-                day_pnl_map[entry_dt.date()] += getattr(t, "realized_pnl", 0.0)
+                day_pnl_map[entry_dt.date()] += getattr(t, "pnl_dollars", 0.0) or 0.0
         scanner_daily_pnls = [day_pnl_map[d] for d in sorted(day_pnl_map)]
         scanner_sharpe = self._sharpe_from_pnls(scanner_daily_pnls)
 
@@ -1484,7 +1482,7 @@ class BacktestEngine:
         }
 
         base_pnl = sum(
-            getattr(t, "realized_pnl", 0.0) for t in trades
+            getattr(t, "pnl_dollars", 0.0) or 0.0 for t in trades
         )
 
         results: dict[str, dict] = {}
@@ -1496,7 +1494,7 @@ class BacktestEngine:
             by_scan_type: dict[str, float] = defaultdict(float)
 
             for t in trades:
-                original_pnl = getattr(t, "realized_pnl", 0.0)
+                original_pnl = getattr(t, "pnl_dollars", 0.0) or 0.0
                 entry_price = getattr(t, "entry_price", 0.0)
                 n_contracts = getattr(t, "quantity", 1)
 
@@ -2010,22 +2008,58 @@ class BacktestEngine:
         commissions = self.config.commission_per_contract * quantity * 2
         realized_pnl = (pnl_per_contract * quantity) - commissions
 
-        # Build TradeLog -- use available attributes
+        # Compute hold time
+        pos_entry_time = pos.get("entry_time", current_time)
+        pos_exit_time = pos.get("exit_time", current_time)
+        hold_minutes = (pos_exit_time - pos_entry_time).total_seconds() / 60.0
+
+        # Compute max gain/loss during trade from watermarks
+        if is_buy:
+            max_gain = (pos.get("high_water_mark", entry_price) - entry_price) * _SPX_MULTIPLIER * quantity
+            max_loss = (pos.get("low_water_mark", entry_price) - entry_price) * _SPX_MULTIPLIER * quantity
+        else:
+            max_gain = (entry_price - pos.get("low_water_mark", entry_price)) * _SPX_MULTIPLIER * quantity
+            max_loss = (entry_price - pos.get("high_water_mark", entry_price)) * _SPX_MULTIPLIER * quantity
+
+        # Compute pnl_percent
+        pnl_percent = (realized_pnl / (entry_price * _SPX_MULTIPLIER * quantity) * 100.0) if entry_price > 0 and quantity > 0 else 0.0
+
+        # Extract signal for market context fields
+        signal = pos.get("signal")
+
+        # Build TradeLog -- use correct field names matching the model
         trade_log = TradeLog(
-            entry_time=pos.get("entry_time", current_time),
-            exit_time=pos.get("exit_time", current_time),
+            timestamp_entry=pos_entry_time,
+            timestamp_exit=pos_exit_time,
             scan_type=pos.get("scan_type"),
+            direction=getattr(signal, "direction", None) if signal else "NEUTRAL",
             session_type=pos.get("session_type"),
             time_zone=pos.get("time_zone"),
             strike=pos.get("strike", 0.0),
             option_type=pos.get("option_type", "CALL"),
-            is_buy=is_buy,
             entry_price=entry_price,
             exit_price=exit_price,
-            quantity=quantity,
-            realized_pnl=realized_pnl,
-            commissions=commissions,
+            pnl_dollars=realized_pnl,
+            pnl_percent=pnl_percent,
+            hold_time_minutes=hold_minutes,
+            max_gain_during_trade=max(max_gain, 0.0),
+            max_loss_during_trade=min(max_loss, 0.0),
             exit_reason=pos.get("exit_reason"),
+            spx_at_entry=getattr(signal, "entry_price", 0.0) if signal else 0.0,
+            vix1d_at_entry=0.0,
+            vix_at_entry=0.0,
+            expected_move_1sigma=0.0,
+            composite_direction_score=getattr(getattr(signal, "direction_score", None), "total_score", 0.0) if signal else 0.0,
+            net_gex_at_entry=0.0,
+            gamma_flip_at_entry=1.0,
+            delta_at_entry=0.0,
+            gamma_at_entry=0.0,
+            theta_at_entry=0.0,
+            iv_at_entry=0.0,
+            tick_10min_avg=0.0,
+            trin_at_entry=1.0,
+            ad_ratio_at_entry=1.0,
+            cumulative_delta_es=0.0,
         )
 
         return trade_log
@@ -2367,7 +2401,7 @@ class BacktestEngine:
             }
 
         pnls = np.array([
-            getattr(t, "realized_pnl", 0.0) for t in trades
+            getattr(t, "pnl_dollars", 0.0) or 0.0 for t in trades
         ], dtype=np.float64)
 
         wins = pnls[pnls > 0]
@@ -2854,7 +2888,7 @@ class BacktestVisualizer:
                 "kurtosis": 0.0,
             }
 
-        pnls = [getattr(t, "realized_pnl", 0.0) for t in trades]
+        pnls = [getattr(t, "pnl_dollars", 0.0) or 0.0 for t in trades]
         arr = np.array(pnls, dtype=np.float64)
 
         # Compute histogram with auto-binning
@@ -2910,7 +2944,7 @@ class BacktestVisualizer:
         zone_data: dict[str, list[float]] = defaultdict(list)
         for t in trades:
             zone = str(getattr(t, "time_zone", "UNKNOWN"))
-            pnl = getattr(t, "realized_pnl", 0.0)
+            pnl = getattr(t, "pnl_dollars", 0.0) or 0.0
             zone_data[zone].append(pnl)
 
         zones = sorted(zone_data.keys())
@@ -2972,7 +3006,7 @@ class BacktestVisualizer:
                 "overall_win_rate": 0.0,
             }
 
-        pnls = [getattr(t, "realized_pnl", 0.0) for t in trades]
+        pnls = [getattr(t, "pnl_dollars", 0.0) or 0.0 for t in trades]
         wins = [1.0 if p > 0 else 0.0 for p in pnls]
 
         overall_win_rate = sum(wins) / len(wins) if wins else 0.0

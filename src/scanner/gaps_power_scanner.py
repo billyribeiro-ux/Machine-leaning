@@ -22,7 +22,7 @@ import math
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -2416,7 +2416,7 @@ class GapsPowerScanner(BaseScanner[AdvancedScanResult]):
             scan_id=str(uuid.uuid4()),
             scan_name=f"GapsPower:{scan_name}",
             category=ScanCategory.PRICE_ACTION,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             symbol=symbol,
             signal_direction=direction,
             signal_strength=round(signal_strength, 4),
@@ -2522,7 +2522,7 @@ class GapsPowerScanner(BaseScanner[AdvancedScanResult]):
             scan_id=str(uuid.uuid4()),
             scan_name="GapsPower:MagnetZone",
             category=ScanCategory.PRICE_ACTION,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             symbol=symbol,
             signal_direction=direction,
             signal_strength=round(signal_strength, 4),

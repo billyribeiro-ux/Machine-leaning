@@ -33,7 +33,7 @@ import math
 import uuid
 import logging
 import numpy as np
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field
 from typing import Optional, Dict, List, Tuple, Any, Literal
 from collections import deque, defaultdict
@@ -558,7 +558,7 @@ class SkewSurfaceAnalyzer:
         tenors: List[int] = []
 
         for expiry, contracts in sorted(by_expiry.items()):
-            tenor_days = max(1, (expiry - datetime.utcnow()).days)
+            tenor_days = max(1, (expiry - datetime.now(timezone.utc)).days)
             t_years = tenor_days / 365.0
             tenors.append(tenor_days)
 
@@ -2538,7 +2538,7 @@ class SkewIntelligenceScanner(BaseScanner[AdvancedScanResult]):
                         symbol=rc.get("symbol", symbol),
                         underlying=symbol,
                         strike=rc.get("strike", 0.0),
-                        expiration=rc.get("expiration", datetime.utcnow()),
+                        expiration=rc.get("expiration", datetime.now(timezone.utc)),
                         option_type=rc.get("option_type", "CALL"),
                         bid=rc.get("bid", 0.0),
                         ask=rc.get("ask", 0.0),

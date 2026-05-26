@@ -3,7 +3,7 @@ Tests for scanner data models.
 """
 
 import pytest
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from src.scanner.models import (
     ScanMode,
@@ -38,7 +38,7 @@ class TestScanResult:
             scanner_type="test",
             direction=SignalDirection.LONG,
             confidence=75.5,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
         )
 
         assert result.symbol == "AAPL"
@@ -139,7 +139,7 @@ class TestOptionsScanResult:
 
     def test_options_result_creation(self):
         """Test options scan result creation."""
-        expiration = datetime.utcnow() + timedelta(days=30)
+        expiration = datetime.now(timezone.utc) + timedelta(days=30)
 
         result = OptionsScanResult(
             symbol="AAPL",
@@ -164,13 +164,13 @@ class TestOptionsScanResult:
             direction=SignalDirection.LONG,
             confidence=80.0,
             strike=150.0,
-            expiration=datetime.utcnow() + timedelta(days=30),
+            expiration=datetime.now(timezone.utc) + timedelta(days=30),
             option_type="CALL",
             bid=2.50,
             ask=2.60,
         )
 
-        assert result.spread == 0.10
+        assert result.spread == pytest.approx(0.10)
         assert result.spread_pct == pytest.approx(4.0, rel=0.01)
 
     def test_itm_detection(self):
@@ -182,7 +182,7 @@ class TestOptionsScanResult:
             direction=SignalDirection.LONG,
             confidence=80.0,
             strike=145.0,
-            expiration=datetime.utcnow() + timedelta(days=30),
+            expiration=datetime.now(timezone.utc) + timedelta(days=30),
             option_type="CALL",
             underlying_price=150.0,
         )
@@ -195,7 +195,7 @@ class TestOptionsScanResult:
             direction=SignalDirection.LONG,
             confidence=80.0,
             strike=155.0,
-            expiration=datetime.utcnow() + timedelta(days=30),
+            expiration=datetime.now(timezone.utc) + timedelta(days=30),
             option_type="CALL",
             underlying_price=150.0,
         )
@@ -208,7 +208,7 @@ class TestOptionsScanResult:
             direction=SignalDirection.SHORT,
             confidence=80.0,
             strike=155.0,
-            expiration=datetime.utcnow() + timedelta(days=30),
+            expiration=datetime.now(timezone.utc) + timedelta(days=30),
             option_type="PUT",
             underlying_price=150.0,
         )
@@ -452,7 +452,7 @@ class TestScanAlert:
             scan_result=result,
             priority=AlertPriority.HIGH,
             message="Test alert",
-            expires_at=datetime.utcnow() + timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) + timedelta(hours=1),
         )
         assert alert.is_expired is False
 
@@ -462,7 +462,7 @@ class TestScanAlert:
             scan_result=result,
             priority=AlertPriority.HIGH,
             message="Test alert",
-            expires_at=datetime.utcnow() - timedelta(hours=1),
+            expires_at=datetime.now(timezone.utc) - timedelta(hours=1),
         )
         assert alert.is_expired is True
 
@@ -472,7 +472,7 @@ class TestScannerSummary:
 
     def test_summary_creation(self):
         """Test summary creation."""
-        start = datetime.utcnow()
+        start = datetime.now(timezone.utc)
         end = start + timedelta(seconds=5)
 
         summary = ScannerSummary(

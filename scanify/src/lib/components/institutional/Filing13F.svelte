@@ -29,7 +29,7 @@
   let sortBy = $state<SortKey>('value');
   let sortDir = $state<'asc' | 'desc'>('desc');
 
-  let sorted = $derived(() => {
+  let sorted = $derived.by(() => {
     const copy = [...filings];
     copy.sort((a, b) => {
       let cmp = 0;
@@ -152,7 +152,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each sorted() as filing, idx (filing.institution + filing.symbol + idx)}
+        {#each sorted as filing, idx (filing.institution + filing.symbol + idx)}
           {@const isNew = isNewPosition(filing)}
           <tr
             class="border-b border-[var(--border-subtle)] transition-colors duration-75 hover:bg-[var(--hover-overlay)]

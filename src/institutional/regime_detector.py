@@ -1211,7 +1211,7 @@ class RegimeChangeDetector:
             try:
                 state = self.analyze(price_slice)
                 regime = state.current_regime
-            except:
+            except Exception:
                 continue
 
             regime_history_bt.append({

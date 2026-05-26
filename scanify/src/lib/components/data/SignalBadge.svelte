@@ -38,7 +38,7 @@
 
 	let style = $derived(directionStyles[direction] ?? directionStyles.neutral);
 
-	let dots = $derived(() => {
+	let dots = $derived.by(() => {
 		let result = '';
 		for (let i = 0; i < 5; i++) {
 			result += i < clampedStrength ? '\u25CF' : '\u25CB';
@@ -54,6 +54,6 @@
 		<span class="whitespace-nowrap">{label}</span>
 	{/if}
 	<span class="font-mono text-[10px] tracking-tight opacity-80" aria-label="Strength {clampedStrength} of 5">
-		{dots()}
+		{dots}
 	</span>
 </span>

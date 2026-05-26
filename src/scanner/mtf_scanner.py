@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from typing import Optional, List, Dict, Tuple, Any
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 import logging
 from collections import defaultdict
@@ -533,7 +533,7 @@ class MultiTimeframeScanner(BaseScanner[MTFScanResult]):
         # Create MTF signal
         mtf_signal = MTFSignal(
             symbol=symbol,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             direction=direction,
             confidence=confidence,
             signal_strength=self._classify_strength(confidence),

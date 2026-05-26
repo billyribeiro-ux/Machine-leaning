@@ -88,8 +88,11 @@ def _make_trade_namespace(
     if exit_time is None:
         exit_time = entry_time + timedelta(minutes=30)
     return SimpleNamespace(
+        pnl_dollars=realized_pnl,
         realized_pnl=realized_pnl,
+        timestamp_entry=entry_time,
         entry_time=entry_time,
+        timestamp_exit=exit_time,
         exit_time=exit_time,
         scan_type=scan_type,
         session_type=session_type,

@@ -15,7 +15,7 @@
 		class: className = ''
 	}: Props = $props();
 
-	let bgColor = $derived(() => {
+	let bgColor = $derived.by(() => {
 		const range = max - min || 1;
 		const normalized = Math.max(-1, Math.min(1, (2 * (value - min)) / range - 1));
 
@@ -33,7 +33,7 @@
 		return 'oklch(0.18 0 0)';
 	});
 
-	let textColor = $derived(() => {
+	let textColor = $derived.by(() => {
 		const range = max - min || 1;
 		const normalized = Math.max(-1, Math.min(1, (2 * (value - min)) / range - 1));
 		const absNorm = Math.abs(normalized);
@@ -42,7 +42,7 @@
 		return 'oklch(0.72 0 0)';
 	});
 
-	let formattedValue = $derived(() => {
+	let formattedValue = $derived.by(() => {
 		if (value == null || isNaN(value)) return '--';
 
 		if (format === 'percent') return value.toFixed(2) + '%';
@@ -60,8 +60,8 @@
 
 <div
 	class="flex items-center justify-center rounded-sm px-2 py-1 font-mono text-xs tabular-nums transition-colors duration-200 {className}"
-	style="background-color: {bgColor()}; color: {textColor()}; font-variant-numeric: tabular-nums;"
+	style="background-color: {bgColor}; color: {textColor}; font-variant-numeric: tabular-nums;"
 	title={String(value)}
 >
-	{formattedValue()}
+	{formattedValue}
 </div>

@@ -146,7 +146,7 @@
 	}
 
 	// Sparkline for chart placeholder
-	let chartPath = $derived(() => {
+	let chartPath = $derived.by(() => {
 		const data = result.sparklineData;
 		if (!data || data.length < 2) return '';
 		const w = 400;
@@ -164,7 +164,7 @@
 			.join(' ');
 	});
 
-	let chartAreaPath = $derived(() => {
+	let chartAreaPath = $derived.by(() => {
 		const data = result.sparklineData;
 		if (!data || data.length < 2) return '';
 		const w = 400;
@@ -185,7 +185,7 @@
 		return 'M ' + points + ' L ' + lastX + ' ' + h + ' L ' + firstX + ' ' + h + ' Z';
 	});
 
-	let chartColor = $derived(() => {
+	let chartColor = $derived.by(() => {
 		const data = result.sparklineData;
 		if (!data || data.length < 2) return 'var(--text-tertiary)';
 		const last = data[data.length - 1] ?? 0;
@@ -193,7 +193,7 @@
 		return last >= first ? 'var(--bullish)' : 'var(--bearish)';
 	});
 
-	let chartFillColor = $derived(() => {
+	let chartFillColor = $derived.by(() => {
 		const data = result.sparklineData;
 		if (!data || data.length < 2) return 'var(--text-tertiary)';
 		const last = data[data.length - 1] ?? 0;
@@ -266,12 +266,12 @@
 			<!-- Chart placeholder -->
 			<h4 class="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Price Chart</h4>
 			<div class="mb-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] p-2">
-				{#if chartPath()}
+				{#if chartPath}
 					<svg width="100%" height="120" viewBox="0 0 400 120" preserveAspectRatio="none" role="img" aria-label="Price chart for {result.symbol}">
 						<!-- Area fill -->
-						<path d={chartAreaPath()} fill={chartFillColor()} opacity="0.3" />
+						<path d={chartAreaPath} fill={chartFillColor} opacity="0.3" />
 						<!-- Line -->
-						<path d={chartPath()} fill="none" stroke={chartColor()} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+						<path d={chartPath} fill="none" stroke={chartColor} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
 					</svg>
 				{:else}
 					<div class="flex h-[120px] items-center justify-center text-sm text-[var(--text-disabled)]">

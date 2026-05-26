@@ -17,7 +17,7 @@ final directional signal with confidence gating.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 import numpy as np
@@ -172,7 +172,7 @@ class CompositeDirectionScore:
     factors_agreeing: int = 0
     has_strong_opposition: bool = False
     signal_valid: bool = False
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ---------------------------------------------------------------------------
@@ -1019,5 +1019,5 @@ class MarketInternalsScorer:
             factors_agreeing=factors_agreeing,
             has_strong_opposition=has_strong_opposition,
             signal_valid=signal_valid,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
         )

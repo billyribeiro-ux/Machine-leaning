@@ -94,7 +94,6 @@ from .mtf_scanner import (
     MTFSignal,
     MTFScanResult,
     TimeframeAnalysis,
-    MTFConfig,
 )
 
 # Engine
@@ -226,7 +225,6 @@ __all__ = [
     "MTFSignal",
     "MTFScanResult",
     "TimeframeAnalysis",
-    "MTFConfig",
     # Engine
     "ScannerEngine",
     "EngineConfig",

@@ -3,6 +3,8 @@
 // Persisted to localStorage, loaded on init
 // ---------------------------------------------------------------------------
 
+import { browser } from '$app/environment';
+
 export type Theme = 'dark' | 'light' | 'high-contrast' | 'oled';
 
 export type Locale =
@@ -166,6 +168,7 @@ function createPreferencesStore() {
   // ---- persistence ----
 
   function persist(): void {
+    if (!browser) return;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(allPreferences));
     } catch {
@@ -174,6 +177,7 @@ function createPreferencesStore() {
   }
 
   function loadFromStorage(): void {
+    if (!browser) return;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return;

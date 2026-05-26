@@ -63,7 +63,7 @@
   );
 
   // Derived: formatted timestamp
-  let formattedTime = $derived(() => {
+  let formattedTime = $derived.by(() => {
     if (!lastUpdate) return '--:--:--';
     try {
       const d = new Date(lastUpdate);
@@ -123,7 +123,7 @@
 
     <!-- Last update timestamp -->
     <div class="status-bar__segment">
-      <span class="status-bar__value">{formattedTime()}</span>
+      <span class="status-bar__value">{formattedTime}</span>
     </div>
   </div>
 </div>

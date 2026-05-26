@@ -66,7 +66,7 @@
     { id: 'sym-nvda',          label: 'NVDA',                 description: 'NVIDIA Corporation',              category: 'symbols',    icon: '$' },
     // Actions
     { id: 'act-new-scan',      label: 'New Scan',             description: 'Create a custom scan',            category: 'actions',    icon: '+',  shortcut: 'N' },
-    { id: 'act-export',        label: 'Export Data',          description: 'Export scan results to CSV',      category: 'actions',    icon: 'Ex' },
+    { id: 'act-export',        label: 'Export Data',          description: 'Export scan results to CSV',      category: 'actions',    icon: 'Ex', action: () => exportSignals('csv') },
     { id: 'act-clear-alerts',  label: 'Clear All Alerts',     description: 'Dismiss all active alerts',       category: 'actions',    icon: 'X' },
     { id: 'act-refresh',       label: 'Force Refresh',        description: 'Refresh all data connections',    category: 'actions',    icon: 'R',  shortcut: 'Shift+R' },
     // Settings
@@ -76,6 +76,35 @@
     { id: 'set-data',          label: 'Data Sources',         description: 'Manage data feed connections',    category: 'settings',   icon: 'db' },
     { id: 'set-keybinds',      label: 'Keyboard Shortcuts',   description: 'View and customize keybindings',  category: 'settings',   icon: 'kb', shortcut: '?' },
   ];
+
+  function exportSignals(format: 'csv' | 'json' | 'pdf'): void {
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('scanify_token') : null;
+    const baseUrl = '/api/signals/export';
+    const params = new URLSearchParams({ format });
+    const url = `${baseUrl}?${params.toString()}`;
+
+    fetch(url, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((res) => {
+        if (!res.ok) throw new Error(`Export failed: ${res.status}`);
+        const disposition = res.headers.get('Content-Disposition') ?? '';
+        const match = disposition.match(/filename="?([^"]+)"?/);
+        const filename = match?.[1] ?? `scanify_export.${format}`;
+        return res.blob().then((blob) => ({ blob, filename }));
+      })
+      .then(({ blob, filename }) => {
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      })
+      .catch((err) => {
+        console.error('Export error:', err);
+      });
+  }
 
   const recentIds = ['nav-scanner', 'scan-momentum', 'sym-spy', 'act-new-scan'];
 
@@ -103,7 +132,7 @@
   }
 
   // ---- Derived: filtered results ----
-  let filteredResults = $derived<CommandItem[]>(() => {
+  let filteredResults = $derived.by(() => {
     if (!query.trim()) {
       // Show recent items when query is empty
       return commands.filter((cmd) => recentIds.includes(cmd.id));
@@ -117,8 +146,8 @@
   });
 
   // ---- Derived: grouped results (for display) ----
-  let groupedResults = $derived(() => {
-    const results = filteredResults();
+  let groupedResults = $derived.by(() => {
+    const results = filteredResults;
     const groups: { category: CommandCategory; label: string; items: CommandItem[] }[] = [];
 
     for (const cat of categoryOrder) {
@@ -135,8 +164,8 @@
   });
 
   // ---- Derived: flat list for keyboard navigation index ----
-  let flatResults = $derived(() => {
-    return groupedResults().flatMap((g) => g.items);
+  let flatResults = $derived.by(() => {
+    return groupedResults.flatMap((g) => g.items);
   });
 
   // ---- Reset state when opened/closed ----
@@ -153,7 +182,7 @@
 
   // Clamp selectedIndex when results change
   $effect(() => {
-    const results = flatResults();
+    const results = flatResults;
     if (selectedIndex >= results.length) {
       selectedIndex = Math.max(0, results.length - 1);
     }
@@ -174,7 +203,7 @@
 
   // ---- Command bar keyboard navigation ----
   function handleKeydown(e: KeyboardEvent): void {
-    const results = flatResults();
+    const results = flatResults;
 
     switch (e.key) {
       case 'ArrowDown':
@@ -219,7 +248,7 @@
 
   // Track flat index for each item across groups
   function getFlatIndex(category: CommandCategory, itemIndex: number): number {
-    const groups = groupedResults();
+    const groups = groupedResults;
     let offset = 0;
     for (const g of groups) {
       if (g.category === category) {
@@ -268,7 +297,7 @@
 
     <!-- Results -->
     <div class="command-bar__results">
-      {#if flatResults().length === 0}
+      {#if flatResults.length === 0}
         <div class="command-bar__empty">
           No results found for "{query}"
         </div>
@@ -276,7 +305,7 @@
         {#if !query.trim()}
           <div class="command-bar__section-label">Recent</div>
         {/if}
-        {#each groupedResults() as group (group.category)}
+        {#each groupedResults as group (group.category)}
           {#if query.trim()}
             <div class="command-bar__section-label">{group.label}</div>
           {/if}

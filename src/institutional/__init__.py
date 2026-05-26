@@ -57,7 +57,6 @@ Author: Revolution Alpha Engine
 
 from .vix_tracker import (
     VIXInstitutionalTracker,
-    VIXOption,
     StrikeAnalysis,
     ExpirationAnalysis,
     VIXTermStructure,
@@ -137,7 +136,6 @@ from .master_orchestrator import (
 __all__ = [
     # VIX Tracker
     'VIXInstitutionalTracker',
-    'VIXOption',
     'StrikeAnalysis',
     'ExpirationAnalysis',
     'VIXTermStructure',

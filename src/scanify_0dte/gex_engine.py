@@ -35,7 +35,7 @@ from __future__ import annotations
 import logging
 import math
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
@@ -67,6 +67,7 @@ _ES_MULTIPLIER: float = 50.0    # E-mini S&P 500 futures point value
 
 _EPSILON: float = 1e-12  # Guard against division by zero
 _MAX_GAMMA_CAP: float = 5.0  # Cap extreme near-expiry gamma values
+_MAX_SPEED_CAP: float = 1.0  # Cap extreme near-expiry speed (dGamma/dSpot) values
 _MIN_MINUTES_FOR_GREEKS: int = 1  # Floor for time input
 
 
@@ -80,6 +81,16 @@ def _safe_divide(numerator: float, denominator: float) -> float:
 def _clamp_gamma(raw_gamma: float) -> float:
     """Clamp gamma to a sane range for 0DTE (avoids blow-up near expiry)."""
     return max(-_MAX_GAMMA_CAP, min(_MAX_GAMMA_CAP, raw_gamma))
+
+
+def _clamp_speed(raw_speed: float) -> float:
+    """Clamp speed (dGamma/dSpot) to a sane range for 0DTE.
+
+    Speed is the third-order Greek and blows up even more violently than
+    gamma near expiry.  Without clamping, extreme values propagate into
+    net_speed on StrikeGEX and corrupt downstream GEX profile analysis.
+    """
+    return max(-_MAX_SPEED_CAP, min(_MAX_SPEED_CAP, raw_speed))
 
 
 # =========================================================================
@@ -287,9 +298,10 @@ class GEXEngine:
 
         # Speed (dGamma/dSpot)
         raw_speed = self.bs_calculator.speed(spot, strike, t, avg_iv, r, q)
+        speed = _clamp_speed(raw_speed)
         net_speed = (
-            -1.0 * raw_speed * call_oi * _CONTRACT_MULTIPLIER * spot
-            + 1.0 * raw_speed * put_oi * _CONTRACT_MULTIPLIER * spot
+            -1.0 * speed * call_oi * _CONTRACT_MULTIPLIER * spot
+            + 1.0 * speed * put_oi * _CONTRACT_MULTIPLIER * spot
         )
 
         return StrikeGEX(
@@ -359,13 +371,13 @@ class GEXEngine:
                 vol_trigger=spot,
                 charm_net_es_contracts=0.0,
                 vanna_net_exposure=0.0,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
         # Group quotes by strike
         strike_map: Dict[float, Dict[str, OptionQuote]] = defaultdict(dict)
         for quote in chain.quotes:
-            side_key = "call" if quote.side == OptionSide.CALL else "put"
+            side_key = "call" if quote.option_type == OptionSide.CALL else "put"
             strike_map[quote.strike][side_key] = quote
 
         # Compute per-strike GEX
@@ -375,10 +387,10 @@ class GEXEngine:
             cq: Optional[OptionQuote] = data.get("call")
             pq: Optional[OptionQuote] = data.get("put")
 
-            call_iv = cq.iv if cq is not None else 0.0
-            put_iv = pq.iv if pq is not None else 0.0
-            call_oi = cq.oi if cq is not None else 0
-            put_oi = pq.oi if pq is not None else 0
+            call_iv = cq.implied_vol if cq is not None else 0.0
+            put_iv = pq.implied_vol if pq is not None else 0.0
+            call_oi = cq.open_interest if cq is not None else 0
+            put_oi = pq.open_interest if pq is not None else 0
             call_vol = cq.volume if cq is not None else 0
             put_vol = pq.volume if pq is not None else 0
 
@@ -422,7 +434,7 @@ class GEXEngine:
                 vol_trigger=spot,
                 charm_net_es_contracts=0.0,
                 vanna_net_exposure=0.0,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
             )
 
         # --- Derived levels ---
@@ -477,7 +489,7 @@ class GEXEngine:
             vol_trigger=vol_trigger,
             charm_net_es_contracts=charm_es,
             vanna_net_exposure=vanna_net,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
         )
 
     # ------------------------------------------------------------------
@@ -574,10 +586,10 @@ class GEXEngine:
         put_oi_map: Dict[float, int] = defaultdict(int)
 
         for quote in chain.quotes:
-            if quote.side == OptionSide.CALL:
-                call_oi_map[quote.strike] += quote.oi
+            if quote.option_type == OptionSide.CALL:
+                call_oi_map[quote.strike] += quote.open_interest
             else:
-                put_oi_map[quote.strike] += quote.oi
+                put_oi_map[quote.strike] += quote.open_interest
 
         all_strikes = sorted(set(call_oi_map.keys()) | set(put_oi_map.keys()))
         if not all_strikes:
@@ -704,7 +716,7 @@ class GEXEngine:
             return 0.0
 
         last_ts, last_gex = gex_history[-1]
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         dt_minutes = (now - last_ts).total_seconds() / 60.0
 
         if dt_minutes < _EPSILON:
@@ -873,7 +885,7 @@ class GEXSignalGenerator:
 
     def _is_on_cooldown(self, signal_type: GEXSignalType) -> bool:
         """Return True if a signal of this type was emitted recently."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         for sig in reversed(self.signal_history):
             if sig.signal_type == signal_type:
                 elapsed = (now - sig.timestamp).total_seconds()
@@ -962,7 +974,7 @@ class GEXSignalGenerator:
             trigger_level=flip,
             target=target,
             stop=stop,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             metadata={
                 "spot": spot,
                 "prior_spot": prior_spot,
@@ -1039,7 +1051,7 @@ class GEXSignalGenerator:
                 trigger_level=call_wall,
                 target=target,
                 stop=stop,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 metadata={
                     "wall_type": "call",
                     "wall_strike": call_wall,
@@ -1079,7 +1091,7 @@ class GEXSignalGenerator:
                 trigger_level=put_wall,
                 target=target,
                 stop=stop,
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(timezone.utc),
                 metadata={
                     "wall_type": "put",
                     "wall_strike": put_wall,
@@ -1165,7 +1177,7 @@ class GEXSignalGenerator:
             trigger_level=tz_upper if direction == "bullish" else tz_lower,
             target=target,
             stop=stop,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             metadata={
                 "tz_upper": tz_upper,
                 "tz_lower": tz_lower,
@@ -1250,7 +1262,7 @@ class GEXSignalGenerator:
             trigger_level=current_gex,
             target=None,
             stop=None,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             metadata={
                 "current_gex": current_gex,
                 "reference_gex": reference_gex,
@@ -1323,7 +1335,7 @@ class GEXSignalGenerator:
             trigger_level=es_contracts,
             target=None,
             stop=None,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             metadata={
                 "es_contracts": es_contracts,
                 "vanna_net": current_profile.vanna_net_exposure,
@@ -1411,7 +1423,7 @@ class GEXSignalGenerator:
             trigger_level=vanna_net,
             target=None,
             stop=None,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             metadata={
                 "vix1d_change_pct": vix1d_change_pct,
                 "vanna_net": vanna_net,

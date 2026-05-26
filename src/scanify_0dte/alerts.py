@@ -265,8 +265,9 @@ class AlertManager:
 
         # Enforce ring-buffer capacity
         if len(self._alerts) >= self._max_alerts:
-            evicted = self._alerts.pop(0)
-            self._alerts_by_id.pop(evicted.alert_id, None)
+            if self._alerts:
+                evicted = self._alerts.pop(0)
+                self._alerts_by_id.pop(evicted.alert_id, None)
             logger.debug(
                 "Alert buffer full -- evicted oldest alert %s", evicted.alert_id[:8]
             )

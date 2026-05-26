@@ -268,7 +268,7 @@ class LeadLagDetector:
 
             # F-statistic
             f_stat_a_to_b = ((rss_r - rss_u) / lag) / (rss_u / (n - 2 * lag - 1))
-        except:
+        except Exception:
             f_stat_a_to_b = 0.0
 
         # Test if B Granger-causes A (swap roles)
@@ -290,7 +290,7 @@ class LeadLagDetector:
             rss_u = np.sum((y - X_unrestricted @ beta_u) ** 2)
 
             f_stat_b_to_a = ((rss_r - rss_u) / lag) / (rss_u / (n - 2 * lag - 1))
-        except:
+        except Exception:
             f_stat_b_to_a = 0.0
 
         # Critical value (approximate, df1=lag, df2=n-2*lag-1)

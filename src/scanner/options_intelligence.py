@@ -19,7 +19,7 @@ Mathematical foundations:
 import numpy as np
 import logging
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, List, Tuple, Any, Literal
 from dataclasses import dataclass, field
 import math
@@ -428,7 +428,7 @@ class IVSurfaceAnalyzer:
         if len(atm_points) < 2:
             return 0.0
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         dtes = []
         ivs = []
         for p in atm_points:
@@ -518,7 +518,7 @@ class IVSurfaceAnalyzer:
         for p in surface:
             by_strike.setdefault(p.strike, []).append(p)
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         for strike, pts in by_strike.items():
             if len(pts) < 2:

@@ -52,21 +52,52 @@ class PasswordChangeRequest(BaseModel):
     new_password: str
 
 
+class MessageResponse(BaseModel):
+    message: str
+
+
 class UserProfile(BaseModel):
     id: str
     email: str
-    username: Optional[str]
+    username: Optional[str] = None
     tier: SubscriptionTier
     tier_name: str
     is_active: bool
-    created_at: Optional[datetime]
+    created_at: Optional[datetime] = None
     features: dict
 
 
 def _hash_password(password: str) -> str:
-    """Hash password with salt"""
-    salt = os.getenv("SCANIFY_PASSWORD_SALT", "dev-salt")
-    return hashlib.sha256(f"{password}{salt}".encode()).hexdigest()
+    """Hash password using PBKDF2 with per-user random salt."""
+    salt = secrets.token_hex(16)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), iterations=600_000)
+    return f"{salt}${dk.hex()}"
+
+
+def _verify_password(password: str, stored_hash: str) -> bool:
+    """Verify a password against a PBKDF2 hash."""
+    if "$" not in stored_hash:
+        return False
+    salt, dk_hex = stored_hash.split("$", 1)
+    dk = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), iterations=600_000)
+    return secrets.compare_digest(dk.hex(), dk_hex)
+
+
+def _validate_password_strength(password: str) -> None:
+    """Enforce minimum password complexity. Raises HTTPException on failure."""
+    if len(password) < 10:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must be at least 10 characters",
+        )
+    has_upper = any(c.isupper() for c in password)
+    has_lower = any(c.islower() for c in password)
+    has_digit = any(c.isdigit() for c in password)
+    if not (has_upper and has_lower and has_digit):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Password must contain uppercase, lowercase, and a digit",
+        )
 
 
 def _generate_user_id() -> str:
@@ -81,6 +112,7 @@ async def register(request: RegisterRequest):
 
     New users start on the FREE tier.
     """
+    _validate_password_strength(request.password)
     email = request.email.lower()
 
     # Check if user already exists
@@ -148,8 +180,7 @@ async def login(request: LoginRequest):
         )
 
     # Verify password
-    password_hash = _hash_password(request.password)
-    if password_hash != user_data["password_hash"]:
+    if not _verify_password(request.password, user_data["password_hash"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",
@@ -263,7 +294,7 @@ async def get_current_user_profile(
     )
 
 
-@router.post("/logout")
+@router.post("/logout", response_model=MessageResponse)
 async def logout(current_user: User = Depends(get_current_active_user)):
     """
     Logout current user.
@@ -274,7 +305,7 @@ async def logout(current_user: User = Depends(get_current_active_user)):
     return {"message": "Successfully logged out"}
 
 
-@router.post("/change-password")
+@router.post("/change-password", response_model=MessageResponse)
 async def change_password(
     request: PasswordChangeRequest,
     current_user: User = Depends(get_current_active_user),
@@ -290,12 +321,13 @@ async def change_password(
         )
 
     # Verify current password
-    current_hash = _hash_password(request.current_password)
-    if current_hash != user_data["password_hash"]:
+    if not _verify_password(request.current_password, user_data["password_hash"]):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Current password is incorrect",
         )
+
+    _validate_password_strength(request.new_password)
 
     # Update password
     user_data["password_hash"] = _hash_password(request.new_password)
@@ -312,8 +344,10 @@ async def admin_create_user(
     admin_key: str,
 ):
     """Create a user with specific tier (admin only)"""
-    expected_key = os.getenv("SCANIFY_ADMIN_KEY", "admin-dev-key")
-    if admin_key != expected_key:
+    expected_key = os.getenv("SCANIFY_ADMIN_KEY", "")
+    if not expected_key:
+        raise HTTPException(status_code=503, detail="Admin endpoint not configured")
+    if not secrets.compare_digest(admin_key, expected_key):
         raise HTTPException(status_code=403, detail="Invalid admin key")
 
     email = email.lower()

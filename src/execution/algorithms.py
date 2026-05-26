@@ -17,7 +17,7 @@ large orders while minimizing slippage and market impact.
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Any, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 import asyncio
 import logging
@@ -91,7 +91,7 @@ class ExecutionPlan:
     total_quantity: int
     strategy: ExecutionStrategy
     slices: List[SliceOrder] = field(default_factory=list)
-    start_time: datetime = field(default_factory=datetime.utcnow)
+    start_time: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     end_time: Optional[datetime] = None
     arrival_price: float = 0.0
     benchmark_price: float = 0.0
@@ -255,7 +255,7 @@ class TWAPAlgorithm(ExecutionAlgorithm):
                 scheduled_time += timedelta(seconds=offset)
 
             slices.append(SliceOrder(
-                order_id=f"TWAP_{i}_{datetime.utcnow().timestamp()}",
+                order_id=f"TWAP_{i}_{datetime.now(timezone.utc).timestamp()}",
                 parent_id="",
                 symbol=self.symbol,
                 side=side,
@@ -273,7 +273,7 @@ class TWAPAlgorithm(ExecutionAlgorithm):
         market_data: MarketMicrostructure,
     ) -> Tuple[bool, Optional[float]]:
         """Check if slice should be sent."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         if slice_order.scheduled_time and now >= slice_order.scheduled_time:
             # Calculate limit price
@@ -345,7 +345,7 @@ class VWAPAlgorithm(ExecutionAlgorithm):
             scheduled_time = start_time + timedelta(seconds=interval * i)
 
             slices.append(SliceOrder(
-                order_id=f"VWAP_{i}_{datetime.utcnow().timestamp()}",
+                order_id=f"VWAP_{i}_{datetime.now(timezone.utc).timestamp()}",
                 parent_id="",
                 symbol=self.symbol,
                 side=side,
@@ -375,7 +375,7 @@ class VWAPAlgorithm(ExecutionAlgorithm):
         market_data: MarketMicrostructure,
     ) -> Tuple[bool, Optional[float]]:
         """Check if slice should be sent based on volume."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         if slice_order.scheduled_time and now >= slice_order.scheduled_time:
             # Adjust participation based on actual volume
@@ -482,7 +482,7 @@ class ImplementationShortfallAlgorithm(ExecutionAlgorithm):
                 continue
 
             slices.append(SliceOrder(
-                order_id=f"IS_{i}_{datetime.utcnow().timestamp()}",
+                order_id=f"IS_{i}_{datetime.now(timezone.utc).timestamp()}",
                 parent_id="",
                 symbol=self.symbol,
                 side=side,
@@ -500,7 +500,7 @@ class ImplementationShortfallAlgorithm(ExecutionAlgorithm):
         market_data: MarketMicrostructure,
     ) -> Tuple[bool, Optional[float]]:
         """Adaptive execution based on market conditions."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         if not slice_order.scheduled_time:
             return False, None
@@ -774,9 +774,9 @@ class ExecutionEngine:
         **kwargs,
     ) -> ExecutionPlan:
         """Create new execution order."""
-        order_id = f"{symbol}_{side.value}_{datetime.utcnow().timestamp()}"
+        order_id = f"{symbol}_{side.value}_{datetime.now(timezone.utc).timestamp()}"
 
-        start_time = start_time or datetime.utcnow()
+        start_time = start_time or datetime.now(timezone.utc)
         end_time = end_time or (start_time + timedelta(hours=1))
 
         # Create algorithm
@@ -839,7 +839,7 @@ class ExecutionEngine:
 
         # Calculate execution time
         first_fill = min((s.filled_time for s in filled_slices if s.filled_time), default=plan.start_time)
-        last_fill = max((s.filled_time for s in filled_slices if s.filled_time), default=datetime.utcnow())
+        last_fill = max((s.filled_time for s in filled_slices if s.filled_time), default=datetime.now(timezone.utc))
 
         execution_time = (last_fill - first_fill).total_seconds() if first_fill and last_fill else 0
 

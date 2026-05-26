@@ -24,7 +24,7 @@
 		lg: 'text-base'
 	};
 
-	let formatted = $derived(() => {
+	let formatted = $derived.by(() => {
 		if (value == null || isNaN(value)) return '$--';
 		return '$' + value.toFixed(decimals);
 	});
@@ -57,7 +57,7 @@
 	class="inline-block text-right font-mono tabular-nums {sizeClasses[size]} {flashClass} {className}"
 	style="font-variant-numeric: tabular-nums;"
 >
-	{formatted()}
+	{formatted}
 </span>
 
 <style>

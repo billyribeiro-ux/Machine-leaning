@@ -22,7 +22,7 @@ from transformers import AutoTokenizer, AutoModel
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Any, Union
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import deque
 from enum import Enum
 import asyncio
@@ -320,7 +320,7 @@ class SentimentAnalyzer:
         return SentimentSignal(
             symbol="",  # To be filled by caller
             source=source,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             sentiment_score=float(np.clip(sentiment_score, -1, 1)),
             confidence=float(np.clip(confidence, 0, 1)),
             magnitude=magnitude,
@@ -475,7 +475,7 @@ class SECFilingAnalyzer:
             signals.append(FilingSignal(
                 symbol=symbol,
                 filing_type=FilingType.FORM_13F,
-                filing_date=datetime.utcnow(),
+                filing_date=datetime.now(timezone.utc),
                 filer=filer,
                 signal_type=signal_type,
                 shares_changed=shares - prev_shares,
@@ -527,7 +527,7 @@ class SECFilingAnalyzer:
         return FilingSignal(
             symbol=symbol,
             filing_type=FilingType.FORM_4,
-            filing_date=datetime.utcnow(),
+            filing_date=datetime.now(timezone.utc),
             filer=insider,
             signal_type="insider_buy" if is_purchase else "insider_sell",
             shares_changed=shares if is_purchase else -shares,
@@ -572,7 +572,7 @@ class SECFilingAnalyzer:
         return FilingSignal(
             symbol=symbol,
             filing_type=FilingType.FORM_8K,
-            filing_date=datetime.utcnow(),
+            filing_date=datetime.now(timezone.utc),
             filer="company",
             signal_type=detected_event,
             sentiment_score=signal.sentiment_score,
@@ -778,8 +778,8 @@ class SocialSentimentAggregator:
         if symbol not in self.signals:
             return None
 
-        cutoff = datetime.utcnow() - timedelta(hours=self.lookback_hours)
-        cutoff_1h = datetime.utcnow() - timedelta(hours=1)
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=self.lookback_hours)
+        cutoff_1h = datetime.now(timezone.utc) - timedelta(hours=1)
 
         recent_signals = [
             s for s in self.signals[symbol]
@@ -832,7 +832,7 @@ class SocialSentimentAggregator:
 
         return AggregatedSentiment(
             symbol=symbol,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             overall_sentiment=float(overall_sentiment),
             sentiment_by_source=sentiment_by_source,
             signal_count=len(recent_signals),
@@ -979,7 +979,7 @@ class AlternativeDataEngine:
         """Get composite signal combining all alternative data."""
         result = {
             "symbol": symbol,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
             "social_sentiment": None,
             "filing_signals": [],
             "earnings_signals": [],
@@ -999,7 +999,7 @@ class AlternativeDataEngine:
 
         # Recent filings
         if symbol in self.filing_signals:
-            cutoff = datetime.utcnow() - timedelta(days=30)
+            cutoff = datetime.now(timezone.utc) - timedelta(days=30)
             recent_filings = [
                 f for f in self.filing_signals[symbol]
                 if f.filing_date > cutoff

@@ -9,7 +9,7 @@ from typing import Optional, List
 from enum import Enum
 
 from fastapi import APIRouter, HTTPException, status, Depends, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from src.api.auth.jwt import get_current_active_user, require_tier, User
 from src.api.auth.tiers import SubscriptionTier, check_tier_access
@@ -45,7 +45,7 @@ class AlertResponse(BaseModel):
     created_at: datetime
     expires_at: Optional[datetime] = None
     read: bool = False
-    metadata: dict = {}
+    metadata: dict = Field(default_factory=dict)
 
 
 class AlertPreferences(BaseModel):
@@ -54,9 +54,11 @@ class AlertPreferences(BaseModel):
     push_alerts: bool = True
     sms_alerts: bool = False
     min_confidence: float = 70.0
-    alert_types: List[AlertType] = [AlertType.SIGNAL]
-    priority_filter: List[AlertPriority] = [AlertPriority.CRITICAL, AlertPriority.HIGH]
-    symbols_watchlist: List[str] = []
+    alert_types: List[AlertType] = Field(default_factory=lambda: [AlertType.SIGNAL])
+    priority_filter: List[AlertPriority] = Field(
+        default_factory=lambda: [AlertPriority.CRITICAL, AlertPriority.HIGH]
+    )
+    symbols_watchlist: List[str] = Field(default_factory=list)
     quiet_hours_start: Optional[str] = None  # "22:00"
     quiet_hours_end: Optional[str] = None    # "08:00"
 
@@ -78,6 +80,16 @@ class AlertRule(CreateAlertRule):
     created_at: datetime
     triggered_count: int = 0
     last_triggered: Optional[datetime] = None
+
+
+class AlertCountResponse(BaseModel):
+    total: int
+    unread: int
+    critical: int
+
+
+class MessageResponse(BaseModel):
+    message: str
 
 
 # In-memory stores
@@ -147,7 +159,7 @@ async def get_alerts(
     return [AlertResponse(**a) for a in alerts[start:end]]
 
 
-@router.get("/count")
+@router.get("/count", response_model=AlertCountResponse)
 async def get_alert_count(
     current_user: User = Depends(require_tier(SubscriptionTier.BASIC)),
 ):
@@ -164,7 +176,7 @@ async def get_alert_count(
     }
 
 
-@router.post("/{alert_id}/read")
+@router.post("/{alert_id}/read", response_model=MessageResponse)
 async def mark_alert_read(
     alert_id: str,
     current_user: User = Depends(require_tier(SubscriptionTier.BASIC)),
@@ -174,7 +186,7 @@ async def mark_alert_read(
     return {"message": "Alert marked as read", "alert_id": alert_id}
 
 
-@router.post("/read-all")
+@router.post("/read-all", response_model=MessageResponse)
 async def mark_all_alerts_read(
     current_user: User = Depends(require_tier(SubscriptionTier.BASIC)),
 ):
@@ -254,7 +266,7 @@ async def create_alert_rule(
     return new_rule
 
 
-@router.delete("/rules/{rule_id}")
+@router.delete("/rules/{rule_id}", response_model=MessageResponse)
 async def delete_alert_rule(
     rule_id: str,
     current_user: User = Depends(require_tier(SubscriptionTier.PRO)),

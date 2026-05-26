@@ -26,7 +26,7 @@ import pandas as pd
 import numpy as np
 from typing import Optional, List, Dict, Any, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 import asyncio
 import logging
@@ -184,7 +184,7 @@ class RevolutionDashboard:
 
         # Running state
         self._running = False
-        self._last_update = datetime.utcnow()
+        self._last_update = datetime.now(timezone.utc)
 
     def create_header(self) -> Panel:
         """Create dashboard header."""
@@ -475,7 +475,7 @@ class RevolutionDashboard:
 
         layout["footer"].update(Panel(footer, box=box.SIMPLE))
 
-        self._last_update = datetime.utcnow()
+        self._last_update = datetime.now(timezone.utc)
         return layout
 
     def add_signal(self, signal: SignalDisplay):
@@ -491,7 +491,7 @@ class RevolutionDashboard:
     def add_alert(self, message: str, level: str = "info"):
         """Add alert to display."""
         self.alerts.append({
-            'time': datetime.utcnow(),
+            'time': datetime.now(timezone.utc),
             'message': message,
             'level': level
         })
@@ -499,7 +499,7 @@ class RevolutionDashboard:
     def update_portfolio(self, state: PortfolioState):
         """Update portfolio state."""
         self.portfolio = state
-        self.performance_history.append((datetime.utcnow(), state.total_equity))
+        self.performance_history.append((datetime.now(timezone.utc), state.total_equity))
 
     def update_scanner_stats(self, scanner: str, stats: Dict):
         """Update scanner statistics."""
@@ -547,7 +547,7 @@ class RiskSettingsMenu:
                 new_val = max(min_val, min(max_val, new_val))
                 setattr(self.config, attr, new_val)
                 self.console.print(f"  ✓ Set to {new_val}", style="green")
-            except:
+            except Exception:
                 self.console.print(f"  Keeping {current}", style="dim")
 
         self.console.print("\n[bold green]Settings updated![/bold green]")

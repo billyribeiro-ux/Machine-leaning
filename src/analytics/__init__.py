@@ -12,13 +12,9 @@ Interactive analytics and reporting:
 
 from .dashboard import (
     RevolutionDashboard,
-    SignalPanel,
-    PerformancePanel,
-    RiskPanel,
     BacktestDashboard,
     RiskSettingsMenu,
     DashboardConfig,
-    create_dashboard,
 )
 
 from .reports import (
@@ -28,8 +24,6 @@ from .reports import (
     JSONReportGenerator,
     MarkdownReportGenerator,
     HTMLReportGenerator,
-    ReportConfig,
-    create_report_manager,
 )
 
 from .visual_dashboard import (
@@ -48,13 +42,9 @@ from .visual_dashboard import (
 __all__ = [
     # Dashboard
     "RevolutionDashboard",
-    "SignalPanel",
-    "PerformancePanel",
-    "RiskPanel",
     "BacktestDashboard",
     "RiskSettingsMenu",
     "DashboardConfig",
-    "create_dashboard",
     # Reports
     "ReportManager",
     "BaseReportGenerator",
@@ -62,8 +52,6 @@ __all__ = [
     "JSONReportGenerator",
     "MarkdownReportGenerator",
     "HTMLReportGenerator",
-    "ReportConfig",
-    "create_report_manager",
     # Visual Dashboard V2
     "RevolutionDashboardV2",
     "ASCIIChart",

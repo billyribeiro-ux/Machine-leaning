@@ -9,11 +9,15 @@ All endpoints use the ``/api/scanify`` prefix and follow the project's
 established patterns for authentication, response models, and error handling.
 """
 
+import csv
+import io
+import json as json_module
 import logging
 from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from src.api.auth.jwt import (
@@ -668,8 +672,8 @@ async def get_scanner_status(
         logger.exception("Error getting scanner status: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve scanner status: {exc}",
-        )
+            detail="Failed to retrieve scanner status",
+        ) from exc
 
     return ScanifyStatusResponse(
         is_running=status_data.get("is_running", False),
@@ -720,8 +724,8 @@ async def start_scanner(
         logger.exception("Failed to start scanner: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to start scanner: {exc}",
-        )
+            detail="Failed to start scanner",
+        ) from exc
 
 
 @router.post("/stop", response_model=ScanifyControlResponse)
@@ -756,8 +760,8 @@ async def stop_scanner(
         logger.exception("Failed to stop scanner: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to stop scanner: {exc}",
-        )
+            detail="Failed to stop scanner",
+        ) from exc
 
 
 @router.get("/health", response_model=ScanifyHealthResponse)
@@ -1211,6 +1215,94 @@ async def get_trade_history(
     )
 
 
+@router.get("/trades/export")
+async def export_trades(
+    format: str = Query("csv", pattern="^(csv|json|pdf)$"),
+    current_user: User = Depends(require_tier(SubscriptionTier.PRO)),
+):
+    """
+    Export trades as a downloadable file (CSV, JSON, or PDF).
+
+    Requires PRO tier or higher.
+    """
+    orch = _get_orchestrator()
+    closed = getattr(orch, "_closed_positions", [])
+    trades = [_serialize_trade(t) for t in closed]
+
+    timestamp_str = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+
+    if format == "json":
+        content = json_module.dumps(trades, indent=2, default=str)
+        return StreamingResponse(
+            io.BytesIO(content.encode()),
+            media_type="application/json",
+            headers={
+                "Content-Disposition": f'attachment; filename="scanify_trades_{timestamp_str}.json"'
+            },
+        )
+
+    if format == "csv":
+        fieldnames = [
+            "timestamp", "symbol", "direction", "entry_price", "exit_price",
+            "pnl", "pnl_percent", "stop_loss", "targets", "exit_reason",
+            "scanner_type", "confidence",
+        ]
+        buf = io.StringIO()
+        writer = csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        for t in trades:
+            row = dict(t)
+            if isinstance(row.get("targets"), list):
+                row["targets"] = ";".join(str(v) for v in row["targets"])
+            writer.writerow(row)
+
+        return StreamingResponse(
+            io.BytesIO(buf.getvalue().encode()),
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f'attachment; filename="scanify_trades_{timestamp_str}.csv"'
+            },
+        )
+
+    if format == "pdf":
+        lines: list[str] = []
+        lines.append(f"SCANIFY Trade Export  |  {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}")
+        lines.append(f"Total trades: {len(trades)}")
+        lines.append("")
+        lines.append(
+            f"{'Symbol':<8} {'Dir':<7} {'Entry':>10} {'Exit':>10} "
+            f"{'P&L':>10} {'P&L%':>7} {'Exit Reason'}"
+        )
+        lines.append("-" * 75)
+        for t in trades:
+            symbol = str(t.get("symbol", ""))[:8]
+            direction = str(t.get("direction", ""))[:7]
+            entry = t.get("entry_price")
+            exit_p = t.get("exit_price")
+            pnl = t.get("pnl", 0)
+            pnl_pct = t.get("pnl_percent", 0)
+            reason = str(t.get("exit_reason", ""))
+            e_str = f"{entry:>10.2f}" if entry is not None else f"{'N/A':>10}"
+            x_str = f"{exit_p:>10.2f}" if exit_p is not None else f"{'N/A':>10}"
+            lines.append(
+                f"{symbol:<8} {direction:<7} {e_str} {x_str} "
+                f"{pnl:>10.2f} {pnl_pct:>6.1f}% {reason}"
+            )
+
+        from src.api.routes.signals import _text_to_pdf
+
+        pdf_bytes = _text_to_pdf("\n".join(lines))
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="scanify_trades_{timestamp_str}.pdf"'
+            },
+        )
+
+    raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
+
+
 @router.get("/pnl", response_model=PnLSummaryResponse)
 async def get_pnl_summary(
     current_user: User = Depends(get_current_active_user),
@@ -1356,8 +1448,8 @@ async def get_market_internals(
         logger.exception("Error fetching market internals: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to fetch market internals: {exc}",
-        )
+            detail="Failed to fetch market internals",
+        ) from exc
 
     if internals is None:
         raise HTTPException(
@@ -1631,8 +1723,8 @@ async def run_manual_calibration(
         logger.exception("Manual calibration failed: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Calibration failed: {exc}",
-        )
+            detail="Calibration failed",
+        ) from exc
 
 
 @router.get("/calibration/weights", response_model=FactorWeightsResponse)
@@ -1702,8 +1794,8 @@ async def get_dashboard(
         logger.exception("Error building dashboard data: %s", exc)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to build dashboard data: {exc}",
-        )
+            detail="Failed to build dashboard data",
+        ) from exc
 
     # Build status sub-object
     status_data = dashboard_data.get("status", {})

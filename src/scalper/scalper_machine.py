@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 from typing import Dict, List, Optional, Tuple, Any, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from enum import Enum
 from collections import deque
 import logging
@@ -73,7 +73,7 @@ class ScalpSignal:
 
     # Timing
     optimal_entry_window_seconds: int = 30
-    signal_expiry: datetime = field(default_factory=datetime.utcnow)
+    signal_expiry: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def is_valid(self) -> bool:
@@ -81,7 +81,7 @@ class ScalpSignal:
         return (
             self.confirmation_count >= self.required_confirmations and
             self.confidence >= 85 and
-            datetime.utcnow() < self.signal_expiry
+            datetime.now(timezone.utc) < self.signal_expiry
         )
 
 
@@ -447,7 +447,7 @@ class ScalperMachine:
             direction=direction,
             strength=self._get_signal_strength(confirmation_count, confidence),
             confidence=confidence,
-            timestamp=datetime.utcnow(),
+            timestamp=datetime.now(timezone.utc),
             entry_price=current_price,
             stop_loss=self._calculate_stop_loss(current_price, atr, direction),
             take_profit_1=self._calculate_take_profit(current_price, atr, direction, 1),
@@ -461,7 +461,7 @@ class ScalperMachine:
             reasoning=self._generate_reasoning(confirmations, indicators, current_idx, direction),
             indicators=self._get_indicator_values(indicators, current_idx),
             market_conditions=self._assess_market_conditions(indicators, current_idx),
-            signal_expiry=datetime.utcnow() + timedelta(seconds=60),
+            signal_expiry=datetime.now(timezone.utc) + timedelta(seconds=60),
         )
 
         self.signals_generated += 1

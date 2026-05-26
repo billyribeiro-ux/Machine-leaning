@@ -20,7 +20,7 @@ from torch.utils.data import DataLoader, Dataset
 import numpy as np
 from typing import Dict, List, Optional, Tuple, Any, Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import deque
 from enum import Enum
 import asyncio
@@ -544,7 +544,7 @@ class ConceptDriftDetector:
         drift_detected = self._detect_drift()
 
         if drift_detected:
-            self.drift_history.append((datetime.utcnow(), self._compute_drift_magnitude()))
+            self.drift_history.append((datetime.now(timezone.utc), self._compute_drift_magnitude()))
             # Reset windows
             self.reference_window.clear()
             self.reference_window.extend(self.test_window)
@@ -800,7 +800,7 @@ class AdaptiveLearningSystem:
         for param_group in self.trainer.optimizer.param_groups:
             param_group['lr'] *= 2.0
 
-        self.state.last_adaptation = datetime.utcnow()
+        self.state.last_adaptation = datetime.now(timezone.utc)
         logger.info("Applying gradual adaptation")
 
     def _rapid_adaptation(self):
@@ -813,13 +813,13 @@ class AdaptiveLearningSystem:
 
         # Create adaptation dataset from recent experiences
         logger.info("Applying rapid meta-learning adaptation")
-        self.state.last_adaptation = datetime.utcnow()
+        self.state.last_adaptation = datetime.now(timezone.utc)
 
     def _ensemble_adaptation(self):
         """Create ensemble with new model for new regime."""
         self.state.model_version += 1
         logger.info(f"Creating ensemble with new model version {self.state.model_version}")
-        self.state.last_adaptation = datetime.utcnow()
+        self.state.last_adaptation = datetime.now(timezone.utc)
 
     def _reset_adaptation(self):
         """Reset model to learn new regime from scratch."""
@@ -841,7 +841,7 @@ class AdaptiveLearningSystem:
 
         self.state.model_version += 1
         logger.info(f"Reset to new model version {self.state.model_version}")
-        self.state.last_adaptation = datetime.utcnow()
+        self.state.last_adaptation = datetime.now(timezone.utc)
 
     async def train_on_buffer(
         self,
@@ -934,7 +934,7 @@ class AdaptiveLearningSystem:
 
     def load_state(self, path: str):
         """Load model and learning state."""
-        state = torch.load(path, map_location=self.device)
+        state = torch.load(path, map_location=self.device, weights_only=True)
 
         self.contrastive_learner.load_state_dict(state["contrastive_learner"])
         self.masked_predictor.load_state_dict(state["masked_predictor"])

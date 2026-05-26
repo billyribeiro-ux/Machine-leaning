@@ -12,15 +12,15 @@ import uuid
 import logging
 import numpy as np
 from enum import Enum
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from dataclasses import dataclass, field, asdict
 from typing import (
     Optional, Dict, List, Tuple, Any, Sequence, Union
 )
 from collections import defaultdict, deque
 
-from .base import BaseScanner, ScannerConfig, ScanContext
-from .models import ScanResult, MarketData, SignalDirection
+from .base import BaseScanner, ScannerConfig, ScanContext, MarketData
+from .models import ScanResult, SignalDirection
 from .advanced_models import (
     AdvancedScanResult,
     ScanCategory,
@@ -349,7 +349,7 @@ class ScannerBacktestResult:
 
     # Metadata
     backtest_run_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    generated_at: datetime = field(default_factory=datetime.utcnow)
+    generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialise every metric to a JSON-compatible dictionary."""
@@ -1997,7 +1997,7 @@ class LiveSignalRecord:
     """Internal record for a tracked live signal."""
     signal_id: str = ""
     signal: Optional[NormalisedSignal] = None
-    registered_at: datetime = field(default_factory=datetime.utcnow)
+    registered_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     outcome_return_pct: Optional[float] = None
     outcome_recorded_at: Optional[datetime] = None
     is_resolved: bool = False
@@ -2070,7 +2070,7 @@ class ScannerPerformanceTracker:
             self._logger.warning("Signal %s not found", signal_id)
             return False
         rec.outcome_return_pct = outcome_return_pct
-        rec.outcome_recorded_at = datetime.utcnow()
+        rec.outcome_recorded_at = datetime.now(timezone.utc)
         rec.is_resolved = True
         return True
 

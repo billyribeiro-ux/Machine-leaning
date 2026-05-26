@@ -39,6 +39,8 @@ from .models import (
     GEXProfile,
     ScanSignal,
     ScanType,
+    SessionType,
+    TimeZoneType,
     TradeDirection,
     TradeLog,
 )
@@ -487,7 +489,7 @@ class ExitManager:
 
         Returns:
             Tuple of ``(should_exit, exit_reason)``.  If ``should_exit`` is
-            ``False``, ``exit_reason`` is ``ExitReason.NONE`` (or a sentinel).
+            ``False``, ``exit_reason`` is ``None``.
         """
         entry = position.entry_price
         current = position.current_price
@@ -514,7 +516,7 @@ class ExitManager:
                     loss_pct * 100,
                     self.time_based_stop_pct * 100,
                 )
-                return True, ExitReason.TIME_BASED_STOP
+                return True, ExitReason.TIME_STOP
 
         # Layer 3: Break-even stop
         if position.is_break_even_set and current < entry:
@@ -524,9 +526,9 @@ class ExitManager:
                 current,
                 entry,
             )
-            return True, ExitReason.BREAK_EVEN_STOP
+            return True, ExitReason.BREAK_EVEN
 
-        return False, ExitReason.NONE
+        return False, None
 
     def check_signal_reversal(
         self,
@@ -554,7 +556,7 @@ class ExitManager:
             return False
 
         # Bullish entry requires positive score to persist
-        if entry_direction == TradeDirection.BULLISH and current_score < 0:
+        if entry_direction == TradeDirection.BULL and current_score < 0:
             logger.warning(
                 "SIGNAL REVERSAL %s | was BULLISH, score now %.1f",
                 position.position_id[:8],
@@ -563,7 +565,7 @@ class ExitManager:
             return True
 
         # Bearish entry requires negative score to persist
-        if entry_direction == TradeDirection.BEARISH and current_score > 0:
+        if entry_direction == TradeDirection.BEAR and current_score > 0:
             logger.warning(
                 "SIGNAL REVERSAL %s | was BEARISH, score now %.1f",
                 position.position_id[:8],
@@ -608,7 +610,7 @@ class ExitManager:
         scan_type = getattr(signal, "scan_type", None)
 
         # Long call / bullish trades: exit if price drops below gamma flip
-        if entry_direction == TradeDirection.BULLISH:
+        if entry_direction == TradeDirection.BULL:
             if spx_price < gamma_flip:
                 logger.warning(
                     "GEX FLIP %s | BULLISH but SPX $%.2f < gamma_flip $%.2f",
@@ -619,7 +621,7 @@ class ExitManager:
                 return True
 
         # Long put / bearish trades: exit if price rises above gamma flip
-        if entry_direction == TradeDirection.BEARISH:
+        if entry_direction == TradeDirection.BEAR:
             if spx_price > gamma_flip:
                 logger.warning(
                     "GEX FLIP %s | BEARISH but SPX $%.2f > gamma_flip $%.2f",
@@ -1033,27 +1035,48 @@ class ExitManager:
         # ------------------------------------------------------------------
         # Build TradeLog
         # ------------------------------------------------------------------
+        # Extract market context from the scan signal
+        signal = position.scan_signal
+
+        # Compute max gain/loss during trade in dollar terms
+        max_gain_during = (position.max_price - position.entry_price) * position._initial_contracts * _MULTIPLIER
+        max_loss_during = (position.min_price - position.entry_price) * position._initial_contracts * _MULTIPLIER
+
         trade_log = TradeLog(
-            position_id=position.position_id,
-            scan_signal=position.scan_signal,
+            timestamp_entry=position.entry_time,
+            timestamp_exit=current_time,
+            scan_type=getattr(signal, "scan_type", None) if signal else ScanType.DIRECTIONAL,
+            direction=getattr(signal, "direction", None) if signal else TradeDirection.NEUTRAL,
+            strike=getattr(signal, "strike_selection", None) and getattr(signal.strike_selection, "strike", 0.0) or getattr(signal, "entry_price", 0.0) if signal else 0.0,
+            option_type=getattr(signal, "strike_selection", None) and getattr(signal.strike_selection, "option_type", "CALL") or "CALL" if signal else "CALL",
             entry_price=position.entry_price,
             exit_price=exit_price,
-            entry_time=position.entry_time,
-            exit_time=current_time,
-            contracts=position._initial_contracts,
-            contracts_at_exit=position.contracts,
             pnl_dollars=total_pnl,
-            pnl_pct=pnl_pct,
+            pnl_percent=pnl_pct * 100.0,
             hold_time_minutes=hold_minutes,
+            max_gain_during_trade=max(max_gain_during, 0.0),
+            max_loss_during_trade=min(max_loss_during, 0.0),
             exit_reason=exit_reason,
-            max_price=position.max_price,
-            min_price=position.min_price,
             optimal_exit_price=optimal_exit_price,
-            optimal_pnl=optimal_pnl,
-            left_on_table_pct=left_on_table_pct,
-            stopped_prematurely=stopped_prematurely,
-            break_even_was_set=position.is_break_even_set,
-            half_off_taken=position._half_off_taken,
+            left_on_table_pct=left_on_table_pct * 100.0 if left_on_table_pct > 0 else 0.0,
+            was_stopped_prematurely=stopped_prematurely,
+            session_type=getattr(signal, "session_type", None) if signal else SessionType.RANGE,
+            time_zone=getattr(signal, "time_zone", None) if signal else TimeZoneType.MORNING_SESSION,
+            spx_at_entry=getattr(signal, "entry_price", 0.0) if signal else 0.0,
+            vix1d_at_entry=0.0,
+            vix_at_entry=0.0,
+            expected_move_1sigma=0.0,
+            composite_direction_score=getattr(getattr(signal, "direction_score", None), "total_score", 0.0) if signal else 0.0,
+            net_gex_at_entry=0.0,
+            gamma_flip_at_entry=1.0,
+            delta_at_entry=getattr(getattr(signal, "strike_selection", None), "delta", 0.0) if signal else 0.0,
+            gamma_at_entry=getattr(getattr(signal, "strike_selection", None), "gamma", 0.0) if signal else 0.0,
+            theta_at_entry=getattr(getattr(signal, "strike_selection", None), "theta", 0.0) if signal else 0.0,
+            iv_at_entry=getattr(getattr(signal, "strike_selection", None), "iv", 0.0) if signal else 0.0,
+            tick_10min_avg=0.0,
+            trin_at_entry=1.0,
+            ad_ratio_at_entry=1.0,
+            cumulative_delta_es=0.0,
         )
 
         self.closed_positions.append(trade_log)
@@ -1133,7 +1156,7 @@ class ExitManager:
 
         hold_times = [t.hold_time_minutes for t in closed]
         left_on_table = [t.left_on_table_pct for t in closed]
-        premature_count = sum(1 for t in closed if t.stopped_prematurely)
+        premature_count = sum(1 for t in closed if t.was_stopped_prematurely)
 
         closed_count = len(closed)
 
@@ -1148,7 +1171,7 @@ class ExitManager:
             "avg_win": gross_wins / len(wins) if wins else 0.0,
             "avg_loss": -gross_losses / len(losses) if losses else 0.0,
             "profit_factor": (
-                gross_wins / gross_losses if gross_losses > 0 else float("inf")
+                min(gross_wins / gross_losses, 999.9) if gross_losses > 0 else 999.9
             ),
             "avg_hold_time_min": (
                 sum(hold_times) / len(hold_times) if hold_times else 0.0

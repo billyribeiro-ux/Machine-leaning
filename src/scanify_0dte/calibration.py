@@ -159,34 +159,36 @@ class TradeLogger:
 
     @staticmethod
     def _trade_to_row(trade: TradeLog) -> Dict[str, Any]:
-        """Convert a ``TradeLog`` dataclass into a flat dictionary suitable for
+        """Convert a ``TradeLog`` instance into a flat dictionary suitable for
         SQLite insertion and JSON serialization."""
+        # Derive trade_date from timestamp_entry
+        trade_date_val = trade.timestamp_entry.date() if isinstance(trade.timestamp_entry, datetime) else trade.timestamp_entry
         return {
-            "id": trade.id,
-            "trade_date": trade.trade_date.isoformat() if isinstance(trade.trade_date, date) else str(trade.trade_date),
+            "id": trade.trade_id,
+            "trade_date": trade_date_val.isoformat() if isinstance(trade_date_val, date) else str(trade_date_val),
             "scan_type": trade.scan_type.value if isinstance(trade.scan_type, ScanType) else str(trade.scan_type),
             "session_type": trade.session_type.value if isinstance(trade.session_type, SessionType) else str(trade.session_type),
             "time_zone": trade.time_zone.value if isinstance(trade.time_zone, TimeZoneType) else str(trade.time_zone),
-            "exit_reason": trade.exit_reason.value if isinstance(trade.exit_reason, ExitReason) else str(trade.exit_reason),
-            "entry_time": trade.entry_time.isoformat() if isinstance(trade.entry_time, datetime) else str(trade.entry_time),
-            "exit_time": trade.exit_time.isoformat() if isinstance(trade.exit_time, datetime) else str(trade.exit_time),
+            "exit_reason": trade.exit_reason.value if isinstance(trade.exit_reason, ExitReason) else str(trade.exit_reason) if trade.exit_reason else "MANUAL",
+            "entry_time": trade.timestamp_entry.isoformat() if isinstance(trade.timestamp_entry, datetime) else str(trade.timestamp_entry),
+            "exit_time": trade.timestamp_exit.isoformat() if isinstance(trade.timestamp_exit, datetime) else str(trade.timestamp_exit) if trade.timestamp_exit else "",
             "entry_price": float(trade.entry_price),
-            "exit_price": float(trade.exit_price),
-            "pnl": float(trade.pnl),
-            "is_win": int(trade.pnl > 0),
-            "direction_score": float(trade.direction_score),
-            "vix1d": float(trade.vix1d),
-            "spx_price": float(trade.spx_price),
+            "exit_price": float(trade.exit_price) if trade.exit_price is not None else 0.0,
+            "pnl": float(trade.pnl_dollars) if trade.pnl_dollars is not None else 0.0,
+            "is_win": int((trade.pnl_dollars or 0.0) > 0),
+            "direction_score": float(trade.composite_direction_score),
+            "vix1d": float(trade.vix1d_at_entry),
+            "spx_price": float(trade.spx_at_entry),
             "strike": float(trade.strike),
             "delta_at_entry": float(trade.delta_at_entry),
-            "factor_scores": json.dumps(trade.factor_scores) if isinstance(trade.factor_scores, dict) else str(trade.factor_scores),
-            "gex_predicted_support": float(trade.gex_predicted_support) if trade.gex_predicted_support is not None else None,
-            "gex_predicted_resistance": float(trade.gex_predicted_resistance) if trade.gex_predicted_resistance is not None else None,
-            "gex_gamma_flip_bullish": int(trade.gex_gamma_flip_bullish) if trade.gex_gamma_flip_bullish is not None else None,
-            "actual_low": float(trade.actual_low) if trade.actual_low is not None else None,
-            "actual_high": float(trade.actual_high) if trade.actual_high is not None else None,
-            "max_drawdown": float(trade.max_drawdown) if hasattr(trade, "max_drawdown") and trade.max_drawdown is not None else 0.0,
-            "metadata_json": json.dumps(trade.metadata) if hasattr(trade, "metadata") and trade.metadata else "{}",
+            "factor_scores": "{}",
+            "gex_predicted_support": None,
+            "gex_predicted_resistance": None,
+            "gex_gamma_flip_bullish": None,
+            "actual_low": None,
+            "actual_high": None,
+            "max_drawdown": float(abs(trade.max_loss_during_trade)) if trade.max_loss_during_trade else 0.0,
+            "metadata_json": "{}",
         }
 
     def _save_to_json(self, row: Dict[str, Any]) -> None:
@@ -212,30 +214,37 @@ class TradeLogger:
         """Reconstruct a ``TradeLog`` from a SQLite row dictionary."""
         d = dict(row)
         return TradeLog(
-            id=d["id"],
-            trade_date=date.fromisoformat(d["trade_date"]),
+            trade_id=d["id"],
+            timestamp_entry=datetime.fromisoformat(d["entry_time"]),
+            timestamp_exit=datetime.fromisoformat(d["exit_time"]) if d.get("exit_time") else None,
             scan_type=ScanType(d["scan_type"]),
+            direction="NEUTRAL",
             session_type=SessionType(d["session_type"]),
             time_zone=TimeZoneType(d["time_zone"]),
-            exit_reason=ExitReason(d["exit_reason"]),
-            entry_time=datetime.fromisoformat(d["entry_time"]),
-            exit_time=datetime.fromisoformat(d["exit_time"]),
+            exit_reason=ExitReason(d["exit_reason"]) if d.get("exit_reason") else None,
             entry_price=d["entry_price"],
-            exit_price=d["exit_price"],
-            pnl=d["pnl"],
-            direction_score=d["direction_score"],
-            vix1d=d["vix1d"],
-            spx_price=d["spx_price"],
+            exit_price=d.get("exit_price"),
+            pnl_dollars=d.get("pnl", 0.0),
+            pnl_percent=0.0,
+            hold_time_minutes=0.0,
             strike=d["strike"],
-            delta_at_entry=d["delta_at_entry"],
-            factor_scores=json.loads(d["factor_scores"]) if d["factor_scores"] else {},
-            gex_predicted_support=d.get("gex_predicted_support"),
-            gex_predicted_resistance=d.get("gex_predicted_resistance"),
-            gex_gamma_flip_bullish=bool(d["gex_gamma_flip_bullish"]) if d.get("gex_gamma_flip_bullish") is not None else None,
-            actual_low=d.get("actual_low"),
-            actual_high=d.get("actual_high"),
-            max_drawdown=d.get("max_drawdown", 0.0),
-            metadata=json.loads(d.get("metadata_json", "{}") or "{}"),
+            option_type="CALL",
+            composite_direction_score=d.get("direction_score", 0.0),
+            vix1d_at_entry=d.get("vix1d", 0.0),
+            vix_at_entry=0.0,
+            spx_at_entry=d.get("spx_price", 0.0),
+            delta_at_entry=d.get("delta_at_entry", 0.0),
+            gamma_at_entry=0.0,
+            theta_at_entry=0.0,
+            iv_at_entry=0.0,
+            expected_move_1sigma=0.0,
+            net_gex_at_entry=0.0,
+            gamma_flip_at_entry=1.0,
+            tick_10min_avg=0.0,
+            trin_at_entry=1.0,
+            ad_ratio_at_entry=1.0,
+            cumulative_delta_es=0.0,
+            max_loss_during_trade=-(d.get("max_drawdown", 0.0) or 0.0),
         )
 
     # ------------------------------------------------------------------
@@ -256,11 +265,11 @@ class TradeLogger:
 
         # Write JSON first (append-only, safest path).
         self._save_to_json(row)
-        logger.info("Trade %s written to JSON log.", trade.id)
+        logger.info("Trade %s written to JSON log.", trade.trade_id)
 
         # Write to SQLite.
         self._save_to_db(row)
-        logger.info("Trade %s written to SQLite.", trade.id)
+        logger.info("Trade %s written to SQLite.", trade.trade_id)
 
     def get_trades(
         self,
@@ -412,7 +421,7 @@ class DailyCalibrator:
         """Compute win rate for a sequence of trades. Returns 0.0 if empty."""
         if not trades:
             return 0.0
-        wins = sum(1 for t in trades if t.pnl > 0)
+        wins = sum(1 for t in trades if (t.pnl_dollars or 0.0) > 0)
         return wins / len(trades)
 
     @staticmethod
@@ -420,7 +429,7 @@ class DailyCalibrator:
         """Compute average P&L. Returns 0.0 if empty."""
         if not trades:
             return 0.0
-        return float(np.mean([t.pnl for t in trades]))
+        return float(np.mean([(t.pnl_dollars or 0.0) for t in trades]))
 
     @staticmethod
     def _sharpe_ratio(trades: Sequence[TradeLog]) -> float:
@@ -432,7 +441,7 @@ class DailyCalibrator:
         """
         if len(trades) < 2:
             return 0.0
-        pnls = np.array([t.pnl for t in trades], dtype=np.float64)
+        pnls = np.array([(t.pnl_dollars or 0.0) for t in trades], dtype=np.float64)
         std = np.std(pnls, ddof=1)
         if std < 1e-12:
             return 0.0
@@ -446,7 +455,7 @@ class DailyCalibrator:
         """
         if not trades:
             return 0.0
-        cumulative = np.cumsum([t.pnl for t in trades])
+        cumulative = np.cumsum([(t.pnl_dollars or 0.0) for t in trades])
         running_max = np.maximum.accumulate(cumulative)
         drawdowns = running_max - cumulative
         return float(np.max(drawdowns)) if len(drawdowns) > 0 else 0.0
@@ -548,7 +557,7 @@ class DailyCalibrator:
         # -- Win rate and avg P&L by VIX1D regime --
         vix_groups: Dict[str, List[TradeLog]] = {}
         for t in trades:
-            bucket = self._vix1d_bucket(t.vix1d)
+            bucket = self._vix1d_bucket(t.vix1d_at_entry)
             vix_groups.setdefault(bucket, []).append(t)
         win_rate_by_vix: Dict[str, float] = {k: self._win_rate(v) for k, v in vix_groups.items()}
         avg_pnl_by_vix: Dict[str, float] = {k: self._avg_pnl(v) for k, v in vix_groups.items()}
@@ -605,7 +614,7 @@ class DailyCalibrator:
 
         # Build feature matrix. Assume factor_scores is a dict with consistent
         # keys across trades. Sort keys for deterministic column order.
-        sample_keys = sorted(trades[0].factor_scores.keys())
+        sample_keys = sorted(getattr(trades[0], "factor_scores", {}).keys())
         n_factors = len(sample_keys)
 
         if n_factors == 0:
@@ -617,8 +626,8 @@ class DailyCalibrator:
 
         for i, t in enumerate(trades):
             for j, key in enumerate(sample_keys):
-                X[i, j] = float(t.factor_scores.get(key, 0.0))
-            y[i] = 1 if t.pnl > 0 else 0
+                X[i, j] = float(getattr(t, "factor_scores", {}).get(key, 0.0))
+            y[i] = 1 if (t.pnl_dollars or 0.0) > 0 else 0
 
         # Require at least two classes for logistic regression.
         if len(np.unique(y)) < 2:
@@ -701,8 +710,8 @@ class DailyCalibrator:
             logger.warning("Insufficient trades for threshold optimization. Returning current: %.2f", current_threshold)
             return current_threshold
 
-        scores = np.array([abs(t.direction_score) for t in trades], dtype=np.float64)
-        labels = np.array([1 if t.pnl > 0 else 0 for t in trades], dtype=np.int32)
+        scores = np.array([abs(t.composite_direction_score) for t in trades], dtype=np.float64)
+        labels = np.array([1 if (t.pnl_dollars or 0.0) > 0 else 0 for t in trades], dtype=np.int32)
 
         if len(np.unique(labels)) < 2:
             logger.warning("Single-class labels. Returning current threshold: %.2f", current_threshold)
@@ -716,7 +725,7 @@ class DailyCalibrator:
             return current_threshold
 
         # Evaluate expected value at each threshold.
-        pnls = np.array([t.pnl for t in trades], dtype=np.float64)
+        pnls = np.array([(t.pnl_dollars or 0.0) for t in trades], dtype=np.float64)
         best_ev = -np.inf
         best_threshold = current_threshold
 
@@ -776,7 +785,7 @@ class DailyCalibrator:
                 result[tz_label] = current_targets.get(tz_label, 0.50)
                 continue
 
-            pnls = np.array([t.pnl for t in tz_trades], dtype=np.float64)
+            pnls = np.array([(t.pnl_dollars or 0.0) for t in tz_trades], dtype=np.float64)
             entries = np.array([t.entry_price for t in tz_trades], dtype=np.float64)
 
             # Compute realized return ratios.
@@ -838,8 +847,8 @@ class DailyCalibrator:
             return current_stop
 
         entries = np.array([t.entry_price for t in trades], dtype=np.float64)
-        drawdowns = np.array([getattr(t, "max_drawdown", 0.0) or 0.0 for t in trades], dtype=np.float64)
-        pnls = np.array([t.pnl for t in trades], dtype=np.float64)
+        drawdowns = np.array([abs(t.max_loss_during_trade) if t.max_loss_during_trade else 0.0 for t in trades], dtype=np.float64)
+        pnls = np.array([(t.pnl_dollars or 0.0) for t in trades], dtype=np.float64)
 
         # Compute drawdown as fraction of entry price.
         dd_pcts = np.where(entries > 1e-6, drawdowns / entries, 0.0)
@@ -907,10 +916,10 @@ class DailyCalibrator:
         # Filter to trades with GEX data.
         gex_trades = [
             t for t in trades
-            if t.gex_predicted_support is not None
-            and t.gex_predicted_resistance is not None
-            and t.actual_low is not None
-            and t.actual_high is not None
+            if getattr(t, "gex_predicted_support", None) is not None
+            and getattr(t, "gex_predicted_resistance", None) is not None
+            and getattr(t, "actual_low", None) is not None
+            and getattr(t, "actual_high", None) is not None
         ]
 
         # Use only the most recent _ROLLING_GEX_WINDOW days of data.
@@ -935,18 +944,18 @@ class DailyCalibrator:
 
         for t in gex_trades:
             # Call wall held if actual high did not breach resistance.
-            if t.actual_high <= t.gex_predicted_resistance * 1.001:
+            if getattr(t, "actual_high", 0.0) <= getattr(t, "gex_predicted_resistance", 0.0) * 1.001:
                 call_wall_correct += 1
 
             # Put wall held if actual low did not breach support.
-            if t.actual_low >= t.gex_predicted_support * 0.999:
+            if getattr(t, "actual_low", 0.0) >= getattr(t, "gex_predicted_support", 0.0) * 0.999:
                 put_wall_correct += 1
 
             # Gamma flip direction prediction.
-            if t.gex_gamma_flip_bullish is not None:
+            if getattr(t, "gex_gamma_flip_bullish", None) is not None:
                 gamma_flip_total += 1
-                actual_bullish = t.pnl > 0 if t.scan_type == ScanType.DIRECTIONAL else (t.actual_high + t.actual_low) / 2 > t.spx_price
-                if t.gex_gamma_flip_bullish == actual_bullish:
+                actual_bullish = (t.pnl_dollars or 0.0) > 0 if t.scan_type == ScanType.DIRECTIONAL else (getattr(t, "actual_high", 0.0) + getattr(t, "actual_low", 0.0)) / 2 > t.spx_at_entry
+                if getattr(t, "gex_gamma_flip_bullish", None) == actual_bullish:
                     gamma_flip_correct += 1
 
         call_wall_acc = call_wall_correct / total
@@ -1004,7 +1013,7 @@ class DailyCalibrator:
         # Group by VIX1D regime.
         regime_groups: Dict[str, List[TradeLog]] = {}
         for t in window_trades:
-            bucket = self._vix1d_bucket(t.vix1d)
+            bucket = self._vix1d_bucket(t.vix1d_at_entry)
             regime_groups.setdefault(bucket, []).append(t)
 
         result: Dict[str, float] = {}
@@ -1023,7 +1032,7 @@ class DailyCalibrator:
                 # Round delta to nearest 0.05.
                 rounded = round(abs(t.delta_at_entry) * 20) / 20
                 rounded = max(0.05, min(rounded, 0.50))
-                delta_buckets.setdefault(rounded, []).append(t.pnl)
+                delta_buckets.setdefault(rounded, []).append((t.pnl_dollars or 0.0))
 
             # Find the delta with best average P&L.
             best_delta = current_deltas.get(bucket_label, 0.20)
@@ -1152,15 +1161,15 @@ class DailyCalibrator:
         """
         by_date: Dict[date, List[TradeLog]] = {}
         for t in trades:
-            d = t.trade_date if isinstance(t.trade_date, date) else date.fromisoformat(str(t.trade_date))
+            d = t.timestamp_entry.date() if isinstance(t.timestamp_entry, datetime) else t.timestamp_entry
             by_date.setdefault(d, []).append(t)
 
         metrics: List[Dict[str, float]] = []
         for d in sorted(by_date.keys()):
             day_trades = by_date[d]
-            pnls = [t.pnl for t in day_trades]
-            vix_vals = [t.vix1d for t in day_trades]
-            spx_prices = [t.spx_price for t in day_trades]
+            pnls = [(t.pnl_dollars or 0.0) for t in day_trades]
+            vix_vals = [t.vix1d_at_entry for t in day_trades]
+            spx_prices = [t.spx_at_entry for t in day_trades]
 
             intraday_range = max(spx_prices) - min(spx_prices) if len(spx_prices) > 1 else 0.0
 
@@ -1452,7 +1461,7 @@ class WeeklyCalibrator:
             return report
 
         # -- Overall metrics --
-        pnls = np.array([t.pnl for t in trades], dtype=np.float64)
+        pnls = np.array([(t.pnl_dollars or 0.0) for t in trades], dtype=np.float64)
         wins = np.sum(pnls > 0)
         report["overall_win_rate"] = float(wins / len(pnls))
 
@@ -1569,7 +1578,7 @@ class WeeklyCalibrator:
             return 0.0
 
         # Sort by entry time.
-        sorted_trades = sorted(trades, key=lambda t: t.entry_time)
+        sorted_trades = sorted(trades, key=lambda t: t.timestamp_entry)
         fold_size = len(sorted_trades) // 4
         if fold_size < 5:
             return 0.0
@@ -1579,7 +1588,7 @@ class WeeklyCalibrator:
             oos_start = k * fold_size
             oos_end = (k + 1) * fold_size if k < 3 else len(sorted_trades)
             oos_trades = sorted_trades[oos_start:oos_end]
-            oos_pnls.extend([t.pnl for t in oos_trades])
+            oos_pnls.extend([(t.pnl_dollars or 0.0) for t in oos_trades])
 
         if len(oos_pnls) < 5:
             return 0.0
@@ -1600,9 +1609,9 @@ class WeeklyCalibrator:
         scan_daily: Dict[str, Dict[date, float]] = {}
         for t in trades:
             st = t.scan_type.value if isinstance(t.scan_type, ScanType) else str(t.scan_type)
-            d = t.trade_date if isinstance(t.trade_date, date) else date.fromisoformat(str(t.trade_date))
+            d = t.timestamp_entry.date() if isinstance(t.timestamp_entry, datetime) else t.timestamp_entry
             scan_daily.setdefault(st, {})
-            scan_daily[st][d] = scan_daily[st].get(d, 0.0) + t.pnl
+            scan_daily[st][d] = scan_daily[st].get(d, 0.0) + (t.pnl_dollars or 0.0)
 
         scan_types = sorted(scan_daily.keys())
         if len(scan_types) < 2:
@@ -1634,7 +1643,7 @@ class WeeklyCalibrator:
         if not trades:
             return {}
 
-        pnls = np.array([t.pnl for t in trades], dtype=np.float64)
+        pnls = np.array([(t.pnl_dollars or 0.0) for t in trades], dtype=np.float64)
         results: Dict[str, float] = {}
 
         for cost in np.arange(0.0, 1.10, 0.10):
@@ -1729,7 +1738,7 @@ class MonthlyCalibrator:
             )
             return report
 
-        pnls = np.array([t.pnl for t in trades], dtype=np.float64)
+        pnls = np.array([(t.pnl_dollars or 0.0) for t in trades], dtype=np.float64)
 
         # -- Scanner Sharpe --
         pnl_std = float(np.std(pnls, ddof=1))
@@ -1770,11 +1779,11 @@ class MonthlyCalibrator:
         monthly_wr: Dict[str, float] = {}
         by_month: Dict[str, List[TradeLog]] = {}
         for t in trades:
-            d = t.trade_date if isinstance(t.trade_date, date) else date.fromisoformat(str(t.trade_date))
+            d = t.timestamp_entry.date() if isinstance(t.timestamp_entry, datetime) else t.timestamp_entry
             month_key = d.strftime("%Y-%m")
             by_month.setdefault(month_key, []).append(t)
         for mk, mt in sorted(by_month.items()):
-            wins = sum(1 for t in mt if t.pnl > 0)
+            wins = sum(1 for t in mt if (t.pnl_dollars or 0.0) > 0)
             monthly_wr[mk] = float(wins / len(mt)) if mt else 0.0
         report["monthly_win_rates"] = monthly_wr
 
@@ -1823,12 +1832,12 @@ class MonthlyCalibrator:
         # Aggregate daily SPX price and VIX1D (use the first trade of each day).
         daily_data: Dict[str, Dict[str, float]] = {}
         for t in trades:
-            d = t.trade_date if isinstance(t.trade_date, date) else date.fromisoformat(str(t.trade_date))
+            d = t.timestamp_entry.date() if isinstance(t.timestamp_entry, datetime) else t.timestamp_entry
             d_str = d.isoformat()
             if d_str not in daily_data:
                 daily_data[d_str] = {
-                    "spx_price": t.spx_price,
-                    "vix1d": t.vix1d,
+                    "spx_price": t.spx_at_entry,
+                    "vix1d": t.vix1d_at_entry,
                 }
 
         if not daily_data:
@@ -1916,7 +1925,7 @@ class MonthlyCalibrator:
         if len(trades) < 40:
             return False, "Insufficient data for signal decay analysis."
 
-        sorted_trades = sorted(trades, key=lambda t: t.entry_time)
+        sorted_trades = sorted(trades, key=lambda t: t.timestamp_entry)
         recent_cutoff = len(sorted_trades) - min(len(sorted_trades) // 3, 60)
         recent = sorted_trades[recent_cutoff:]
         historical = sorted_trades[:recent_cutoff]
@@ -1924,8 +1933,8 @@ class MonthlyCalibrator:
         if len(recent) < 10 or len(historical) < 10:
             return False, "Insufficient split for decay detection."
 
-        recent_pnls = np.array([t.pnl for t in recent], dtype=np.float64)
-        hist_pnls = np.array([t.pnl for t in historical], dtype=np.float64)
+        recent_pnls = np.array([(t.pnl_dollars or 0.0) for t in recent], dtype=np.float64)
+        hist_pnls = np.array([(t.pnl_dollars or 0.0) for t in historical], dtype=np.float64)
 
         recent_mean = float(np.mean(recent_pnls))
         hist_mean = float(np.mean(hist_pnls))

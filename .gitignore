@@ -25,3 +25,12 @@ target/
 .coverage
 htmlcov/
 logs/
+.DS_Store
+*.log
+*.csv
+*.parquet
+.idea/
+.vscode/
+.ipynb_checkpoints/
+.claude/
+data/

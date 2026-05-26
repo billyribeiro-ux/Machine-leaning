@@ -32,7 +32,7 @@
   let sortBy = $state<SortKey>('volOiRatio');
   let sortDir = $state<'asc' | 'desc'>('desc');
 
-  let sorted = $derived(() => {
+  let sorted = $derived.by(() => {
     const copy = [...activities];
     copy.sort((a, b) => {
       let cmp = 0;
@@ -169,7 +169,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each sorted() as act, idx (act.symbol + act.strike + act.expiry + act.type + idx)}
+        {#each sorted as act, idx (act.symbol + act.strike + act.expiry + act.type + idx)}
           {@const isCall = act.type === 'call'}
           <tr
             class="border-b border-[var(--border-subtle)] transition-colors duration-75 hover:bg-[var(--hover-overlay)]

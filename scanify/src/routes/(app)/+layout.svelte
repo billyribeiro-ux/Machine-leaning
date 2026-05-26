@@ -6,13 +6,22 @@
   import NavRail from '$lib/components/layout/NavRail.svelte';
   import StatusBar from '$lib/components/layout/StatusBar.svelte';
   import CommandBar from '$lib/components/layout/CommandBar.svelte';
+  import { wsStore } from '$lib/stores/websocket.svelte';
+  import { scannerStore } from '$lib/stores/scanner.svelte';
 
   let { children }: { children: Snippet } = $props();
 
   let commandBarOpen = $state(false);
 
+  /** Map WebSocket connection state to StatusBar's expected type. */
+  let connectionStatus = $derived.by(() => {
+    const state = wsStore.connectionState;
+    if (state === 'reconnecting') return 'connecting' as const;
+    return state as 'connected' | 'connecting' | 'disconnected';
+  });
+
   /** Derive the active route segment from the current URL path. */
-  let activeRoute = $derived(() => {
+  let activeRoute = $derived.by(() => {
     const path = page.url.pathname;
     // Extract the first segment after /(app)/
     const segments = path.split('/').filter(Boolean);
@@ -43,11 +52,11 @@
 
   {#snippet statusbar()}
     <StatusBar
-      connectionStatus="connected"
+      connectionStatus={connectionStatus}
       marketPhase="regular"
-      activeScanCount={3}
-      lastUpdate={new Date().toISOString()}
-      wsLatency={24}
+      activeScanCount={scannerStore.activeScanCount}
+      lastUpdate={wsStore.lastMessageTimestamp ? new Date(wsStore.lastMessageTimestamp).toISOString() : ''}
+      wsLatency={wsStore.latency}
     />
   {/snippet}
 </AppShell>

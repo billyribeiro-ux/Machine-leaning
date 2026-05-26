@@ -21,7 +21,7 @@ Key formulas:
 import math
 import numpy as np
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Tuple
 from collections import deque
 
@@ -207,7 +207,7 @@ class GEXResult:
     net_speed_by_strike: Dict[float, float] = field(default_factory=dict)
 
     dealer_position: str = "long_gamma"   # "long_gamma" | "short_gamma"
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 @dataclass
@@ -220,7 +220,7 @@ class GEXSignal:
     trigger_price: float = 0.0
     target_price: Optional[float] = None
     description: str = ""
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 # ---------------------------------------------------------------------------
@@ -388,7 +388,7 @@ class GEXEngine:
            trigger / transition zone.
         6. Compute net charm / vanna / speed exposures.
         """
-        result = GEXResult(timestamp=datetime.utcnow())
+        result = GEXResult(timestamp=datetime.now(timezone.utc))
         T = self._time_to_expiry(chain)
         strike_map = self._group_by_strike(chain)
 
@@ -670,7 +670,7 @@ class GEXEngine:
         6. VANNA_AMPLIFICATION   — VIX1D change >10 % and large vanna.
         """
         signals: List[GEXSignal] = []
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # -------- 1. GAMMA_FLIP_CROSSOVER ------------------------------
         if prior_gex is not None and current_gex.gamma_flip_level > 0:
@@ -921,7 +921,7 @@ class GEXEngine:
 
         ``T = minutes_remaining / (252 * 390)``
         """
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         if chain.expiry is None:
             return _MIN_T
 
