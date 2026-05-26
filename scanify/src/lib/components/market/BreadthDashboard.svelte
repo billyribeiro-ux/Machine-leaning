@@ -82,12 +82,14 @@
       </div>
     </div>
     <!-- Gauge bar -->
-    {@const nhTotal = internals.newHighs + internals.newLows}
-    {@const nhPct = nhTotal > 0 ? (internals.newHighs / nhTotal) * 100 : 50}
-    <div class="flex h-2 rounded-full overflow-hidden bg-[var(--bg-void)]">
-      <div class="h-full bg-[var(--bullish-dim)] transition-all duration-300" style="width: {nhPct}%;"></div>
-      <div class="h-full bg-[var(--bearish-dim)] transition-all duration-300" style="width: {100 - nhPct}%;"></div>
-    </div>
+    {#if true}
+      {@const nhTotal = internals.newHighs + internals.newLows}
+      {@const nhPct = nhTotal > 0 ? (internals.newHighs / nhTotal) * 100 : 50}
+      <div class="flex h-2 rounded-full overflow-hidden bg-[var(--bg-void)]">
+        <div class="h-full bg-[var(--bullish-dim)] transition-all duration-300" style="width: {nhPct}%;"></div>
+        <div class="h-full bg-[var(--bearish-dim)] transition-all duration-300" style="width: {100 - nhPct}%;"></div>
+      </div>
+    {/if}
   </div>
 
   <!-- % Above 200-day MA -->
@@ -149,13 +151,12 @@
   <div class="panel p-4 flex flex-col gap-3 sm:col-span-2 lg:col-span-2">
     <span class="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider">Breadth Summary</span>
     <div class="grid grid-cols-4 gap-3">
-      {@const metrics = [
+      {#each [
         { label: 'A/D Ratio', value: formatRatio(adRatio), bullish: adRatio >= 1 },
         { label: 'NH-NL', value: `${nhNlDiff >= 0 ? '+' : ''}${nhNlDiff}`, bullish: nhNlDiff >= 0 },
         { label: '>200MA', value: `${internals.percentAbove200ma.toFixed(0)}%`, bullish: internals.percentAbove200ma >= 50 },
         { label: '>50MA', value: `${internals.percentAbove50ma.toFixed(0)}%`, bullish: internals.percentAbove50ma >= 50 }
-      ]}
-      {#each metrics as m}
+      ] as m}
         <div class="text-center">
           <div class="mono-nums text-base font-bold {m.bullish ? 'text-[var(--bullish)]' : 'text-[var(--bearish)]'}">
             {m.value}
