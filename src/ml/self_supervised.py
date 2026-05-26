@@ -934,7 +934,7 @@ class AdaptiveLearningSystem:
 
     def load_state(self, path: str):
         """Load model and learning state."""
-        state = torch.load(path, map_location=self.device)
+        state = torch.load(path, map_location=self.device, weights_only=True)
 
         self.contrastive_learner.load_state_dict(state["contrastive_learner"])
         self.masked_predictor.load_state_dict(state["masked_predictor"])

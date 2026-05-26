@@ -56,6 +56,8 @@ class TradeDirection(str, Enum):
     BULL = "BULL"
     BEAR = "BEAR"
     NEUTRAL = "NEUTRAL"
+    LONG_CALL = "LONG_CALL"
+    LONG_PUT = "LONG_PUT"
 
 
 class ExitReason(str, Enum):
