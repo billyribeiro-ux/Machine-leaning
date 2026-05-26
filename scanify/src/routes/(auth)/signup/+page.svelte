@@ -19,7 +19,7 @@
   });
 
   let strengthLabel = $derived.by(() => {
-    const s = passwordStrength();
+    const s = passwordStrength;
     if (s === 0) return '';
     if (s === 1) return 'Weak';
     if (s === 2) return 'Fair';
@@ -28,7 +28,7 @@
   });
 
   let strengthColor = $derived.by(() => {
-    const s = passwordStrength();
+    const s = passwordStrength;
     if (s <= 1) return 'var(--bearish)';
     if (s === 2) return 'var(--warning)';
     if (s === 3) return 'var(--bullish-dim)';
@@ -147,11 +147,11 @@
                 {#each Array(4) as _, i}
                   <div
                     class="h-1 flex-1 rounded-full transition-all"
-                    style="background: {i < passwordStrength() ? strengthColor() : 'var(--bg-overlay)'};"
+                    style="background: {i < passwordStrength ? strengthColor : 'var(--bg-overlay)'};"
                   ></div>
                 {/each}
               </div>
-              <p class="text-xs" style="color: {strengthColor()};">{strengthLabel()}</p>
+              <p class="text-xs" style="color: {strengthColor};">{strengthLabel}</p>
             </div>
           {/if}
         </div>

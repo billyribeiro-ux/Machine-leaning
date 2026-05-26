@@ -261,7 +261,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each filteredResults() as result, i (result.id)}
+        {#each filteredResults as result, i (result.id)}
           <tr
             class="transition-colors cursor-pointer"
             style="background: {i % 2 === 0 ? 'var(--bg-surface)' : 'transparent'}; border-bottom: 1px solid var(--border-subtle);"
@@ -322,7 +322,7 @@
           </tr>
         {/each}
 
-        {#if filteredResults().length === 0}
+        {#if filteredResults.length === 0}
           <tr>
             <td colspan="9" class="text-center py-12 text-sm" style="color: var(--text-tertiary);">
               No results match current filters
