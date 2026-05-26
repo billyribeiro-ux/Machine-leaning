@@ -20,13 +20,15 @@ Complete guide to deploying Scanify as a desktop app and web service.
 │            ┌──────────────┴──────────────┐                  │
 │            ▼                              ▼                  │
 │  ┌─────────────────┐           ┌─────────────────┐          │
-│  │  Desktop App    │           │    Web App      │          │
-│  │  (Tauri/React)  │           │   (Next.js)     │          │
+│  │  Desktop App    │           │  Browser App    │          │
+│  │  (Tauri v2)     │           │  (SvelteKit)    │          │
 │  │                 │           │                 │          │
 │  │  • Your screen  │           │  • Subscribers  │          │
 │  │  • System tray  │           │  • Login/Auth   │          │
 │  │  • Notifications│           │  • Stripe       │          │
 │  └─────────────────┘           └─────────────────┘          │
+│          └──────────── same codebase ────────────┘          │
+│                      (scanify/)                              │
 │                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -56,34 +58,34 @@ python scanify_server.py --with-scanner
 ### 2. Run Desktop App (For Screen Sharing)
 
 ```bash
-cd desktop
+cd scanify
 
 # Install dependencies
-npm install
+pnpm install
 
 # Development mode
-npm run tauri:dev
+pnpm tauri:dev
 
 # Build for distribution
-npm run tauri:build
-# Output: desktop/src-tauri/target/release/bundle/
+pnpm tauri:build
+# Output: src-tauri/target/release/bundle/
 ```
 
-### 3. Run Web App (For Subscribers)
+### 3. Run Browser App (For Subscribers)
 
 ```bash
-cd web
+cd scanify
 
 # Install dependencies
-npm install
+pnpm install
 
 # Development
-npm run dev
-# Available at http://localhost:3000
+pnpm dev
+# Available at http://localhost:5173
 
 # Production build
-npm run build
-npm run start
+pnpm build
+pnpm preview
 ```
 
 ## Detailed Setup
@@ -95,7 +97,7 @@ npm run start
 | Python | 3.11+ |
 | Node.js | 18+ |
 | Rust | Latest stable (for Tauri) |
-| npm/pnpm | Latest |
+| pnpm | 10+ |
 
 ### Environment Variables
 
@@ -115,35 +117,20 @@ ALPACA_API_KEY=your_alpaca_key
 ALPACA_SECRET_KEY=your_alpaca_secret
 
 # CORS (comma-separated origins)
-SCANIFY_CORS_ORIGINS=http://localhost:3000,https://yourdomain.com
-```
-
-For the web app (`web/.env.local`):
-
-```env
-NEXT_PUBLIC_API_URL=http://localhost:8000
-NEXT_PUBLIC_WS_URL=ws://localhost:8000
-
-# Stripe (for payments)
-STRIPE_SECRET_KEY=sk_test_...
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
+SCANIFY_CORS_ORIGINS=http://localhost:5173,https://yourdomain.com
 ```
 
 ### Desktop App Configuration
 
-Edit `desktop/src-tauri/tauri.conf.json`:
+Edit `scanify/src-tauri/tauri.conf.json`:
 
 ```json
 {
-  "package": {
-    "productName": "Scanify",
-    "version": "1.0.0"
-  },
-  "tauri": {
-    "bundle": {
-      "identifier": "com.yourcompany.scanify",
-      "icon": [...]
-    }
+  "productName": "Scanify",
+  "version": "1.0.0",
+  "identifier": "com.scanify.app",
+  "bundle": {
+    "icon": [...]
   }
 }
 ```
@@ -151,18 +138,18 @@ Edit `desktop/src-tauri/tauri.conf.json`:
 ### Build Desktop App for Distribution
 
 ```bash
-cd desktop
+cd scanify
 
 # macOS
-npm run tauri:build
+pnpm tauri:build
 # Output: src-tauri/target/release/bundle/dmg/Scanify.dmg
 
 # Windows
-npm run tauri:build
+pnpm tauri:build
 # Output: src-tauri/target/release/bundle/msi/Scanify.msi
 
 # Linux
-npm run tauri:build
+pnpm tauri:build
 # Output: src-tauri/target/release/bundle/appimage/Scanify.AppImage
 ```
 
@@ -229,11 +216,12 @@ docker build -t scanify-api .
 docker run -p 8000:8000 --env-file .env scanify-api
 ```
 
-### Production Web (Vercel)
+### Production Web (Vercel/Cloudflare)
 
 ```bash
-cd web
-vercel --prod
+cd scanify
+pnpm build
+# Deploy the .svelte-kit/cloudflare output
 ```
 
 ### Production Desktop (Distribution)
@@ -255,7 +243,7 @@ vercel --prod
 
 2. Launch the desktop app:
    ```bash
-   cd desktop && npm run tauri:dev
+   cd scanify && pnpm tauri:dev
    ```
 
 3. Login as admin (create via API):

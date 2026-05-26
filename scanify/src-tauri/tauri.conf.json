@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "identifier": "com.scanify.app",
   "build": {
-    "beforeBuildCommand": "npm run build",
-    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "pnpm run build",
+    "beforeDevCommand": "pnpm run dev",
     "frontendDist": "../build",
     "devUrl": "http://localhost:5173"
   },

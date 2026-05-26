@@ -3,6 +3,7 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
+	"packageManager": "pnpm@10.33.0",
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build",
@@ -32,6 +33,9 @@
 		"typescript": "^5.9.3",
 		"vite": "^7.3.1",
 		"vitest": "^4.0.18"
+	},
+	"pnpm": {
+		"onlyBuiltDependencies": ["esbuild", "sharp", "workerd"]
 	},
 	"dependencies": {
 		"@sentry/svelte": "^10.38.0",
