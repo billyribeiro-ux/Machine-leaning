@@ -4,6 +4,8 @@
   Fuzzy search with keyboard navigation, categories, and mock data.
 -->
 <script lang="ts">
+  import { exportData } from '$lib/utils/export';
+
   type CommandCategory = 'navigation' | 'scans' | 'symbols' | 'actions' | 'settings';
 
   interface CommandItem {
@@ -78,32 +80,9 @@
   ];
 
   function exportSignals(format: 'csv' | 'json' | 'pdf'): void {
-    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('scanify_token') : null;
-    const baseUrl = '/api/signals/export';
-    const params = new URLSearchParams({ format });
-    const url = `${baseUrl}?${params.toString()}`;
-
-    fetch(url, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`Export failed: ${res.status}`);
-        const disposition = res.headers.get('Content-Disposition') ?? '';
-        const match = disposition.match(/filename="?([^"]+)"?/);
-        const filename = match?.[1] ?? `scanify_export.${format}`;
-        return res.blob().then((blob) => ({ blob, filename }));
-      })
-      .then(({ blob, filename }) => {
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = filename;
-        a.click();
-        URL.revokeObjectURL(a.href);
-      })
-      .catch((err) => {
-        console.error('Export error:', err);
-      });
+    exportData(format, 'scanner').catch((err) => {
+      console.error('Export error:', err);
+    });
   }
 
   const recentIds = ['nav-scanner', 'scan-momentum', 'sym-spy', 'act-new-scan'];

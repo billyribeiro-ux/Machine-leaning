@@ -354,7 +354,7 @@ async def export_signals(
     if _scanner_engine and hasattr(_scanner_engine, "last_results") and _scanner_engine.last_results:
         raw_signals = []
         for result in _scanner_engine.last_results.results:
-            raw_signals.append({
+            sig: dict = {
                 "symbol": result.symbol,
                 "scanner_type": result.scanner_type,
                 "direction": result.direction.value if hasattr(result.direction, "value") else str(result.direction),
@@ -365,7 +365,9 @@ async def export_signals(
                 "risk_reward": result.risk_reward,
                 "timeframe": result.timeframe.value if hasattr(result.timeframe, "value") else str(result.timeframe),
                 "timestamp": result.timestamp.isoformat() if hasattr(result.timestamp, "isoformat") else str(result.timestamp),
-            })
+            }
+            _enrich_precision_alpha(sig, result)
+            raw_signals.append(sig)
     else:
         raw_signals = _filter_signals_for_tier(_signals_cache, tier)
 
@@ -400,13 +402,46 @@ async def export_signals(
     raise HTTPException(status_code=400, detail=f"Unsupported format: {format}")
 
 
+def _enrich_precision_alpha(sig: dict, result) -> None:
+    """Add dimension scores and option recommendation for precision_alpha signals."""
+    if getattr(result, "scanner_type", "") != "precision_alpha":
+        return
+    meta = getattr(result, "metadata", None) or {}
+    dims = meta.get("dimensions")
+    if dims:
+        for dim_name, dim_data in dims.items():
+            sig[f"dim_{dim_name}"] = dim_data.get("score", "")
+            sig[f"dim_{dim_name}_dir"] = dim_data.get("direction", "")
+        sig["regime"] = meta.get("regime", "")
+    opt = meta.get("option_recommendation")
+    if opt:
+        sig["opt_type"] = opt.get("type", "")
+        sig["opt_strike"] = opt.get("strike", "")
+        sig["opt_dte"] = opt.get("dte", "")
+        sig["opt_delta"] = opt.get("delta", "")
+        sig["opt_premium"] = opt.get("premium", "")
+        sig["opt_breakeven"] = opt.get("breakeven", "")
+        sig["opt_max_risk"] = opt.get("max_risk", "")
+        sig["opt_target_pnl_pct"] = opt.get("target_pnl_pct", "")
+
+
 def _build_csv_response(signals: list, timestamp_str: str) -> StreamingResponse:
     """Build a CSV StreamingResponse from a list of signal dicts."""
-    fieldnames = [
+    base_fields = [
         "timestamp", "symbol", "scanner_type", "direction",
         "confidence", "entry_price", "stop_loss", "targets",
         "risk_reward", "timeframe",
     ]
+    has_pa = any(s.get("scanner_type") == "precision_alpha" for s in signals)
+    if has_pa:
+        pa_dim_fields = []
+        for s in signals:
+            if s.get("scanner_type") == "precision_alpha":
+                pa_dim_fields = [k for k in s if k.startswith("dim_") or k.startswith("opt_") or k == "regime"]
+                break
+        fieldnames = base_fields + pa_dim_fields
+    else:
+        fieldnames = base_fields
 
     buf = io.StringIO()
     writer = csv.DictWriter(buf, fieldnames=fieldnames, extrasaction="ignore")
@@ -451,6 +486,33 @@ def _build_pdf_response(signals: list, timestamp_str: str) -> StreamingResponse:
         stop_str = f"{stop:>10.2f}" if stop is not None else f"{'N/A':>10}"
         rr_str = f"{rr:>6.2f}" if rr is not None else f"{'N/A':>6}"
         lines.append(f"{symbol:<8} {scanner:<14} {direction:<7} {confidence:>6.1f} {entry_str} {stop_str} {rr_str} {ts}")
+
+    pa_signals = [s for s in signals if s.get("scanner_type") == "precision_alpha"]
+    if pa_signals:
+        lines.append("")
+        lines.append("=" * 90)
+        lines.append("PRECISION ALPHA — Dimension Breakdown")
+        lines.append("=" * 90)
+        for sig in pa_signals:
+            sym = sig.get("symbol", "")
+            regime = sig.get("regime", "N/A")
+            lines.append(f"\n  {sym}  |  Regime: {regime}  |  Composite: {sig.get('confidence', 0):.1f}")
+            lines.append(f"  {'Dimension':<24} {'Score':>7} {'Direction':>10}")
+            lines.append(f"  {'-' * 44}")
+            for key in sorted(sig.keys()):
+                if key.startswith("dim_") and not key.endswith("_dir"):
+                    dim_name = key[4:]
+                    score = sig.get(key, "")
+                    d = sig.get(f"dim_{dim_name}_dir", "")
+                    score_str = f"{float(score):>7.1f}" if score != "" else f"{'N/A':>7}"
+                    dir_str = f"{float(d):>10.3f}" if d != "" else f"{'N/A':>10}"
+                    lines.append(f"  {dim_name:<24} {score_str} {dir_str}")
+            if sig.get("opt_type"):
+                lines.append(f"  Option: {sig['opt_type']} ${sig.get('opt_strike', '')} "
+                             f"({sig.get('opt_dte', '')}d) "
+                             f"delta={sig.get('opt_delta', '')} "
+                             f"prem=${sig.get('opt_premium', '')} "
+                             f"BE=${sig.get('opt_breakeven', '')}")
 
     text = "\n".join(lines)
     pdf_bytes = _text_to_pdf(text)

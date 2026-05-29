@@ -2,6 +2,7 @@
   import DarkPoolFeed from '$components/institutional/DarkPoolFeed.svelte';
   import ShortInterest from '$components/institutional/ShortInterest.svelte';
   import ETFFlows from '$components/institutional/ETFFlows.svelte';
+  import ExportToolbar from '$lib/components/ui/ExportToolbar.svelte';
 
   let activeTab = $state<'darkpool' | 'short' | 'etf'>('darkpool');
 
@@ -57,6 +58,7 @@
   <!-- Header -->
   <div class="flex items-center justify-between px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
     <h1 class="text-lg font-bold" style="color: var(--text-primary);">Institutional</h1>
+    <ExportToolbar source="institutional" />
   </div>
 
   <!-- Tab switcher -->

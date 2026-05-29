@@ -1,5 +1,6 @@
 <script lang="ts">
   import InternalsBar from '$components/market/InternalsBar.svelte';
+  import ExportToolbar from '$lib/components/ui/ExportToolbar.svelte';
 
   const indices = [
     { symbol: 'SPY', price: 502.34, change: 2.25, changePercent: 0.45 },
@@ -52,9 +53,13 @@
   <!-- Page header -->
   <div class="flex items-center justify-between shrink-0">
     <h1 class="text-xl font-bold" style="color: var(--text-primary);">Dashboard</h1>
-    <span class="text-xs font-mono" style="color: var(--text-tertiary);">
-      {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
-    </span>
+    <div class="flex items-center gap-3">
+      <ExportToolbar source="dashboard" />
+      <div class="w-px h-5" style="background: var(--border-subtle);"></div>
+      <span class="text-xs font-mono" style="color: var(--text-tertiary);">
+        {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
+      </span>
+    </div>
   </div>
 
   <!-- Grid layout -->
