@@ -17,6 +17,7 @@ Components:
     - exit_manager: Position and exit management
     - trade_logger: Trade logging and self-learning calibration
     - orchestrator: Master controller tying all components together
+    - gex_dashboard: SpotGamma-style GEX visualization with key levels and bar charts
 """
 
 import logging
@@ -249,6 +250,59 @@ except ImportError as exc:
     )
 
 # ---------------------------------------------------------------------------
+# gex_dashboard — SpotGamma-style GEX visualization
+# ---------------------------------------------------------------------------
+try:
+    from .gex_dashboard import (
+        GEXTheme,
+        GEXDashboardData,
+        GEXDashboard,
+        render_gex_dashboard,
+    )
+except ImportError as exc:
+    _logger.warning("Failed to import scanify.gex_dashboard: %s", exc)
+    warnings.warn(
+        f"scanify.gex_dashboard could not be imported: {exc}",
+        ImportWarning,
+        stacklevel=2,
+    )
+
+# ---------------------------------------------------------------------------
+# yahoo_adapter — Yahoo Finance real data adapter
+# ---------------------------------------------------------------------------
+try:
+    from .yahoo_adapter import (
+        YahooFinanceAdapter,
+        run_live_gex_test,
+    )
+except ImportError as exc:
+    _logger.warning("Failed to import scanify.yahoo_adapter: %s", exc)
+    warnings.warn(
+        f"scanify.yahoo_adapter could not be imported: {exc}",
+        ImportWarning,
+        stacklevel=2,
+    )
+
+# ---------------------------------------------------------------------------
+# edgar_adapter — SEC EDGAR institutional data adapter
+# ---------------------------------------------------------------------------
+try:
+    from .edgar_adapter import (
+        InstitutionalHolder,
+        OptionsPosition,
+        InstitutionalSummary,
+        EDGARAdapter,
+        run_edgar_test,
+    )
+except ImportError as exc:
+    _logger.warning("Failed to import scanify.edgar_adapter: %s", exc)
+    warnings.warn(
+        f"scanify.edgar_adapter could not be imported: {exc}",
+        ImportWarning,
+        stacklevel=2,
+    )
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 __all__ = [
@@ -333,4 +387,18 @@ __all__ = [
     "ScanCycleResult",
     "SessionState",
     "ScanifyOrchestrator",
+    # gex_dashboard
+    "GEXTheme",
+    "GEXDashboardData",
+    "GEXDashboard",
+    "render_gex_dashboard",
+    # yahoo_adapter
+    "YahooFinanceAdapter",
+    "run_live_gex_test",
+    # edgar_adapter
+    "InstitutionalHolder",
+    "OptionsPosition",
+    "InstitutionalSummary",
+    "EDGARAdapter",
+    "run_edgar_test",
 ]

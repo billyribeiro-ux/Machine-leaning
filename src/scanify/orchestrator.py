@@ -43,6 +43,7 @@ from .premium_seller import PremiumSellingScanner, PremiumSellSignal
 from .gamma_scalp import GammaScalpScanner, GammaScalpSignal
 from .exit_manager import ExitManager, Position, ExitSignal
 from .trade_logger import TradeLogger, TradeRecord, CalibrationEngine
+from .gex_dashboard import GEXDashboard, GEXDashboardData
 
 logger = logging.getLogger(__name__)
 
@@ -1361,6 +1362,66 @@ class ScanifyOrchestrator:
             "net_vanna_exposure": round(gex.net_vanna_exposure, 0),
             "timestamp": gex.timestamp.isoformat(),
         }
+
+    # ==================================================================
+    # GEX Dashboard rendering
+    # ==================================================================
+
+    def render_gex_dashboard(
+        self,
+        chain: Optional[OptionsChain] = None,
+        console=None,
+    ) -> None:
+        """Render the SpotGamma-style GEX dashboard to the terminal.
+
+        Uses the current session state (GEX result, signals, VIX1D, etc.)
+        to populate and render the full GEX visualization.
+
+        Parameters
+        ----------
+        chain : OptionsChain, optional
+            Current options chain for per-strike OI detail.
+        console : rich.Console, optional
+            Custom console for rendering.  Uses a default if not provided.
+        """
+        gex = self._state.current_gex
+        if gex is None:
+            logger.warning("No GEX data available for dashboard rendering.")
+            return
+
+        setup = self._state.session_setup
+        spot = chain.underlying_price if chain else 0.0
+        if spot <= 0 and setup:
+            spot = setup.expected_move.upper_1sigma - setup.expected_move.em_1sigma
+
+        vix1d = self._state.vix1d_history[-1] if self._state.vix1d_history else 0.0
+
+        gex_signals = self.gex_engine.detect_signals(
+            gex, self._state.prior_gex, spot, vix1d
+        )
+
+        momentum = self.gex_engine.get_gex_momentum()
+        high_speed = self.gex_engine.get_high_speed_strikes(gex, spot)
+
+        tz_str = ""
+        if setup:
+            tz_str = setup.session_type.value
+        session_str = self._state.session_setup.session_type.value if setup else ""
+
+        data = GEXDashboardData(
+            gex_result=gex,
+            spot_price=spot,
+            chain=chain,
+            signals=gex_signals,
+            gex_momentum=momentum,
+            high_speed_strikes=high_speed,
+            vix1d=vix1d,
+            session_type=session_str,
+            time_zone=tz_str,
+        )
+
+        dashboard = GEXDashboard(console=console)
+        dashboard.render(data)
 
     # ==================================================================
     # Session reset
