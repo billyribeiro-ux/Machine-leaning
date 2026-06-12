@@ -268,6 +268,41 @@ except ImportError as exc:
     )
 
 # ---------------------------------------------------------------------------
+# yahoo_adapter — Yahoo Finance real data adapter
+# ---------------------------------------------------------------------------
+try:
+    from .yahoo_adapter import (
+        YahooFinanceAdapter,
+        run_live_gex_test,
+    )
+except ImportError as exc:
+    _logger.warning("Failed to import scanify.yahoo_adapter: %s", exc)
+    warnings.warn(
+        f"scanify.yahoo_adapter could not be imported: {exc}",
+        ImportWarning,
+        stacklevel=2,
+    )
+
+# ---------------------------------------------------------------------------
+# edgar_adapter — SEC EDGAR institutional data adapter
+# ---------------------------------------------------------------------------
+try:
+    from .edgar_adapter import (
+        InstitutionalHolder,
+        OptionsPosition,
+        InstitutionalSummary,
+        EDGARAdapter,
+        run_edgar_test,
+    )
+except ImportError as exc:
+    _logger.warning("Failed to import scanify.edgar_adapter: %s", exc)
+    warnings.warn(
+        f"scanify.edgar_adapter could not be imported: {exc}",
+        ImportWarning,
+        stacklevel=2,
+    )
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 __all__ = [
@@ -357,4 +392,13 @@ __all__ = [
     "GEXDashboardData",
     "GEXDashboard",
     "render_gex_dashboard",
+    # yahoo_adapter
+    "YahooFinanceAdapter",
+    "run_live_gex_test",
+    # edgar_adapter
+    "InstitutionalHolder",
+    "OptionsPosition",
+    "InstitutionalSummary",
+    "EDGARAdapter",
+    "run_edgar_test",
 ]

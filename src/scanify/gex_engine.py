@@ -26,7 +26,7 @@ from typing import Dict, List, Optional, Tuple
 from collections import deque
 
 from .config import GEXConfig, GEXSignalType, SignalDirection
-from .data_feeds import OptionsChain, OptionQuote
+from .data_feeds import OptionsChain, OptionQuote, OptionType
 
 
 # ---------------------------------------------------------------------------
@@ -48,6 +48,13 @@ _OPT_MULTIPLIER = 100.0
 
 # Bump sizes for numerical greeks.
 _SPOT_BUMP = 0.01          # 1 cent for speed / vanna bump
+
+
+def _is_call(option_type) -> bool:
+    """Check whether an option_type value represents a call (handles enum and str)."""
+    if isinstance(option_type, OptionType):
+        return option_type == OptionType.CALL
+    return str(option_type).lower() == "call"
 _VOL_BUMP = 0.001          # 0.1 vol-pt for vanna bump
 _TIME_BUMP = _MIN_T        # 1 minute for charm bump
 
@@ -337,13 +344,13 @@ class GEXEngine:
             sigma = None
 
             for q_obj in quotes:
-                if q_obj.option_type == "call":
+                if _is_call(q_obj.option_type):
                     call_oi = q_obj.open_interest
                 else:
                     put_oi = q_obj.open_interest
                 # Take any available IV; prefer call side.
-                if q_obj.iv is not None and q_obj.iv > 0:
-                    sigma = q_obj.iv
+                if q_obj.implied_vol is not None and q_obj.implied_vol > 0:
+                    sigma = q_obj.implied_vol
 
             if call_oi == 0 and put_oi == 0:
                 continue
@@ -413,29 +420,29 @@ class GEXEngine:
             sigma = None
 
             for q_obj in quotes:
-                if q_obj.option_type == "call":
+                if _is_call(q_obj.option_type):
                     call_oi = q_obj.open_interest
                     # Try to extract IV from market mid-price when chain IV
                     # is missing or unreliable.
-                    if (q_obj.iv is None or q_obj.iv <= 0) and q_obj.bid is not None and q_obj.ask is not None:
+                    if (q_obj.implied_vol is None or q_obj.implied_vol <= 0) and q_obj.bid is not None and q_obj.ask is not None:
                         mid = (q_obj.bid + q_obj.ask) / 2.0
                         if mid > self.config.iv_extrapolation_threshold:
                             sigma = self.compute_iv_from_price(
                                 mid, spot, strike, T, r, q, "call"
                             )
-                    elif q_obj.iv is not None and q_obj.iv > 0:
-                        sigma = q_obj.iv
+                    elif q_obj.implied_vol is not None and q_obj.implied_vol > 0:
+                        sigma = q_obj.implied_vol
                 else:
                     put_oi = q_obj.open_interest
                     if sigma is None:
-                        if (q_obj.iv is None or q_obj.iv <= 0) and q_obj.bid is not None and q_obj.ask is not None:
+                        if (q_obj.implied_vol is None or q_obj.implied_vol <= 0) and q_obj.bid is not None and q_obj.ask is not None:
                             mid = (q_obj.bid + q_obj.ask) / 2.0
                             if mid > self.config.iv_extrapolation_threshold:
                                 sigma = self.compute_iv_from_price(
                                     mid, spot, strike, T, r, q, "put"
                                 )
-                        elif q_obj.iv is not None and q_obj.iv > 0:
-                            sigma = q_obj.iv
+                        elif q_obj.implied_vol is not None and q_obj.implied_vol > 0:
+                            sigma = q_obj.implied_vol
 
             # Skip strikes with zero OI entirely.
             if call_oi == 0 and put_oi == 0:
@@ -568,7 +575,7 @@ class GEXEngine:
         put_oi_map: Dict[float, int] = {}
         for strike, quotes in strike_map.items():
             for q_obj in quotes:
-                if q_obj.option_type == "call":
+                if _is_call(q_obj.option_type):
                     call_oi_map[strike] = q_obj.open_interest
                 else:
                     put_oi_map[strike] = q_obj.open_interest
