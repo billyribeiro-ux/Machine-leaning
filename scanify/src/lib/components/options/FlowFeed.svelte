@@ -75,21 +75,17 @@
   );
 </script>
 
-<div class="panel flex flex-col overflow-hidden {className}">
+<div class="panel flow-panel {className}">
   <!-- Header -->
-  <div class="flex items-center justify-between px-4 py-2 border-b border-[var(--border-subtle)]">
-    <div class="flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full bg-[var(--bullish)] signal-ping"></div>
-      <span class="text-sm font-semibold text-[var(--text-primary)]">Options Flow</span>
-      <span class="text-2xs text-[var(--text-tertiary)]">({items.length})</span>
+  <div class="flow-header">
+    <div class="header-left">
+      <div class="live-dot signal-ping"></div>
+      <span class="header-title">Options Flow</span>
+      <span class="text-2xs header-count">({items.length})</span>
     </div>
     <button
       type="button"
-      class="text-2xs px-2 py-1 rounded transition-colors
-        {autoScroll
-          ? 'bg-[var(--accent-bg)] text-[var(--accent-bright)]'
-          : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'
-        }"
+      class="auto-btn text-2xs {autoScroll ? 'auto-btn-active' : ''}"
       onclick={() => (autoScroll = !autoScroll)}
     >
       {autoScroll ? 'AUTO' : 'PAUSED'}
@@ -98,87 +94,305 @@
 
   <!-- Feed -->
   <div
-    class="flex-1 overflow-y-auto min-h-0 space-y-1 p-2"
+    class="feed-scroll"
     bind:this={feedContainer}
     onmouseenter={handleMouseEnter}
     onmouseleave={handleMouseLeave}
   >
     {#each sortedItems as item (item.id)}
       {@const isCall = item.type === 'call'}
-      {@const tintBg = isCall ? 'bg-[oklch(0.13_0.03_155/0.5)]' : 'bg-[oklch(0.13_0.03_25/0.5)]'}
-      {@const borderColor = item.isUnusual
-        ? (isCall ? 'border-[var(--bullish-dim)]' : 'border-[var(--bearish-dim)]')
-        : 'border-[var(--border-subtle)]'
-      }
 
       <div
-        class="flex items-center gap-2 px-3 py-2 rounded-md border transition-all duration-150 hover:bg-[var(--hover-overlay)]
-          {tintBg} {borderColor}
-          {item.isUnusual ? 'shadow-[0_0_12px_0_oklch(0.6_0.15_85/0.15)]' : ''}"
+        class="flow-row {isCall ? 'flow-row-call' : 'flow-row-put'}
+          {item.isUnusual ? (isCall ? 'flow-row-unusual flow-row-unusual-call' : 'flow-row-unusual flow-row-unusual-put') : ''}"
       >
         <!-- Symbol -->
-        <span class="text-xs font-semibold text-[var(--text-primary)] w-14 shrink-0">{item.symbol}</span>
+        <span class="symbol-col">{item.symbol}</span>
 
         <!-- Type badge -->
-        <span
-          class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-sm shrink-0
-            {isCall
-              ? 'bg-[var(--bullish-bg)] text-[var(--bullish-bright)] border border-[oklch(0.45_0.12_155/0.3)]'
-              : 'bg-[var(--bearish-bg)] text-[var(--bearish-bright)] border border-[oklch(0.42_0.12_25/0.3)]'
-            }"
-        >
+        <span class="type-badge {isCall ? 'type-badge-call' : 'type-badge-put'}">
           {item.type === 'call' ? 'C' : 'P'}
         </span>
 
         <!-- Strike @ Expiration -->
-        <span class="text-xs mono-nums text-[var(--text-secondary)] shrink-0">
+        <span class="strike-col mono-nums">
           {item.strike}@{formatExpShort(item.expiration)}
         </span>
 
         <!-- Side -->
-        <span
-          class="text-[10px] uppercase font-medium shrink-0
-            {item.side === 'buy' ? 'text-[var(--bullish)]' : 'text-[var(--bearish)]'}"
-        >
+        <span class="side-col {item.side === 'buy' ? 'side-buy' : 'side-sell'}">
           {item.side}
         </span>
 
         <!-- Spacer -->
-        <div class="flex-1"></div>
+        <div class="spacer"></div>
 
         <!-- Badges -->
         {#if item.isSweep}
-          <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm bg-[var(--accent-bg)] text-[var(--accent-bright)] border border-[oklch(0.44_0.14_290/0.3)]">
-            SWEEP
-          </span>
+          <span class="badge-sweep">SWEEP</span>
         {/if}
         {#if item.isUnusual}
-          <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-sm bg-[var(--warning-bg)] text-[var(--warning-bright)] border border-[oklch(0.52_0.10_85/0.3)]">
-            UNUSUAL
-          </span>
+          <span class="badge-unusual">UNUSUAL</span>
         {/if}
 
         <!-- Size -->
-        <span class="text-xs mono-nums text-[var(--text-secondary)] w-12 text-right shrink-0">
+        <span class="size-col mono-nums">
           {item.size.toLocaleString()}
         </span>
 
         <!-- Premium -->
-        <span class="text-xs mono-nums font-semibold text-[var(--text-primary)] w-16 text-right shrink-0">
+        <span class="premium-col mono-nums">
           {formatPremium(item.premium)}
         </span>
 
         <!-- Time -->
-        <span class="text-2xs text-[var(--text-tertiary)] w-16 text-right shrink-0">
+        <span class="text-2xs time-col">
           {formatTime(typeof item.timestamp === 'string' ? new Date(item.timestamp).getTime() : item.timestamp)}
         </span>
       </div>
     {/each}
 
     {#if items.length === 0}
-      <div class="flex items-center justify-center h-32 text-sm text-[var(--text-tertiary)]">
+      <div class="empty-state">
         Waiting for options flow data...
       </div>
     {/if}
   </div>
 </div>
+
+<style>
+  /* ── Layout ── */
+  .flow-panel {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  .flow-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-inline: 16px;
+    padding-block: 8px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 9999px;
+    background-color: var(--bullish);
+  }
+
+  .header-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .header-count {
+    color: var(--text-tertiary);
+  }
+
+  /* ── Auto-scroll button ── */
+  .auto-btn {
+    padding-inline: 8px;
+    padding-block: 4px;
+    border-radius: 4px;
+    transition: color 150ms, background-color 150ms;
+    color: var(--text-tertiary);
+  }
+
+  .auto-btn:hover {
+    color: var(--text-secondary);
+  }
+
+  .auto-btn-active {
+    background-color: var(--accent-bg);
+    color: var(--accent-bright);
+  }
+
+  .auto-btn-active:hover {
+    color: var(--accent-bright);
+  }
+
+  /* ── Feed scroll area ── */
+  .feed-scroll {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    padding: 8px;
+  }
+
+  .feed-scroll > :global(* + *) {
+    margin-top: 4px;
+  }
+
+  /* ── Flow row (shared) ── */
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-inline: 12px;
+    padding-block: 8px;
+    border-radius: 6px;
+    border: 1px solid var(--border-subtle);
+    transition: all 150ms;
+  }
+
+  .flow-row:hover {
+    background-color: var(--hover-overlay);
+  }
+
+  /* ── Row tint variants ── */
+  .flow-row-call {
+    background-color: oklch(0.13 0.03 155 / 0.5);
+  }
+
+  .flow-row-put {
+    background-color: oklch(0.13 0.03 25 / 0.5);
+  }
+
+  /* ── Unusual activity ── */
+  .flow-row-unusual {
+    box-shadow: 0 0 12px 0 oklch(0.6 0.15 85 / 0.15);
+  }
+
+  .flow-row-unusual-call {
+    border-color: var(--bullish-dim);
+  }
+
+  .flow-row-unusual-put {
+    border-color: var(--bearish-dim);
+  }
+
+  /* ── Symbol column ── */
+  .symbol-col {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--text-primary);
+    width: 56px;
+    flex-shrink: 0;
+  }
+
+  /* ── Type badge ── */
+  .type-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding-inline: 6px;
+    padding-block: 2px;
+    border-radius: 2px;
+    flex-shrink: 0;
+    border: 1px solid;
+  }
+
+  .type-badge-call {
+    background-color: var(--bullish-bg);
+    color: var(--bullish-bright);
+    border-color: oklch(0.45 0.12 155 / 0.3);
+  }
+
+  .type-badge-put {
+    background-color: var(--bearish-bg);
+    color: var(--bearish-bright);
+    border-color: oklch(0.42 0.12 25 / 0.3);
+  }
+
+  /* ── Strike column ── */
+  .strike-col {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+
+  /* ── Side column ── */
+  .side-col {
+    font-size: 10px;
+    text-transform: uppercase;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+
+  .side-buy {
+    color: var(--bullish);
+  }
+
+  .side-sell {
+    color: var(--bearish);
+  }
+
+  /* ── Spacer ── */
+  .spacer {
+    flex: 1;
+  }
+
+  /* ── Badges ── */
+  .badge-sweep {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding-inline: 6px;
+    padding-block: 2px;
+    border-radius: 2px;
+    background-color: var(--accent-bg);
+    color: var(--accent-bright);
+    border: 1px solid oklch(0.44 0.14 290 / 0.3);
+  }
+
+  .badge-unusual {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding-inline: 6px;
+    padding-block: 2px;
+    border-radius: 2px;
+    background-color: var(--warning-bg);
+    color: var(--warning-bright);
+    border: 1px solid oklch(0.52 0.10 85 / 0.3);
+  }
+
+  /* ── Size column ── */
+  .size-col {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    width: 48px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── Premium column ── */
+  .premium-col {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--text-primary);
+    width: 64px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── Time column ── */
+  .time-col {
+    color: var(--text-tertiary);
+    width: 64px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 128px;
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+  }
+</style>

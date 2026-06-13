@@ -64,8 +64,8 @@
   }
 
   function sortIndicator(key: SortKey): string {
-    if (sortBy !== key) return ' \u25B3';
-    return sortDir === 'asc' ? ' \u25B2' : ' \u25BC';
+    if (sortBy !== key) return ' △';
+    return sortDir === 'asc' ? ' ▲' : ' ▼';
   }
 
   function formatDate(dateStr: string): string {
@@ -74,61 +74,61 @@
   }
 </script>
 
-<div class="panel flex flex-col overflow-hidden {className}">
+<div class="panel insider-wrapper {className}">
   <!-- Header -->
-  <div class="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)]">
-    <span class="text-sm font-semibold text-[var(--text-primary)]">Insider Transactions</span>
-    <span class="text-2xs text-[var(--text-tertiary)]">{transactions.length} transactions</span>
+  <div class="insider-header">
+    <span class="insider-header-title">Insider Transactions</span>
+    <span class="insider-header-count">{transactions.length} transactions</span>
   </div>
 
   <!-- Table -->
-  <div class="flex-1 overflow-auto">
-    <table class="w-full min-w-[700px]">
-      <thead class="sticky top-0 z-10 bg-[var(--bg-elevated)]">
-        <tr class="border-b border-[var(--border-subtle)]">
-          <th class="px-3 py-2 text-left">
+  <div class="insider-table-scroll">
+    <table class="insider-table">
+      <thead class="insider-thead">
+        <tr class="insider-thead-row">
+          <th class="insider-th insider-th--left">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="insider-sort-btn"
               onclick={() => handleSort('date')}
             >
               Date{sortIndicator('date')}
             </button>
           </th>
-          <th class="px-3 py-2 text-left">
+          <th class="insider-th insider-th--left">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="insider-sort-btn"
               onclick={() => handleSort('symbol')}
             >
               Symbol{sortIndicator('symbol')}
             </button>
           </th>
-          <th class="px-3 py-2 text-left">
-            <span class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">Insider</span>
+          <th class="insider-th insider-th--left">
+            <span class="insider-th-label">Insider</span>
           </th>
-          <th class="px-3 py-2 text-left">
-            <span class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">Title</span>
+          <th class="insider-th insider-th--left">
+            <span class="insider-th-label">Title</span>
           </th>
-          <th class="px-3 py-2 text-center">
-            <span class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">Type</span>
+          <th class="insider-th insider-th--center">
+            <span class="insider-th-label">Type</span>
           </th>
-          <th class="px-3 py-2 text-right">
+          <th class="insider-th insider-th--right">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="insider-sort-btn"
               onclick={() => handleSort('shares')}
             >
               Shares{sortIndicator('shares')}
             </button>
           </th>
-          <th class="px-3 py-2 text-right">
-            <span class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">Price</span>
+          <th class="insider-th insider-th--right">
+            <span class="insider-th-label">Price</span>
           </th>
-          <th class="px-3 py-2 text-right">
+          <th class="insider-th insider-th--right">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="insider-sort-btn"
               onclick={() => handleSort('value')}
             >
               Value{sortIndicator('value')}
@@ -139,27 +139,19 @@
       <tbody>
         {#each sorted as tx, idx (tx.symbol + tx.date + tx.insiderName + idx)}
           {@const isBuy = tx.type === 'buy'}
-          <tr
-            class="border-b border-[var(--border-subtle)] transition-colors duration-75 hover:bg-[var(--hover-overlay)]
-              {isBuy ? 'bg-[oklch(0.13_0.02_155/0.3)]' : 'bg-[oklch(0.13_0.02_25/0.3)]'}"
-          >
-            <td class="px-3 py-2 mono-nums text-xs text-[var(--text-secondary)]">{formatDate(tx.date)}</td>
-            <td class="px-3 py-2 text-xs font-semibold text-[var(--text-primary)]">{tx.symbol}</td>
-            <td class="px-3 py-2 text-xs text-[var(--text-secondary)] truncate max-w-[140px]">{tx.insiderName}</td>
-            <td class="px-3 py-2 text-2xs text-[var(--text-tertiary)] truncate max-w-[100px]">{tx.title}</td>
-            <td class="px-3 py-2 text-center">
-              <span
-                class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-sm
-                  {isBuy
-                    ? 'bg-[var(--bullish-bg)] text-[var(--bullish-bright)] border border-[oklch(0.45_0.12_155/0.3)]'
-                    : 'bg-[var(--bearish-bg)] text-[var(--bearish-bright)] border border-[oklch(0.42_0.12_25/0.3)]'}"
-              >
+          <tr class="insider-row {isBuy ? 'insider-row--buy' : 'insider-row--sell'}">
+            <td class="insider-td mono-nums insider-td--date">{formatDate(tx.date)}</td>
+            <td class="insider-td insider-td--symbol">{tx.symbol}</td>
+            <td class="insider-td insider-td--name">{tx.insiderName}</td>
+            <td class="insider-td insider-td--title">{tx.title}</td>
+            <td class="insider-td insider-td--type-cell">
+              <span class="insider-badge {isBuy ? 'insider-badge--buy' : 'insider-badge--sell'}">
                 {tx.type}
               </span>
             </td>
-            <td class="px-3 py-2 mono-nums text-xs text-right text-[var(--text-secondary)]">{tx.shares.toLocaleString()}</td>
-            <td class="px-3 py-2 mono-nums text-xs text-right text-[var(--text-secondary)]">{formatPrice(tx.price)}</td>
-            <td class="px-3 py-2 mono-nums text-xs text-right font-semibold {isBuy ? 'text-[var(--bullish)]' : 'text-[var(--bearish)]'}">
+            <td class="insider-td mono-nums insider-td--numeric">{tx.shares.toLocaleString()}</td>
+            <td class="insider-td mono-nums insider-td--numeric">{formatPrice(tx.price)}</td>
+            <td class="insider-td mono-nums insider-td--value {isBuy ? 'insider-td--bullish' : 'insider-td--bearish'}">
               {formatMarketCap(tx.value)}
             </td>
           </tr>
@@ -168,9 +160,217 @@
     </table>
 
     {#if transactions.length === 0}
-      <div class="flex items-center justify-center h-32 text-sm text-[var(--text-tertiary)]">
+      <div class="insider-empty">
         No insider transactions to display
       </div>
     {/if}
   </div>
 </div>
+
+<style>
+  /* Wrapper */
+  .insider-wrapper {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .insider-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .insider-header-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .insider-header-count {
+    font-size: var(--text-2xs);
+    color: var(--text-tertiary);
+  }
+
+  /* Table scroll container */
+  .insider-table-scroll {
+    flex: 1;
+    overflow: auto;
+  }
+
+  /* Table */
+  .insider-table {
+    width: 100%;
+    min-width: 700px;
+  }
+
+  /* Thead */
+  .insider-thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--bg-elevated);
+  }
+
+  .insider-thead-row {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  /* Th */
+  .insider-th {
+    padding: 8px 12px;
+  }
+
+  .insider-th--left {
+    text-align: left;
+  }
+
+  .insider-th--center {
+    text-align: center;
+  }
+
+  .insider-th--right {
+    text-align: right;
+  }
+
+  /* Th label (non-sortable) */
+  .insider-th-label {
+    font-size: var(--text-2xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+  }
+
+  /* Sort button */
+  .insider-sort-btn {
+    font-size: var(--text-2xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+  }
+
+  .insider-sort-btn:hover {
+    color: var(--text-secondary);
+  }
+
+  /* Body row */
+  .insider-row {
+    border-bottom: 1px solid var(--border-subtle);
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+    transition-duration: 75ms;
+  }
+
+  .insider-row:hover {
+    background-color: var(--hover-overlay);
+  }
+
+  .insider-row--buy {
+    background-color: oklch(0.13 0.02 155 / 0.3);
+  }
+
+  .insider-row--sell {
+    background-color: oklch(0.13 0.02 25 / 0.3);
+  }
+
+  /* Td base */
+  .insider-td {
+    padding: 8px 12px;
+  }
+
+  /* Date cell */
+  .insider-td--date {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+  }
+
+  /* Symbol cell */
+  .insider-td--symbol {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  /* Insider name cell */
+  .insider-td--name {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 140px;
+  }
+
+  /* Title cell */
+  .insider-td--title {
+    font-size: var(--text-2xs);
+    color: var(--text-tertiary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100px;
+  }
+
+  /* Type cell (container) */
+  .insider-td--type-cell {
+    text-align: center;
+  }
+
+  /* Type badge */
+  .insider-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+  }
+
+  .insider-badge--buy {
+    background-color: var(--bullish-bg);
+    color: var(--bullish-bright);
+    border: 1px solid oklch(0.45 0.12 155 / 0.3);
+  }
+
+  .insider-badge--sell {
+    background-color: var(--bearish-bg);
+    color: var(--bearish-bright);
+    border: 1px solid oklch(0.42 0.12 25 / 0.3);
+  }
+
+  /* Numeric cells (shares, price) */
+  .insider-td--numeric {
+    font-size: var(--text-xs);
+    text-align: right;
+    color: var(--text-secondary);
+  }
+
+  /* Value cell */
+  .insider-td--value {
+    font-size: var(--text-xs);
+    text-align: right;
+    font-weight: 600;
+  }
+
+  .insider-td--bullish {
+    color: var(--bullish);
+  }
+
+  .insider-td--bearish {
+    color: var(--bearish);
+  }
+
+  /* Empty state */
+  .insider-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 128px;
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+  }
+</style>

@@ -54,23 +54,21 @@
   <title>Institutional - Scanify</title>
 </svelte:head>
 
-<div class="flex flex-col h-full overflow-hidden">
+<div class="page-layout">
   <!-- Header -->
-  <div class="flex items-center justify-between px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
-    <h1 class="text-lg font-bold" style="color: var(--text-primary);">Institutional</h1>
+  <div class="page-header">
+    <h1 class="page-title">Institutional</h1>
     <ExportToolbar source="institutional" />
   </div>
 
   <!-- Tab switcher -->
-  <div class="flex gap-1 px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
+  <div class="tab-bar">
     {#each tabs as tab (tab.id)}
       <button
         type="button"
         onclick={() => activeTab = tab.id}
-        class="rounded-lg px-4 py-2 text-xs font-medium transition-all"
-        style="background: {activeTab === tab.id ? 'var(--accent-bg)' : 'var(--bg-elevated)'};
-               color: {activeTab === tab.id ? 'var(--accent-bright)' : 'var(--text-secondary)'};
-               border: 1px solid {activeTab === tab.id ? 'var(--accent-dim)' : 'var(--border-subtle)'};"
+        class="tab-button"
+        class:tab-button--active={activeTab === tab.id}
       >
         {tab.label}
       </button>
@@ -78,15 +76,70 @@
   </div>
 
   <!-- Tab content -->
-  <div class="flex-1 overflow-hidden min-h-0">
+  <div class="tab-content">
     {#if activeTab === 'darkpool'}
-      <DarkPoolFeed trades={darkPoolTrades} class="h-full" />
+      <DarkPoolFeed trades={darkPoolTrades} />
 
     {:else if activeTab === 'short'}
-      <ShortInterest data={shortInterestData} class="h-full" />
+      <ShortInterest data={shortInterestData} />
 
     {:else if activeTab === 'etf'}
-      <ETFFlows data={etfFlowData} class="h-full" />
+      <ETFFlows data={etfFlowData} />
     {/if}
   </div>
 </div>
+
+<style>
+  .page-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .page-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    padding: 12px 20px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .tab-button {
+    border-radius: var(--radius-lg);
+    padding: 8px 16px;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    transition: all 150ms;
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .tab-button--active {
+    background: var(--accent-bg);
+    color: var(--accent-bright);
+    border-color: var(--accent-dim);
+  }
+
+  .tab-content {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+</style>

@@ -33,41 +33,31 @@
 	const selectId = $derived(
 		id || (label ? `select-${label.toLowerCase().replace(/\s+/g, '-')}` : undefined)
 	);
-
-	const baseClasses =
-		'w-full appearance-none rounded-lg bg-[oklch(0.13_0_0)] text-[oklch(0.88_0_0)] px-3 py-2 pr-9 text-sm border border-[oklch(0.24_0_0)] transition-all duration-150 outline-none focus:border-[oklch(0.45_0.12_250)] focus:ring-2 focus:ring-[oklch(0.45_0.12_250/0.3)] cursor-pointer';
-
-	const disabledClasses = $derived(
-		disabled ? 'opacity-50 cursor-not-allowed' : ''
-	);
-
-	let computedClass = $derived(
-		`${baseClasses} ${disabledClasses} ${className}`.trim()
-	);
 </script>
 
-<div class="relative flex flex-col gap-1.5">
+<div class="select-wrapper">
 	{#if label}
 		<label
 			for={selectId}
-			class="text-xs font-medium text-[oklch(0.65_0_0)] select-none"
+			class="select-label"
 		>
 			{label}
 		</label>
 	{/if}
 
-	<div class="relative">
+	<div class="select-inner">
 		<select
 			id={selectId}
 			{name}
 			{disabled}
 			bind:value
-			class={computedClass}
+			class="select-field {className}"
+			class:is-disabled={disabled}
 			{onchange}
 			{...rest}
 		>
 			{#if placeholder}
-				<option value="" disabled selected class="text-[oklch(0.45_0_0)]">
+				<option value="" disabled selected class="select-placeholder">
 					{placeholder}
 				</option>
 			{/if}
@@ -79,9 +69,7 @@
 		</select>
 
 		<!-- Chevron icon -->
-		<div
-			class="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[oklch(0.50_0_0)]"
-		>
+		<div class="select-chevron">
 			<svg
 				xmlns="http://www.w3.org/2000/svg"
 				width="14"
@@ -98,3 +86,63 @@
 		</div>
 	</div>
 </div>
+
+<style>
+	.select-wrapper {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+
+	.select-label {
+		font-size: var(--text-xs);
+		font-weight: 500;
+		color: oklch(0.65 0 0);
+		user-select: none;
+	}
+
+	.select-inner {
+		position: relative;
+	}
+
+	.select-field {
+		width: 100%;
+		appearance: none;
+		-webkit-appearance: none;
+		border-radius: var(--radius-lg);
+		background-color: oklch(0.13 0 0);
+		color: oklch(0.88 0 0);
+		padding-inline: 12px;
+		padding-inline-end: 36px;
+		padding-block: 8px;
+		font-size: var(--text-sm);
+		border: 1px solid oklch(0.24 0 0);
+		transition: all 150ms;
+		outline: none;
+		cursor: pointer;
+	}
+
+	.select-field:focus {
+		border-color: oklch(0.45 0.12 250);
+		box-shadow: 0 0 0 2px oklch(0.45 0.12 250 / 0.3);
+	}
+
+	.select-field.is-disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.select-placeholder {
+		color: oklch(0.45 0 0);
+	}
+
+	.select-chevron {
+		pointer-events: none;
+		position: absolute;
+		top: 50%;
+		right: 12px;
+		transform: translateY(-50%);
+		color: oklch(0.50 0 0);
+	}
+</style>

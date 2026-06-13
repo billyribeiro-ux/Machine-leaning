@@ -52,9 +52,9 @@
 	}
 
 	function changeColor(val: number): string {
-		if (val > 0) return 'text-[var(--bullish)]';
-		if (val < 0) return 'text-[var(--bearish)]';
-		return 'text-[var(--text-tertiary)]';
+		if (val > 0) return 'color-bullish';
+		if (val < 0) return 'color-bearish';
+		return 'color-tertiary';
 	}
 
 	function directionBadgeClass(dir: string): string {
@@ -66,20 +66,20 @@
 	function strengthDots(s: number): string {
 		let out = '';
 		for (let i = 0; i < 5; i++) {
-			out += i < s ? '\u25CF' : '\u25CB';
+			out += i < s ? '●' : '○';
 		}
 		return out;
 	}
 
 	function strengthColor(s: number): string {
 		const map: Record<number, string> = {
-			1: 'text-[var(--strength-1)]',
-			2: 'text-[var(--strength-2)]',
-			3: 'text-[var(--strength-3)]',
-			4: 'text-[var(--strength-4)]',
-			5: 'text-[var(--strength-5)]',
+			1: 'strength-1',
+			2: 'strength-2',
+			3: 'strength-3',
+			4: 'strength-4',
+			5: 'strength-5',
 		};
-		return map[s] || 'text-[var(--text-tertiary)]';
+		return map[s] || 'color-tertiary';
 	}
 
 	function formatTimestamp(ts: number): string {
@@ -132,9 +132,9 @@
 	]);
 
 	function signalDotClass(dir: string): string {
-		if (dir === 'bullish') return 'bg-[var(--bullish)]';
-		if (dir === 'bearish') return 'bg-[var(--bearish)]';
-		return 'bg-[var(--neutral)]';
+		if (dir === 'bullish') return 'dot-bullish';
+		if (dir === 'bearish') return 'dot-bearish';
+		return 'dot-neutral';
 	}
 
 	function relativeTime(ts: number): string {
@@ -202,22 +202,22 @@
 	});
 </script>
 
-<div class="rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] {className}">
+<div class="scan-detail-root {className}">
 	<!-- Header -->
-	<div class="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3">
-		<div class="flex items-center gap-3">
-			<span class="font-mono text-xl font-bold uppercase text-[var(--text-primary)]" style="letter-spacing: 0.03em;">
+	<div class="header">
+		<div class="header-left">
+			<span class="symbol-label">
 				{result.symbol}
 			</span>
-			<span class="text-sm text-[var(--text-tertiary)]">{result.name}</span>
-			<span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium {directionBadgeClass(result.direction)}">
+			<span class="name-label">{result.name}</span>
+			<span class="direction-badge {directionBadgeClass(result.direction)}">
 				{result.direction}
 			</span>
 		</div>
-		<div class="flex items-center gap-4 text-right">
+		<div class="header-right">
 			<div>
-				<div class="mono-nums text-xl font-bold text-[var(--text-primary)]">{formatPrice(result.price)}</div>
-				<div class="mono-nums text-sm font-medium {changeColor(result.changePercent)}">
+				<div class="price-value mono-nums">{formatPrice(result.price)}</div>
+				<div class="change-value mono-nums {changeColor(result.changePercent)}">
 					{formatPercent(result.changePercent)} ({result.change > 0 ? '+' : ''}{result.change.toFixed(2)})
 				</div>
 			</div>
@@ -225,36 +225,36 @@
 	</div>
 
 	<!-- Two-column body -->
-	<div class="grid grid-cols-1 gap-0 md:grid-cols-2">
+	<div class="body-grid">
 		<!-- Left column: Key Metrics -->
-		<div class="border-b border-[var(--border-subtle)] p-5 md:border-b-0 md:border-r">
-			<h4 class="mb-3 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Key Metrics</h4>
-			<div class="grid grid-cols-2 gap-x-6 gap-y-3">
+		<div class="left-column">
+			<h4 class="section-heading">Key Metrics</h4>
+			<div class="metrics-grid">
 				{#each keyMetrics as metric}
 					<div>
-						<div class="text-[10px] uppercase tracking-wider text-[var(--text-disabled)]">{metric.label}</div>
-						<div class="mono-nums text-sm font-medium text-[var(--text-primary)]">{metric.value}</div>
+						<div class="metric-label">{metric.label}</div>
+						<div class="metric-value mono-nums">{metric.value}</div>
 					</div>
 				{/each}
 			</div>
 
 			<!-- Strength & Signal -->
-			<div class="mt-4 flex items-center gap-4 border-t border-[var(--border-subtle)] pt-3">
+			<div class="signal-strip">
 				<div>
-					<div class="text-[10px] uppercase tracking-wider text-[var(--text-disabled)]">Signal</div>
-					<span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium leading-none {directionBadgeClass(result.direction)}">
+					<div class="metric-label">Signal</div>
+					<span class="signal-badge {directionBadgeClass(result.direction)}">
 						{result.signalName}
 					</span>
 				</div>
 				<div>
-					<div class="text-[10px] uppercase tracking-wider text-[var(--text-disabled)]">Strength</div>
-					<span class="font-mono text-sm tracking-tight {strengthColor(result.strength)}" title="Strength: {result.strength}/5">
+					<div class="metric-label">Strength</div>
+					<span class="strength-display {strengthColor(result.strength)}" title="Strength: {result.strength}/5">
 						{strengthDots(result.strength)}
 					</span>
 				</div>
 				<div>
-					<div class="text-[10px] uppercase tracking-wider text-[var(--text-disabled)]">Rel Volume</div>
-					<span class="mono-nums text-sm font-medium {result.relativeVolume >= 2 ? 'text-[var(--warning)]' : 'text-[var(--text-secondary)]'}">
+					<div class="metric-label">Rel Volume</div>
+					<span class="rel-volume mono-nums {result.relativeVolume >= 2 ? 'vol-warning' : 'vol-normal'}">
 						{result.relativeVolume.toFixed(1)}x
 					</span>
 				</div>
@@ -262,10 +262,10 @@
 		</div>
 
 		<!-- Right column: Chart + Signal History -->
-		<div class="p-5">
+		<div class="right-column">
 			<!-- Chart placeholder -->
-			<h4 class="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Price Chart</h4>
-			<div class="mb-4 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] p-2">
+			<h4 class="section-heading chart-heading">Price Chart</h4>
+			<div class="chart-container">
 				{#if chartPath}
 					<svg width="100%" height="120" viewBox="0 0 400 120" preserveAspectRatio="none" role="img" aria-label="Price chart for {result.symbol}">
 						<!-- Area fill -->
@@ -274,34 +274,34 @@
 						<path d={chartPath} fill="none" stroke={chartColor} stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
 					</svg>
 				{:else}
-					<div class="flex h-[120px] items-center justify-center text-sm text-[var(--text-disabled)]">
+					<div class="chart-empty">
 						No chart data available
 					</div>
 				{/if}
 			</div>
 
 			<!-- Signal History -->
-			<h4 class="mb-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)]">Signal History</h4>
-			<div class="space-y-0">
+			<h4 class="section-heading signal-history-heading">Signal History</h4>
+			<div class="signal-history-list">
 				{#each signalHistory as signal, i}
-					<div class="flex items-center gap-3 rounded-md px-2 py-1.5 transition-colors hover:bg-[var(--bg-overlay)]">
+					<div class="signal-row">
 						<!-- Timeline dot + connector -->
-						<div class="relative flex flex-col items-center">
-							<div class="h-2 w-2 rounded-full {signalDotClass(signal.direction)}"></div>
+						<div class="timeline-column">
+							<div class="timeline-dot {signalDotClass(signal.direction)}"></div>
 							{#if i < signalHistory.length - 1}
-								<div class="mt-0.5 h-3 w-px bg-[var(--border-subtle)]"></div>
+								<div class="timeline-connector"></div>
 							{/if}
 						</div>
 
 						<!-- Content -->
-						<div class="flex flex-1 items-center justify-between min-w-0">
-							<div class="flex items-center gap-2 min-w-0">
-								<span class="text-sm text-[var(--text-primary)]">{signal.name}</span>
-								<span class="font-mono text-[10px] tracking-tight {strengthColor(signal.strength)}">
+						<div class="signal-content">
+							<div class="signal-info">
+								<span class="signal-name">{signal.name}</span>
+								<span class="signal-strength {strengthColor(signal.strength)}">
 									{strengthDots(signal.strength)}
 								</span>
 							</div>
-							<span class="mono-nums text-2xs text-[var(--text-disabled)] flex-shrink-0">
+							<span class="signal-time mono-nums">
 								{relativeTime(signal.time)}
 							</span>
 						</div>
@@ -312,14 +312,364 @@
 	</div>
 
 	<!-- Footer: metadata -->
-	<div class="flex items-center justify-between border-t border-[var(--border-subtle)] px-5 py-2">
-		<div class="flex items-center gap-3 text-2xs text-[var(--text-disabled)]">
+	<div class="footer">
+		<div class="footer-meta">
 			<span>Sector: {result.sector}</span>
-			<span class="text-[var(--border-default)]">&middot;</span>
+			<span class="footer-separator">&middot;</span>
 			<span>Category: {result.category}</span>
 		</div>
-		<span class="mono-nums text-2xs text-[var(--text-disabled)]">
+		<span class="footer-timestamp mono-nums">
 			Last updated: {formatTimestamp(result.timestamp)}
 		</span>
 	</div>
 </div>
+
+<style>
+	/* Root container */
+	.scan-detail-root {
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--border-default);
+		background-color: var(--bg-surface);
+	}
+
+	/* ── Header ── */
+	.header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		border-bottom: 1px solid var(--border-subtle);
+		padding-inline: 20px;
+		padding-block: 12px;
+	}
+
+	.header-left {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.symbol-label {
+		font-family: var(--font-mono);
+		font-size: var(--text-xl);
+		font-weight: 700;
+		text-transform: uppercase;
+		color: var(--text-primary);
+		letter-spacing: 0.03em;
+	}
+
+	.name-label {
+		font-size: var(--text-sm);
+		color: var(--text-tertiary);
+	}
+
+	.direction-badge {
+		display: inline-flex;
+		align-items: center;
+		border-radius: var(--radius-full);
+		padding-inline: 8px;
+		padding-block: 2px;
+		font-size: 10px;
+		font-weight: 500;
+	}
+
+	.header-right {
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		text-align: right;
+	}
+
+	.price-value {
+		font-size: var(--text-xl);
+		font-weight: 700;
+		color: var(--text-primary);
+	}
+
+	.change-value {
+		font-size: var(--text-sm);
+		font-weight: 500;
+	}
+
+	/* ── Dynamic color classes ── */
+	.color-bullish {
+		color: var(--bullish);
+	}
+
+	.color-bearish {
+		color: var(--bearish);
+	}
+
+	.color-tertiary {
+		color: var(--text-tertiary);
+	}
+
+	/* ── Badge variants ── */
+	.badge-bullish {
+		/* Inherits direction-badge or signal-badge base styles from context */
+	}
+
+	.badge-bearish {
+		/* Inherits direction-badge or signal-badge base styles from context */
+	}
+
+	.badge-neutral {
+		/* Inherits direction-badge or signal-badge base styles from context */
+	}
+
+	/* ── Strength color classes ── */
+	.strength-1 {
+		color: var(--strength-1);
+	}
+
+	.strength-2 {
+		color: var(--strength-2);
+	}
+
+	.strength-3 {
+		color: var(--strength-3);
+	}
+
+	.strength-4 {
+		color: var(--strength-4);
+	}
+
+	.strength-5 {
+		color: var(--strength-5);
+	}
+
+	/* ── Signal dot variants ── */
+	.dot-bullish {
+		background-color: var(--bullish);
+	}
+
+	.dot-bearish {
+		background-color: var(--bearish);
+	}
+
+	.dot-neutral {
+		background-color: var(--neutral);
+	}
+
+	/* ── Two-column body grid ── */
+	.body-grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 0;
+	}
+
+	@media (min-width: 768px) {
+		.body-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	/* ── Left column ── */
+	.left-column {
+		border-bottom: 1px solid var(--border-subtle);
+		padding: 20px;
+	}
+
+	@media (min-width: 768px) {
+		.left-column {
+			border-bottom: none;
+			border-right: 1px solid var(--border-subtle);
+		}
+	}
+
+	.section-heading {
+		margin-bottom: 12px;
+		font-size: var(--text-xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-tertiary);
+	}
+
+	.metrics-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		column-gap: 24px;
+		row-gap: 12px;
+	}
+
+	.metric-label {
+		font-size: 10px;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-disabled);
+	}
+
+	.metric-value {
+		font-size: var(--text-sm);
+		font-weight: 500;
+		color: var(--text-primary);
+	}
+
+	/* ── Signal strip ── */
+	.signal-strip {
+		margin-top: 16px;
+		display: flex;
+		align-items: center;
+		gap: 16px;
+		border-top: 1px solid var(--border-subtle);
+		padding-top: 12px;
+	}
+
+	.signal-badge {
+		display: inline-flex;
+		align-items: center;
+		border-radius: var(--radius-full);
+		padding-inline: 8px;
+		padding-block: 2px;
+		font-size: 10px;
+		font-weight: 500;
+		line-height: 1;
+	}
+
+	.strength-display {
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		letter-spacing: -0.01em;
+	}
+
+	.rel-volume {
+		font-size: var(--text-sm);
+		font-weight: 500;
+	}
+
+	.vol-warning {
+		color: var(--warning);
+	}
+
+	.vol-normal {
+		color: var(--text-secondary);
+	}
+
+	/* ── Right column ── */
+	.right-column {
+		padding: 20px;
+	}
+
+	.chart-heading {
+		margin-bottom: 8px;
+	}
+
+	.chart-container {
+		margin-bottom: 16px;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-subtle);
+		background-color: var(--bg-base);
+		padding: 8px;
+	}
+
+	.chart-empty {
+		display: flex;
+		height: 120px;
+		align-items: center;
+		justify-content: center;
+		font-size: var(--text-sm);
+		color: var(--text-disabled);
+	}
+
+	.signal-history-heading {
+		margin-bottom: 8px;
+	}
+
+	/* ── Signal history list ── */
+	.signal-history-list {
+		/* space-y-0: no extra spacing between children */
+	}
+
+	.signal-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		border-radius: var(--radius-md);
+		padding-inline: 8px;
+		padding-block: 6px;
+		transition: color 150ms, background-color 150ms, border-color 150ms;
+	}
+
+	.signal-row:hover {
+		background-color: var(--bg-overlay);
+	}
+
+	.timeline-column {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.timeline-dot {
+		height: 8px;
+		width: 8px;
+		border-radius: var(--radius-full);
+	}
+
+	.timeline-connector {
+		margin-top: 2px;
+		height: 12px;
+		width: 1px;
+		background-color: var(--border-subtle);
+	}
+
+	.signal-content {
+		display: flex;
+		flex: 1;
+		align-items: center;
+		justify-content: space-between;
+		min-width: 0;
+	}
+
+	.signal-info {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		min-width: 0;
+	}
+
+	.signal-name {
+		font-size: var(--text-sm);
+		color: var(--text-primary);
+	}
+
+	.signal-strength {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: -0.01em;
+	}
+
+	.signal-time {
+		font-size: var(--text-2xs);
+		color: var(--text-disabled);
+		flex-shrink: 0;
+	}
+
+	/* ── Footer ── */
+	.footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		border-top: 1px solid var(--border-subtle);
+		padding-inline: 20px;
+		padding-block: 8px;
+	}
+
+	.footer-meta {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		font-size: var(--text-2xs);
+		color: var(--text-disabled);
+	}
+
+	.footer-separator {
+		color: var(--border-default);
+	}
+
+	.footer-timestamp {
+		font-size: var(--text-2xs);
+		color: var(--text-disabled);
+	}
+</style>

@@ -23,17 +23,16 @@
 	}
 </script>
 
-<div class="flex items-center gap-1.5">
+<div class="export-toolbar">
 	<button
 		type="button"
 		onclick={() => handleExport('csv')}
 		disabled={exporting !== null}
-		class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-all"
-		style="background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border-subtle);"
+		class="export-btn"
 		title="Download CSV"
 	>
 		{#if exporting === 'csv'}
-			<span class="inline-block w-3 h-3 border-2 rounded-full animate-spin" style="border-color: var(--text-tertiary); border-top-color: transparent;"></span>
+			<span class="export-spinner"></span>
 		{:else}
 			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -49,12 +48,11 @@
 		type="button"
 		onclick={() => handleExport('pdf')}
 		disabled={exporting !== null}
-		class="inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-all"
-		style="background: var(--bg-elevated); color: var(--text-secondary); border: 1px solid var(--border-subtle);"
+		class="export-btn"
 		title="Download PDF"
 	>
 		{#if exporting === 'pdf'}
-			<span class="inline-block w-3 h-3 border-2 rounded-full animate-spin" style="border-color: var(--text-tertiary); border-top-color: transparent;"></span>
+			<span class="export-spinner"></span>
 		{:else}
 			<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 				<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
@@ -67,6 +65,60 @@
 	</button>
 
 	{#if error}
-		<span class="text-[10px] font-medium" style="color: var(--bearish);">{error}</span>
+		<span class="export-error">{error}</span>
 	{/if}
 </div>
+
+<style>
+	.export-toolbar {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+	}
+
+	.export-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		border-radius: var(--radius-md);
+		padding-inline: 10px;
+		padding-block: 6px;
+		font-size: 11px;
+		font-weight: 500;
+		transition: all 150ms;
+		background-color: var(--bg-elevated);
+		color: var(--text-secondary);
+		border: 1px solid var(--border-subtle);
+	}
+
+	.export-btn:hover:not(:disabled) {
+		background-color: var(--bg-overlay);
+		color: var(--text-primary);
+	}
+
+	.export-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.export-spinner {
+		display: inline-block;
+		width: 12px;
+		height: 12px;
+		border: 2px solid var(--text-tertiary);
+		border-top-color: transparent;
+		border-radius: var(--radius-full);
+		animation: spin 1s linear infinite;
+	}
+
+	.export-error {
+		font-size: 10px;
+		font-weight: 500;
+		color: var(--bearish);
+	}
+
+	@keyframes spin {
+		from { transform: rotate(0deg); }
+		to { transform: rotate(360deg); }
+	}
+</style>

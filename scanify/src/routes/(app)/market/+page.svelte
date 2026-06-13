@@ -33,56 +33,182 @@
   <title>Market - Scanify</title>
 </svelte:head>
 
-<div class="flex flex-col h-full overflow-auto">
+<div class="page-root">
   <!-- Header -->
-  <div class="flex items-center justify-between px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
-    <h1 class="text-lg font-bold" style="color: var(--text-primary);">Market Overview</h1>
-    <div class="flex items-center gap-3">
+  <div class="page-header">
+    <h1 class="page-title">Market Overview</h1>
+    <div class="header-actions">
       <ExportToolbar source="market" />
-      <div class="w-px h-5" style="background: var(--border-subtle);"></div>
-      <span class="text-xs font-mono" style="color: var(--text-tertiary);">
+      <div class="header-divider"></div>
+      <span class="header-timestamp">
         {new Date().toLocaleTimeString('en-US', { hour12: false })}
       </span>
     </div>
   </div>
 
-  <div class="p-5 space-y-5">
+  <div class="page-content">
     <!-- 2x2 Grid -->
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+    <div class="overview-grid">
 
       <!-- Breadth Dashboard -->
-      <div class="panel p-5 space-y-3">
-        <h2 class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-tertiary);">Market Breadth</h2>
+      <div class="panel section-panel">
+        <h2 class="section-label">Market Breadth</h2>
         <BreadthDashboard internals={breadthData} />
       </div>
 
       <!-- Internals Bar -->
-      <div class="panel p-5 space-y-3">
-        <h2 class="text-xs font-semibold uppercase tracking-wider" style="color: var(--text-tertiary);">Market Internals</h2>
+      <div class="panel section-panel">
+        <h2 class="section-label">Market Internals</h2>
         <InternalsBar tick={456} trin={0.87} vix={15.2} advDecRatio={1.40} />
         <!-- Supplementary metric cards -->
-        <div class="grid grid-cols-2 gap-3 mt-3">
-          <div class="rounded-lg p-3 text-center" style="background: var(--bg-base); border: 1px solid var(--border-subtle);">
-            <div class="text-[10px] uppercase tracking-wider" style="color: var(--text-tertiary);">Advancers</div>
-            <div class="text-lg font-bold font-mono" style="color: var(--bullish);">1,850</div>
+        <div class="metric-grid">
+          <div class="metric-card">
+            <div class="metric-label">Advancers</div>
+            <div class="metric-value metric-value--bullish">1,850</div>
           </div>
-          <div class="rounded-lg p-3 text-center" style="background: var(--bg-base); border: 1px solid var(--border-subtle);">
-            <div class="text-[10px] uppercase tracking-wider" style="color: var(--text-tertiary);">Decliners</div>
-            <div class="text-lg font-bold font-mono" style="color: var(--bearish);">1,320</div>
+          <div class="metric-card">
+            <div class="metric-label">Decliners</div>
+            <div class="metric-value metric-value--bearish">1,320</div>
           </div>
         </div>
       </div>
 
       <!-- Sentiment Gauge -->
-      <div class="panel p-5 flex flex-col items-center justify-center">
+      <div class="panel sentiment-panel">
         <SentimentGauge value={35} label="Market Sentiment" />
       </div>
 
       <!-- Sector Rotation -->
-      <div class="panel p-5">
+      <div class="panel sector-panel">
         <SectorRotation sectors={sectorData} />
       </div>
 
     </div>
   </div>
 </div>
+
+<style>
+  .page-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: auto;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .page-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-subtle);
+  }
+
+  .header-timestamp {
+    font-size: var(--text-xs);
+    font-family: var(--font-mono);
+    color: var(--text-tertiary);
+  }
+
+  .page-content {
+    padding: 20px;
+  }
+
+  .page-content > * + * {
+    margin-top: 20px;
+  }
+
+  .overview-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  @media (min-width: 1024px) {
+    .overview-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .section-panel {
+    padding: 20px;
+  }
+
+  .section-panel > * + * {
+    margin-top: 12px;
+  }
+
+  .section-label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+  }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+  }
+
+  .metric-card {
+    border-radius: var(--radius-lg);
+    padding: 12px;
+    text-align: center;
+    background: var(--bg-base);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .metric-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+  }
+
+  .metric-value {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .metric-value--bullish {
+    color: var(--bullish);
+  }
+
+  .metric-value--bearish {
+    color: var(--bearish);
+  }
+
+  .sentiment-panel {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .sector-panel {
+    padding: 20px;
+  }
+</style>

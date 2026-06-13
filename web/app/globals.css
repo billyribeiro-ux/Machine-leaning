@@ -1,8 +1,24 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* CSS Reset */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
 :root {
+  --scanify-primary: #6366f1;
+  --scanify-secondary: #8b5cf6;
+  --scanify-accent: #22d3ee;
+  --scanify-success: #22c55e;
+  --scanify-warning: #f59e0b;
+  --scanify-danger: #ef4444;
+  --scanify-dark-900: #0f0f12;
+  --scanify-dark-800: #16161d;
+  --scanify-dark-700: #1e1e28;
+  --scanify-dark-600: #262633;
+
   --foreground-rgb: 255, 255, 255;
   --background-start-rgb: 15, 15, 18;
   --background-end-rgb: 22, 22, 29;
@@ -16,6 +32,7 @@ body {
     rgb(var(--background-end-rgb))
   );
   min-height: 100vh;
+  line-height: 1.5;
 }
 
 /* Custom scrollbar */
@@ -37,24 +54,82 @@ body {
   background: #4f4f60;
 }
 
-@layer components {
-  .card {
-    @apply bg-scanify-dark-800 rounded-xl border border-scanify-dark-600 p-4 shadow-lg;
-  }
+/* Component classes */
+.card {
+  background-color: var(--scanify-dark-800);
+  border-radius: 12px;
+  border: 1px solid var(--scanify-dark-600);
+  padding: 16px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+}
 
-  .btn-primary {
-    @apply bg-scanify-primary hover:bg-indigo-600 text-white font-medium py-2 px-4 rounded-lg transition-colors disabled:opacity-50;
-  }
+.btn-primary {
+  background-color: var(--scanify-primary);
+  color: #fff;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: color 150ms, background-color 150ms, border-color 150ms;
+}
 
-  .btn-secondary {
-    @apply bg-scanify-dark-700 hover:bg-scanify-dark-600 text-gray-200 font-medium py-2 px-4 rounded-lg transition-colors border border-scanify-dark-600;
-  }
+.btn-primary:hover {
+  background-color: #4f46e5;
+}
 
-  .input {
-    @apply bg-scanify-dark-700 border border-scanify-dark-600 rounded-lg px-3 py-2 text-gray-100 focus:outline-none focus:border-scanify-primary focus:ring-1 focus:ring-scanify-primary w-full;
-  }
+.btn-primary:disabled {
+  opacity: 0.5;
+}
 
-  .badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+.btn-secondary {
+  background-color: var(--scanify-dark-700);
+  color: #e5e7eb;
+  font-weight: 500;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--scanify-dark-600);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition: color 150ms, background-color 150ms, border-color 150ms;
+}
+
+.btn-secondary:hover {
+  background-color: var(--scanify-dark-600);
+}
+
+.input {
+  background-color: var(--scanify-dark-700);
+  border: 1px solid var(--scanify-dark-600);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: #f3f4f6;
+  width: 100%;
+  font-size: inherit;
+  outline: none;
+  transition: border-color 150ms;
+}
+
+.input:focus {
+  border-color: var(--scanify-primary);
+  box-shadow: 0 0 0 1px var(--scanify-primary);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+/* Spin animation for loading spinners */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }

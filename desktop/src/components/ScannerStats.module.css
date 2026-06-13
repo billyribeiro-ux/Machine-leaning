@@ -1,0 +1,101 @@
+.statsCard {
+  height: 100%;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.statBox {
+  background-color: var(--scanify-dark-700);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.statHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.statIcon {
+  width: 16px;
+  height: 16px;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: #6b7280;
+}
+
+.statValue {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.colorCyan {
+  color: var(--scanify-accent);
+}
+
+.colorGreen {
+  color: #4ade80;
+}
+
+.colorYellow {
+  color: #facc15;
+}
+
+.colorPurple {
+  color: #c084fc;
+}
+
+.scannerList {
+  margin-top: 12px;
+}
+
+.scannerList > * + * {
+  margin-top: 4px;
+}
+
+.scannerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.scannerInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.scannerDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+}
+
+.scannerDotRunning {
+  background-color: #22c55e;
+}
+
+.scannerDotStopped {
+  background-color: #6b7280;
+}
+
+.scannerName {
+  color: #9ca3af;
+  text-transform: capitalize;
+}
+
+.scannerSignals {
+  color: #6b7280;
+}

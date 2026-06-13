@@ -47,20 +47,20 @@
 	}
 
 	function changeColor(val: number): string {
-		if (val > 0) return 'text-[var(--bullish)]';
-		if (val < 0) return 'text-[var(--bearish)]';
-		return 'text-[var(--text-tertiary)]';
+		if (val > 0) return 'change-bullish';
+		if (val < 0) return 'change-bearish';
+		return 'change-neutral';
 	}
 
 	function borderColor(dir: string, selected: boolean): string {
 		if (selected) {
-			if (dir === 'bullish') return 'border-[var(--bullish)]';
-			if (dir === 'bearish') return 'border-[var(--bearish)]';
-			return 'border-[var(--accent)]';
+			if (dir === 'bullish') return 'border-bullish-selected';
+			if (dir === 'bearish') return 'border-bearish-selected';
+			return 'border-accent-selected';
 		}
-		if (dir === 'bullish') return 'border-[var(--bullish-dim)]';
-		if (dir === 'bearish') return 'border-[var(--bearish-dim)]';
-		return 'border-[var(--border-default)]';
+		if (dir === 'bullish') return 'border-bullish-dim';
+		if (dir === 'bearish') return 'border-bearish-dim';
+		return 'border-default';
 	}
 
 	function glowClass(dir: string, selected: boolean): string {
@@ -79,20 +79,20 @@
 	function strengthDots(s: number): string {
 		let out = '';
 		for (let i = 0; i < 5; i++) {
-			out += i < s ? '\u25CF' : '\u25CB';
+			out += i < s ? '●' : '○';
 		}
 		return out;
 	}
 
 	function strengthColor(s: number): string {
 		const map: Record<number, string> = {
-			1: 'text-[var(--strength-1)]',
-			2: 'text-[var(--strength-2)]',
-			3: 'text-[var(--strength-3)]',
-			4: 'text-[var(--strength-4)]',
-			5: 'text-[var(--strength-5)]',
+			1: 'strength-1',
+			2: 'strength-2',
+			3: 'strength-3',
+			4: 'strength-4',
+			5: 'strength-5',
 		};
-		return map[s] || 'text-[var(--text-tertiary)]';
+		return map[s] || 'strength-default';
 	}
 
 	// Sparkline SVG path computation
@@ -129,48 +129,45 @@
 
 <button
 	type="button"
-	class="group w-full rounded-lg border bg-[var(--bg-surface)] p-3.5 text-left transition-all duration-150 hover:bg-[var(--bg-elevated)]
-		{borderColor(result.direction, isSelected)}
-		{glowClass(result.direction, isSelected)}
-		{className}"
+	class="scan-card {borderColor(result.direction, isSelected)} {glowClass(result.direction, isSelected)} {className}"
 	onclick={handleClick}
 	aria-selected={isSelected}
 	role="option"
 >
 	<!-- Top row: Ticker + Price + Change -->
-	<div class="flex items-start justify-between gap-2">
-		<div class="min-w-0">
-			<div class="font-mono text-lg font-bold uppercase text-[var(--text-primary)]" style="letter-spacing: 0.02em;">
+	<div class="top-row">
+		<div class="ticker-info">
+			<div class="ticker-symbol">
 				{result.symbol}
 			</div>
-			<div class="truncate text-xs text-[var(--text-tertiary)]" style="max-width: 140px;">
+			<div class="ticker-name">
 				{result.name}
 			</div>
 		</div>
-		<div class="text-right flex-shrink-0">
-			<div class="mono-nums text-base font-semibold text-[var(--text-primary)]">
+		<div class="price-info">
+			<div class="price-value mono-nums">
 				{formatPrice(result.price)}
 			</div>
-			<div class="mono-nums text-sm font-medium {changeColor(result.changePercent)}">
+			<div class="price-change mono-nums {changeColor(result.changePercent)}">
 				{formatPercent(result.changePercent)}
 			</div>
 		</div>
 	</div>
 
 	<!-- Signal badge row -->
-	<div class="mt-2.5 flex items-center gap-2">
-		<span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium leading-none {signalBadgeClass(result.direction)}">
+	<div class="signal-row">
+		<span class="signal-badge {signalBadgeClass(result.direction)}">
 			{result.signalName}
 		</span>
-		<span class="font-mono text-[10px] tracking-tight {strengthColor(result.strength)}" title="Strength: {result.strength}/5">
+		<span class="strength-indicator {strengthColor(result.strength)}" title="Strength: {result.strength}/5">
 			{strengthDots(result.strength)}
 		</span>
 	</div>
 
 	<!-- Sparkline -->
 	{#if sparklinePath}
-		<div class="mt-2.5">
-			<svg width="120" height="32" viewBox="0 0 120 32" class="w-full" preserveAspectRatio="none" role="img" aria-label="Price trend">
+		<div class="sparkline-container">
+			<svg width="120" height="32" viewBox="0 0 120 32" class="sparkline-svg" preserveAspectRatio="none" role="img" aria-label="Price trend">
 				<path
 					d={sparklinePath}
 					fill="none"
@@ -184,19 +181,228 @@
 	{/if}
 
 	<!-- Bottom row: Volume + RelVol -->
-	<div class="mt-2.5 flex items-center justify-between border-t border-[var(--border-subtle)] pt-2">
-		<div class="flex items-center gap-3">
+	<div class="bottom-row">
+		<div class="volume-group">
 			<div>
-				<div class="text-[10px] uppercase text-[var(--text-disabled)]">Vol</div>
-				<div class="mono-nums text-xs text-[var(--text-secondary)]">{formatVolume(result.volume)}</div>
+				<div class="volume-label">Vol</div>
+				<div class="volume-value mono-nums">{formatVolume(result.volume)}</div>
 			</div>
 			<div>
-				<div class="text-[10px] uppercase text-[var(--text-disabled)]">RVol</div>
-				<div class="mono-nums text-xs font-medium {result.relativeVolume >= 2 ? 'text-[var(--warning)]' : 'text-[var(--text-secondary)]'}">
+				<div class="volume-label">RVol</div>
+				<div class="rvol-value mono-nums {result.relativeVolume >= 2 ? 'rvol-high' : 'rvol-normal'}">
 					{result.relativeVolume.toFixed(1)}x
 				</div>
 			</div>
 		</div>
-		<span class="text-[10px] text-[var(--text-disabled)]">{result.sector}</span>
+		<span class="sector-label">{result.sector}</span>
 	</div>
 </button>
+
+<style>
+	/* ── Card container ── */
+	.scan-card {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		border-radius: var(--radius-lg);
+		border: 1px solid;
+		background-color: var(--bg-surface);
+		padding: 14px;
+		text-align: left;
+		transition: all 150ms;
+		cursor: pointer;
+	}
+
+	.scan-card:hover {
+		background-color: var(--bg-elevated);
+	}
+
+	/* ── Border color variants ── */
+	.scan-card.border-bullish-selected {
+		border-color: var(--bullish);
+	}
+	.scan-card.border-bearish-selected {
+		border-color: var(--bearish);
+	}
+	.scan-card.border-accent-selected {
+		border-color: var(--accent);
+	}
+	.scan-card.border-bullish-dim {
+		border-color: var(--bullish-dim);
+	}
+	.scan-card.border-bearish-dim {
+		border-color: var(--bearish-dim);
+	}
+	.scan-card.border-default {
+		border-color: var(--border-default);
+	}
+
+	/* ── Glow ring variants ── */
+	.scan-card :global(.glow-ring-bullish) {
+		/* handled by global styles or keep as-is */
+	}
+	.scan-card.glow-ring-bullish {
+		/* preserve existing glow-ring-bullish global class */
+	}
+	.scan-card.glow-ring-bearish {
+		/* preserve existing glow-ring-bearish global class */
+	}
+	.scan-card.glow-ring-accent {
+		/* preserve existing glow-ring-accent global class */
+	}
+
+	/* ── Top row ── */
+	.top-row {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 8px;
+	}
+
+	.ticker-info {
+		min-width: 0;
+	}
+
+	.ticker-symbol {
+		font-family: var(--font-mono);
+		font-size: var(--text-lg);
+		font-weight: 700;
+		text-transform: uppercase;
+		color: var(--text-primary);
+		letter-spacing: 0.02em;
+	}
+
+	.ticker-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: var(--text-xs);
+		color: var(--text-tertiary);
+		max-width: 140px;
+	}
+
+	.price-info {
+		text-align: right;
+		flex-shrink: 0;
+	}
+
+	.price-value {
+		font-size: var(--text-base);
+		font-weight: 600;
+		color: var(--text-primary);
+	}
+
+	.price-change {
+		font-size: var(--text-sm);
+		font-weight: 500;
+	}
+
+	/* ── Change color variants ── */
+	.change-bullish {
+		color: var(--bullish);
+	}
+	.change-bearish {
+		color: var(--bearish);
+	}
+	.change-neutral {
+		color: var(--text-tertiary);
+	}
+
+	/* ── Signal badge row ── */
+	.signal-row {
+		margin-top: 10px;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.signal-badge {
+		display: inline-flex;
+		align-items: center;
+		border-radius: var(--radius-full);
+		padding: 2px 8px;
+		font-size: 10px;
+		font-weight: 500;
+		line-height: 1;
+	}
+
+	.strength-indicator {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: -0.01em;
+	}
+
+	/* ── Strength color variants ── */
+	.strength-1 {
+		color: var(--strength-1);
+	}
+	.strength-2 {
+		color: var(--strength-2);
+	}
+	.strength-3 {
+		color: var(--strength-3);
+	}
+	.strength-4 {
+		color: var(--strength-4);
+	}
+	.strength-5 {
+		color: var(--strength-5);
+	}
+	.strength-default {
+		color: var(--text-tertiary);
+	}
+
+	/* ── Sparkline ── */
+	.sparkline-container {
+		margin-top: 10px;
+	}
+
+	.sparkline-svg {
+		width: 100%;
+	}
+
+	/* ── Bottom row ── */
+	.bottom-row {
+		margin-top: 10px;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		border-top: 1px solid var(--border-subtle);
+		padding-top: 8px;
+	}
+
+	.volume-group {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.volume-label {
+		font-size: 10px;
+		text-transform: uppercase;
+		color: var(--text-disabled);
+	}
+
+	.volume-value {
+		font-size: var(--text-xs);
+		color: var(--text-secondary);
+	}
+
+	.rvol-value {
+		font-size: var(--text-xs);
+		font-weight: 500;
+	}
+
+	.rvol-normal {
+		color: var(--text-secondary);
+	}
+
+	.rvol-high {
+		color: var(--warning);
+	}
+
+	.sector-label {
+		font-size: 10px;
+		color: var(--text-disabled);
+	}
+</style>

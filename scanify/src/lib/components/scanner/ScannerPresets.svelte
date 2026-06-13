@@ -31,24 +31,24 @@
 
 	function presetButtonClass(id: string): string {
 		const isActive = activePreset === id;
-		const base = 'flex-shrink-0 flex items-center gap-2 rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-150 select-none whitespace-nowrap border';
+		const base = 'preset-button';
 
 		if (isActive) {
-			return base + ' bg-[var(--accent-bg)] text-[var(--accent-bright)] border-[var(--accent-dim)] shadow-[0_0_12px_0_var(--accent-bg)]';
+			return base + ' preset-button--active';
 		}
 
-		return base + ' bg-transparent text-[var(--text-tertiary)] border-transparent hover:bg-[var(--bg-overlay)] hover:text-[var(--text-secondary)] hover:border-[var(--border-subtle)]';
+		return base + ' preset-button--inactive';
 	}
 </script>
 
-<div class="relative {className}">
+<div class="presets-wrapper {className}">
 	<!-- Scroll shadow indicators -->
-	<div class="pointer-events-none absolute left-0 top-0 bottom-0 z-10 w-6 bg-gradient-to-r from-[var(--bg-surface)] to-transparent"></div>
-	<div class="pointer-events-none absolute right-0 top-0 bottom-0 z-10 w-6 bg-gradient-to-l from-[var(--bg-surface)] to-transparent"></div>
+	<div class="scroll-shadow scroll-shadow--left"></div>
+	<div class="scroll-shadow scroll-shadow--right"></div>
 
 	<!-- Scrollable preset row -->
 	<div
-		class="flex items-center gap-1.5 overflow-x-auto px-2 py-1.5 scrollbar-hidden"
+		class="presets-row"
 		bind:this={scrollContainer}
 		role="tablist"
 		aria-label="Scanner presets"
@@ -71,7 +71,7 @@
 					stroke-width="2"
 					stroke-linecap="round"
 					stroke-linejoin="round"
-					class="flex-shrink-0 opacity-70"
+					class="preset-icon"
 				>
 					<path d={preset.icon} />
 				</svg>
@@ -80,3 +80,80 @@
 		{/each}
 	</div>
 </div>
+
+<style>
+	.presets-wrapper {
+		position: relative;
+	}
+
+	.scroll-shadow {
+		pointer-events: none;
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		z-index: 10;
+		width: 24px;
+	}
+
+	.scroll-shadow--left {
+		left: 0;
+		background: linear-gradient(to right, var(--bg-surface), transparent);
+	}
+
+	.scroll-shadow--right {
+		right: 0;
+		background: linear-gradient(to left, var(--bg-surface), transparent);
+	}
+
+	.presets-row {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		overflow-x: auto;
+		padding: 6px 8px;
+		scrollbar-width: none;
+	}
+
+	.presets-row::-webkit-scrollbar {
+		display: none;
+	}
+
+	.preset-button {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		border-radius: var(--radius-lg);
+		padding: 8px 14px;
+		font-size: var(--text-sm);
+		font-weight: 500;
+		transition: all 150ms;
+		user-select: none;
+		white-space: nowrap;
+		border: 1px solid;
+	}
+
+	.preset-button--active {
+		background-color: var(--accent-bg);
+		color: var(--accent-bright);
+		border-color: var(--accent-dim);
+		box-shadow: 0 0 12px 0 var(--accent-bg);
+	}
+
+	.preset-button--inactive {
+		background-color: transparent;
+		color: var(--text-tertiary);
+		border-color: transparent;
+	}
+
+	.preset-button--inactive:hover {
+		background-color: var(--bg-overlay);
+		color: var(--text-secondary);
+		border-color: var(--border-subtle);
+	}
+
+	.preset-icon {
+		flex-shrink: 0;
+		opacity: 0.7;
+	}
+</style>

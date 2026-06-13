@@ -17,22 +17,22 @@
 
 	const directionStyles: Record<string, { bg: string; text: string; glow: string; border: string }> = {
 		bullish: {
-			bg: 'bg-[oklch(0.35_0.10_145)]',
-			text: 'text-[oklch(0.80_0.14_145)]',
-			glow: 'shadow-[0_0_8px_oklch(0.50_0.15_145/0.3)]',
-			border: 'border-[oklch(0.45_0.12_145/0.5)]'
+			bg: 'oklch(0.35 0.10 145)',
+			text: 'oklch(0.80 0.14 145)',
+			glow: '0 0 8px oklch(0.50 0.15 145 / 0.3)',
+			border: 'oklch(0.45 0.12 145 / 0.5)'
 		},
 		bearish: {
-			bg: 'bg-[oklch(0.32_0.10_25)]',
-			text: 'text-[oklch(0.78_0.14_25)]',
-			glow: 'shadow-[0_0_8px_oklch(0.50_0.18_25/0.3)]',
-			border: 'border-[oklch(0.42_0.12_25/0.5)]'
+			bg: 'oklch(0.32 0.10 25)',
+			text: 'oklch(0.78 0.14 25)',
+			glow: '0 0 8px oklch(0.50 0.18 25 / 0.3)',
+			border: 'oklch(0.42 0.12 25 / 0.5)'
 		},
 		neutral: {
-			bg: 'bg-[oklch(0.28_0.04_250)]',
-			text: 'text-[oklch(0.72_0.06_250)]',
-			glow: 'shadow-[0_0_8px_oklch(0.45_0.06_250/0.3)]',
-			border: 'border-[oklch(0.38_0.04_250/0.5)]'
+			bg: 'oklch(0.28 0.04 250)',
+			text: 'oklch(0.72 0.06 250)',
+			glow: '0 0 8px oklch(0.45 0.06 250 / 0.3)',
+			border: 'oklch(0.38 0.04 250 / 0.5)'
 		}
 	};
 
@@ -41,19 +41,45 @@
 	let dots = $derived.by(() => {
 		let result = '';
 		for (let i = 0; i < 5; i++) {
-			result += i < clampedStrength ? '\u25CF' : '\u25CB';
+			result += i < clampedStrength ? '●' : '○';
 		}
 		return result;
 	});
 </script>
 
 <span
-	class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium {style.bg} {style.text} {style.glow} {style.border} {className}"
+	class="signal-badge {className}"
+	style="background-color: {style.bg}; color: {style.text}; box-shadow: {style.glow}; border-color: {style.border};"
 >
 	{#if label}
-		<span class="whitespace-nowrap">{label}</span>
+		<span class="badge-label">{label}</span>
 	{/if}
-	<span class="font-mono text-[10px] tracking-tight opacity-80" aria-label="Strength {clampedStrength} of 5">
+	<span class="badge-dots" aria-label="Strength {clampedStrength} of 5">
 		{dots}
 	</span>
 </span>
+
+<style>
+	.signal-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		border-radius: var(--radius-full);
+		border: 1px solid;
+		padding-inline: 10px;
+		padding-block: 2px;
+		font-size: var(--text-xs);
+		font-weight: 500;
+	}
+
+	.badge-label {
+		white-space: nowrap;
+	}
+
+	.badge-dots {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: -0.02em;
+		opacity: 0.8;
+	}
+</style>

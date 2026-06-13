@@ -23,35 +23,6 @@
 		id || (label ? `toggle-${label.toLowerCase().replace(/\s+/g, '-')}` : `toggle-${Math.random().toString(36).slice(2, 8)}`)
 	);
 
-	const trackSizes: Record<string, string> = {
-		sm: 'w-8 h-[18px]',
-		md: 'w-11 h-6'
-	};
-
-	const thumbSizes: Record<string, string> = {
-		sm: 'h-3.5 w-3.5',
-		md: 'h-5 w-5'
-	};
-
-	const thumbTranslate: Record<string, string> = {
-		sm: 'translate-x-3.5',
-		md: 'translate-x-5'
-	};
-
-	let trackClass = $derived(
-		`relative inline-flex shrink-0 ${trackSizes[size]} items-center rounded-full transition-colors duration-200 ease-in-out cursor-pointer ${
-			checked
-				? 'bg-[oklch(0.55_0.15_145)]'
-				: 'bg-[oklch(0.24_0_0)]'
-		} ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-110'}`
-	);
-
-	let thumbClass = $derived(
-		`inline-block ${thumbSizes[size]} rounded-full bg-white shadow-sm transform transition-transform duration-200 ease-in-out ${
-			checked ? thumbTranslate[size] : 'translate-x-0.5'
-		}`
-	);
-
 	function handleClick() {
 		if (!disabled) {
 			checked = !checked;
@@ -66,7 +37,7 @@
 	}
 </script>
 
-<div class="inline-flex items-center gap-2.5">
+<div class="toggle-wrapper">
 	<input
 		type="checkbox"
 		id={toggleId}
@@ -83,20 +54,119 @@
 		aria-checked={checked}
 		aria-labelledby={label ? `${toggleId}-label` : undefined}
 		{disabled}
-		class={trackClass}
+		class="toggle-track size-{size}"
+		class:is-checked={checked}
+		class:is-disabled={disabled}
 		onclick={handleClick}
 		onkeydown={handleKeydown}
 	>
-		<span class={thumbClass}></span>
+		<span
+			class="toggle-thumb size-{size}"
+			class:is-checked={checked}
+		></span>
 	</button>
 
 	{#if label}
 		<label
 			id="{toggleId}-label"
 			for={toggleId}
-			class="text-sm text-[oklch(0.75_0_0)] select-none {disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}"
+			class="toggle-label"
+			class:is-disabled={disabled}
 		>
 			{label}
 		</label>
 	{/if}
 </div>
+
+<style>
+	.toggle-wrapper {
+		display: inline-flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border-width: 0;
+	}
+
+	.toggle-track {
+		position: relative;
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		border-radius: var(--radius-full);
+		transition: background-color 200ms ease-in-out;
+		cursor: pointer;
+		background-color: oklch(0.24 0 0);
+	}
+
+	.toggle-track.size-sm {
+		width: 32px;
+		height: 18px;
+	}
+
+	.toggle-track.size-md {
+		width: 44px;
+		height: 24px;
+	}
+
+	.toggle-track.is-checked {
+		background-color: oklch(0.55 0.15 145);
+	}
+
+	.toggle-track.is-disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.toggle-track:not(.is-disabled):hover {
+		filter: brightness(1.1);
+	}
+
+	.toggle-thumb {
+		display: inline-block;
+		border-radius: var(--radius-full);
+		background-color: white;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+		transform: translateX(2px);
+		transition: transform 200ms ease-in-out;
+	}
+
+	.toggle-thumb.size-sm {
+		height: 14px;
+		width: 14px;
+	}
+
+	.toggle-thumb.size-md {
+		height: 20px;
+		width: 20px;
+	}
+
+	.toggle-thumb.size-sm.is-checked {
+		transform: translateX(14px);
+	}
+
+	.toggle-thumb.size-md.is-checked {
+		transform: translateX(20px);
+	}
+
+	.toggle-label {
+		font-size: var(--text-sm);
+		color: oklch(0.75 0 0);
+		user-select: none;
+		cursor: pointer;
+	}
+
+	.toggle-label.is-disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+</style>

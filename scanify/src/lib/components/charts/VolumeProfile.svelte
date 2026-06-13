@@ -114,12 +114,12 @@
 	}
 </script>
 
-<div class="relative inline-block">
+<div class="volume-container">
 	<svg
 		{width}
 		{height}
 		viewBox="0 0 {width} {height}"
-		class="select-none"
+		class="chart-svg"
 		role="img"
 		aria-label="Volume Profile"
 	>
@@ -128,7 +128,7 @@
 			x={width / 2}
 			y={14}
 			text-anchor="middle"
-			class="text-[10px] fill-[oklch(0.50_0_0)] font-mono"
+			class="chart-title"
 		>
 			Volume Profile
 		</text>
@@ -163,9 +163,8 @@
 				y={y + barHeight / 2 + 1}
 				text-anchor="end"
 				dominant-baseline="middle"
-				class="text-[9px] font-mono {isPoc
-					? 'fill-[oklch(0.85_0.12_80)]'
-					: 'fill-[oklch(0.50_0_0)]'}"
+				class="price-label"
+				style:fill={isPoc ? 'oklch(0.85 0.12 80)' : 'oklch(0.50 0 0)'}
 			>
 				{formatPrice(level.price)}
 			</text>
@@ -185,7 +184,7 @@
 				onmouseenter={(e) => handleMouseMove(e, i)}
 				onmousemove={(e) => handleMouseMove(e, i)}
 				onmouseleave={handleMouseLeave}
-				class="cursor-crosshair transition-[fill] duration-100"
+				class="bar-buy"
 			/>
 
 			<!-- Sell volume (red, stacked after buy) -->
@@ -203,7 +202,7 @@
 				onmouseenter={(e) => handleMouseMove(e, i)}
 				onmousemove={(e) => handleMouseMove(e, i)}
 				onmouseleave={handleMouseLeave}
-				class="cursor-crosshair transition-[fill] duration-100"
+				class="bar-sell"
 			/>
 
 			<!-- POC indicator -->
@@ -222,7 +221,7 @@
 					x={BAR_AREA_LEFT + barAreaWidth + 2}
 					y={y + barHeight / 2}
 					dominant-baseline="middle"
-					class="text-[8px] fill-[oklch(0.85_0.12_80)] font-mono font-bold"
+					class="poc-label"
 				>
 					POC
 				</text>
@@ -248,7 +247,7 @@
 				<text
 					x={BAR_AREA_LEFT + barAreaWidth + 2}
 					y={getBarY(vahIdx) - 2}
-					class="text-[7px] fill-[oklch(0.60_0.10_250)] font-mono"
+					class="vah-label"
 				>
 					VAH
 				</text>
@@ -268,7 +267,7 @@
 				<text
 					x={BAR_AREA_LEFT + barAreaWidth + 2}
 					y={getBarY(valIdx) + barHeight + 8}
-					class="text-[7px] fill-[oklch(0.60_0.10_250)] font-mono"
+					class="val-label"
 				>
 					VAL
 				</text>
@@ -280,31 +279,133 @@
 	{#if hoveredIndex !== null && sortedData[hoveredIndex]}
 		{@const level = sortedData[hoveredIndex]}
 		<div
-			class="pointer-events-none absolute z-50 rounded-lg border border-[oklch(0.25_0_0)]
-				bg-[oklch(0.14_0_0/0.94)] px-3 py-2 shadow-xl backdrop-blur-sm"
+			class="tooltip"
 			style="left: {mouseX + 12}px; top: {mouseY - 60}px;"
 		>
-			<div class="text-[10px] text-[oklch(0.50_0_0)] mb-1">
-				Price: <span class="text-[oklch(0.85_0_0)] font-mono">{formatPrice(level.price)}</span>
+			<div class="tooltip-price">
+				Price: <span class="tooltip-price-value">{formatPrice(level.price)}</span>
 			</div>
-			<div class="flex flex-col gap-0.5 text-[10px] font-mono">
-				<div class="flex items-center gap-2">
-					<span class="w-1.5 h-1.5 rounded-full bg-[oklch(0.55_0.15_145)]"></span>
-					<span class="text-[oklch(0.55_0_0)]">Buy</span>
-					<span class="text-[oklch(0.75_0.15_145)] ml-auto">{formatVolume(level.buyVolume)}</span>
+			<div class="tooltip-rows">
+				<div class="tooltip-row">
+					<span class="tooltip-dot" style="background: oklch(0.55 0.15 145);"></span>
+					<span class="tooltip-label">Buy</span>
+					<span class="tooltip-value" style="color: oklch(0.75 0.15 145);">{formatVolume(level.buyVolume)}</span>
 				</div>
-				<div class="flex items-center gap-2">
-					<span class="w-1.5 h-1.5 rounded-full bg-[oklch(0.50_0.18_25)]"></span>
-					<span class="text-[oklch(0.55_0_0)]">Sell</span>
-					<span class="text-[oklch(0.70_0.16_25)] ml-auto">{formatVolume(level.sellVolume)}</span>
+				<div class="tooltip-row">
+					<span class="tooltip-dot" style="background: oklch(0.50 0.18 25);"></span>
+					<span class="tooltip-label">Sell</span>
+					<span class="tooltip-value" style="color: oklch(0.70 0.16 25);">{formatVolume(level.sellVolume)}</span>
 				</div>
-				<div
-					class="flex items-center gap-2 pt-1 mt-1 border-t border-[oklch(0.22_0_0)]"
-				>
-					<span class="text-[oklch(0.55_0_0)]">Total</span>
-					<span class="text-[oklch(0.80_0_0)] ml-auto">{formatVolume(level.volume)}</span>
+				<div class="tooltip-row tooltip-divider">
+					<span class="tooltip-label">Total</span>
+					<span class="tooltip-value" style="color: oklch(0.80 0 0);">{formatVolume(level.volume)}</span>
 				</div>
 			</div>
 		</div>
 	{/if}
 </div>
+
+<style>
+	.volume-container {
+		position: relative;
+		display: inline-block;
+	}
+
+	.chart-svg {
+		user-select: none;
+	}
+
+	.chart-title {
+		font-size: 10px;
+		fill: oklch(0.50 0 0);
+		font-family: var(--font-mono);
+	}
+
+	.price-label {
+		font-size: 9px;
+		font-family: var(--font-mono);
+	}
+
+	.poc-label {
+		font-size: 8px;
+		fill: oklch(0.85 0.12 80);
+		font-family: var(--font-mono);
+		font-weight: 700;
+	}
+
+	.vah-label {
+		font-size: 7px;
+		fill: oklch(0.60 0.10 250);
+		font-family: var(--font-mono);
+	}
+
+	.val-label {
+		font-size: 7px;
+		fill: oklch(0.60 0.10 250);
+		font-family: var(--font-mono);
+	}
+
+	.bar-buy,
+	.bar-sell {
+		cursor: crosshair;
+		transition: fill 100ms;
+	}
+
+	.tooltip {
+		pointer-events: none;
+		position: absolute;
+		z-index: 50;
+		border-radius: var(--radius-lg, 8px);
+		border: 1px solid oklch(0.25 0 0);
+		background: oklch(0.14 0 0 / 0.94);
+		padding-inline: 12px;
+		padding-block: 8px;
+		box-shadow: 0 20px 25px -5px oklch(0 0 0 / 0.25);
+		backdrop-filter: blur(4px);
+	}
+
+	.tooltip-price {
+		font-size: 10px;
+		color: oklch(0.50 0 0);
+		margin-bottom: 4px;
+	}
+
+	.tooltip-price-value {
+		color: oklch(0.85 0 0);
+		font-family: var(--font-mono);
+	}
+
+	.tooltip-rows {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		font-size: 10px;
+		font-family: var(--font-mono);
+	}
+
+	.tooltip-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.tooltip-dot {
+		width: 6px;
+		height: 6px;
+		border-radius: 9999px;
+	}
+
+	.tooltip-label {
+		color: oklch(0.55 0 0);
+	}
+
+	.tooltip-value {
+		margin-left: auto;
+	}
+
+	.tooltip-divider {
+		padding-top: 4px;
+		margin-top: 4px;
+		border-top: 1px solid oklch(0.22 0 0);
+	}
+</style>

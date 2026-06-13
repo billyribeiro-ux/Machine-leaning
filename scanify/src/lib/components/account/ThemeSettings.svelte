@@ -69,34 +69,29 @@
   }
 </script>
 
-<div class="flex flex-col gap-8 {className}">
+<div class="wrapper {className}">
   <!-- Section header -->
-  <div class="flex flex-col gap-1">
-    <h2 class="text-lg font-semibold text-[oklch(0.90_0_0)]">Appearance</h2>
-    <p class="text-sm text-[oklch(0.55_0_0)]">Customize the look and feel of your workspace</p>
+  <div class="section-header">
+    <h2 class="title">Appearance</h2>
+    <p class="subtitle">Customize the look and feel of your workspace</p>
   </div>
 
   <!-- Theme selection: 2x2 grid -->
-  <div class="flex flex-col gap-3">
-    <h3 class="text-xs font-semibold uppercase tracking-wider text-[oklch(0.60_0_0)]">Theme</h3>
-    <div class="grid grid-cols-2 gap-3">
+  <div class="section">
+    <h3 class="section-label">Theme</h3>
+    <div class="theme-grid">
       {#each themes as theme (theme.id)}
         {@const isActive = activeTheme === theme.id}
         <button
-          class="
-            relative flex flex-col gap-3 p-4 rounded-xl border text-left
-            transition-all duration-200 cursor-pointer
-            {isActive
-              ? 'border-[oklch(0.50_0.15_250)] bg-[oklch(0.15_0.01_250)] shadow-[0_0_16px_oklch(0.50_0.15_250/0.1)]'
-              : 'border-[oklch(0.22_0_0)] bg-[oklch(0.12_0_0)] hover:border-[oklch(0.30_0_0)] hover:bg-[oklch(0.14_0_0)]'}
-          "
+          class="theme-card"
+          class:active={isActive}
           onclick={() => selectTheme(theme.id)}
         >
           <!-- Active indicator -->
           {#if isActive}
-            <div class="absolute top-3 right-3">
-              <div class="flex items-center justify-center w-5 h-5 rounded-full bg-[oklch(0.50_0.15_250)]">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3 h-3 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <div class="active-indicator">
+              <div class="check-circle">
+                <svg xmlns="http://www.w3.org/2000/svg" class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
               </div>
@@ -104,21 +99,21 @@
           {/if}
 
           <!-- Color swatch preview -->
-          <div class="flex items-center gap-2">
+          <div class="swatch-row">
             {#each theme.colors as color}
               <span
-                class="w-5 h-5 rounded-full border border-[oklch(0.30_0_0)]"
+                class="swatch"
                 style:background-color={color}
               ></span>
             {/each}
           </div>
 
           <!-- Label and description -->
-          <div class="flex flex-col gap-0.5">
-            <span class="text-sm font-semibold {isActive ? 'text-[oklch(0.90_0_0)]' : 'text-[oklch(0.75_0_0)]'}">
+          <div class="theme-info">
+            <span class="theme-label" class:active={isActive}>
               {theme.label}
             </span>
-            <span class="text-[11px] text-[oklch(0.48_0_0)]">
+            <span class="theme-description">
               {theme.description}
             </span>
           </div>
@@ -128,18 +123,12 @@
   </div>
 
   <!-- Animations toggle -->
-  <div class="flex flex-col gap-3">
-    <h3 class="text-xs font-semibold uppercase tracking-wider text-[oklch(0.60_0_0)]">Motion</h3>
-    <div
-      class="
-        flex items-center justify-between
-        rounded-xl border border-[oklch(0.20_0_0)] bg-[oklch(0.12_0_0)]
-        px-4 py-3
-      "
-    >
-      <div class="flex flex-col gap-0.5">
-        <span class="text-sm font-medium text-[oklch(0.80_0_0)]">Animations</span>
-        <span class="text-[11px] text-[oklch(0.48_0_0)]">
+  <div class="section">
+    <h3 class="section-label">Motion</h3>
+    <div class="toggle-row">
+      <div class="toggle-text">
+        <span class="toggle-label">Animations</span>
+        <span class="toggle-description">
           Enable transitions and motion effects
         </span>
       </div>
@@ -147,45 +136,34 @@
         type="button"
         role="switch"
         aria-checked={animationsEnabled}
-        class="
-          relative inline-flex h-6 w-11 shrink-0 items-center rounded-full
-          transition-colors duration-200 cursor-pointer border-none
-          {animationsEnabled ? 'bg-[oklch(0.55_0.15_145)]' : 'bg-[oklch(0.24_0_0)]'}
-        "
+        class="toggle-track"
+        class:enabled={animationsEnabled}
         onclick={() => { animationsEnabled = !animationsEnabled; }}
       >
         <span
-          class="
-            inline-block h-5 w-5 rounded-full bg-white shadow-sm
-            transition-transform duration-200
-            {animationsEnabled ? 'translate-x-5' : 'translate-x-0.5'}
-          "
+          class="toggle-thumb"
+          class:enabled={animationsEnabled}
         ></span>
       </button>
     </div>
   </div>
 
   <!-- Density selector -->
-  <div class="flex flex-col gap-3">
-    <h3 class="text-xs font-semibold uppercase tracking-wider text-[oklch(0.60_0_0)]">Density</h3>
-    <div class="flex gap-2">
+  <div class="section">
+    <h3 class="section-label">Density</h3>
+    <div class="density-row">
       {#each densityOptions as option (option.id)}
         {@const isActive = density === option.id}
         <button
-          class="
-            flex-1 py-2.5 rounded-lg text-xs font-medium text-center
-            border transition-all duration-150 cursor-pointer
-            {isActive
-              ? 'border-[oklch(0.45_0.12_250)] bg-[oklch(0.17_0.02_250)] text-[oklch(0.80_0.10_250)]'
-              : 'border-[oklch(0.22_0_0)] bg-[oklch(0.12_0_0)] text-[oklch(0.55_0_0)] hover:border-[oklch(0.30_0_0)] hover:text-[oklch(0.70_0_0)]'}
-          "
+          class="density-btn"
+          class:active={isActive}
           onclick={() => { density = option.id; }}
         >
           {option.label}
         </button>
       {/each}
     </div>
-    <p class="text-[11px] text-[oklch(0.42_0_0)]">
+    <p class="density-hint">
       {density === 'compact'
         ? 'Tighter spacing for maximum data density'
         : density === 'normal'
@@ -194,3 +172,245 @@
     </p>
   </div>
 </div>
+
+<style>
+  /* ---- Layout wrapper ---- */
+  .wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  /* ---- Section header ---- */
+  .section-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: oklch(0.90 0 0);
+  }
+
+  .subtitle {
+    font-size: var(--text-sm);
+    color: oklch(0.55 0 0);
+  }
+
+  /* ---- Reusable section ---- */
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .section-label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: oklch(0.60 0 0);
+  }
+
+  /* ---- Theme grid ---- */
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .theme-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    border-radius: var(--radius-xl);
+    border: 1px solid oklch(0.22 0 0);
+    background-color: oklch(0.12 0 0);
+    text-align: left;
+    transition: all 200ms;
+    cursor: pointer;
+  }
+
+  .theme-card:hover {
+    border-color: oklch(0.30 0 0);
+    background-color: oklch(0.14 0 0);
+  }
+
+  .theme-card.active {
+    border-color: oklch(0.50 0.15 250);
+    background-color: oklch(0.15 0.01 250);
+    box-shadow: 0 0 16px oklch(0.50 0.15 250 / 0.1);
+  }
+
+  .theme-card.active:hover {
+    border-color: oklch(0.50 0.15 250);
+    background-color: oklch(0.15 0.01 250);
+  }
+
+  /* ---- Active indicator (checkmark) ---- */
+  .active-indicator {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+  }
+
+  .check-circle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-full);
+    background-color: oklch(0.50 0.15 250);
+  }
+
+  .check-icon {
+    width: 12px;
+    height: 12px;
+    color: white;
+  }
+
+  /* ---- Swatch row ---- */
+  .swatch-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .swatch {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-full);
+    border: 1px solid oklch(0.30 0 0);
+  }
+
+  /* ---- Theme info ---- */
+  .theme-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .theme-label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: oklch(0.75 0 0);
+  }
+
+  .theme-label.active {
+    color: oklch(0.90 0 0);
+  }
+
+  .theme-description {
+    font-size: 11px;
+    color: oklch(0.48 0 0);
+  }
+
+  /* ---- Toggle row (animations) ---- */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: var(--radius-xl);
+    border: 1px solid oklch(0.20 0 0);
+    background-color: oklch(0.12 0 0);
+    padding-inline: 16px;
+    padding-block: 12px;
+  }
+
+  .toggle-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .toggle-label {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: oklch(0.80 0 0);
+  }
+
+  .toggle-description {
+    font-size: 11px;
+    color: oklch(0.48 0 0);
+  }
+
+  /* ---- Toggle switch ---- */
+  .toggle-track {
+    position: relative;
+    display: inline-flex;
+    height: 24px;
+    width: 44px;
+    flex-shrink: 0;
+    align-items: center;
+    border-radius: var(--radius-full);
+    transition: background-color 200ms;
+    cursor: pointer;
+    border: none;
+    background-color: oklch(0.24 0 0);
+  }
+
+  .toggle-track.enabled {
+    background-color: oklch(0.55 0.15 145);
+  }
+
+  .toggle-thumb {
+    display: inline-block;
+    height: 20px;
+    width: 20px;
+    border-radius: var(--radius-full);
+    background-color: white;
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition: transform 200ms;
+    transform: translateX(2px);
+  }
+
+  .toggle-thumb.enabled {
+    transform: translateX(20px);
+  }
+
+  /* ---- Density selector ---- */
+  .density-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .density-btn {
+    flex: 1;
+    padding-block: 10px;
+    border-radius: var(--radius-lg);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    text-align: center;
+    border: 1px solid oklch(0.22 0 0);
+    background-color: oklch(0.12 0 0);
+    color: oklch(0.55 0 0);
+    transition: all 150ms;
+    cursor: pointer;
+  }
+
+  .density-btn:hover {
+    border-color: oklch(0.30 0 0);
+    color: oklch(0.70 0 0);
+  }
+
+  .density-btn.active {
+    border-color: oklch(0.45 0.12 250);
+    background-color: oklch(0.17 0.02 250);
+    color: oklch(0.80 0.10 250);
+  }
+
+  .density-btn.active:hover {
+    border-color: oklch(0.45 0.12 250);
+    color: oklch(0.80 0.10 250);
+  }
+
+  .density-hint {
+    font-size: 11px;
+    color: oklch(0.42 0 0);
+  }
+</style>

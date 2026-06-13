@@ -268,23 +268,18 @@
 	});
 </script>
 
-<div class="flex flex-col w-full">
+<div class="chart-wrapper">
 	<!-- Timeframe selector bar -->
-	<div class="flex items-center gap-1 px-3 py-2 border-b border-[oklch(0.22_0_0)]">
-		<span
-			class="text-xs font-semibold text-[oklch(0.90_0_0)] tracking-wider mr-3 font-mono"
-		>
+	<div class="timeframe-bar">
+		<span class="symbol-label">
 			{symbol}
 		</span>
 
-		<div class="flex items-center gap-0.5 rounded-md bg-[oklch(0.14_0_0)] p-0.5">
+		<div class="timeframe-group">
 			{#each timeframes as tf}
 				<button
 					type="button"
-					class="px-2.5 py-1 text-[11px] font-medium rounded transition-all duration-150
-						{tf === timeframe
-						? 'bg-[oklch(0.24_0.005_270)] text-white shadow-sm'
-						: 'text-[oklch(0.55_0_0)] hover:text-[oklch(0.75_0_0)] hover:bg-[oklch(0.18_0_0)]'}"
+					class="tf-btn {tf === timeframe ? 'tf-btn-active' : ''}"
 					onclick={() => selectTimeframe(tf)}
 				>
 					{tf}
@@ -293,62 +288,54 @@
 		</div>
 
 		{#if tooltipData}
-			<div class="ml-auto flex items-center gap-3 text-[11px] font-mono">
-				<span class="text-[oklch(0.50_0_0)]">O</span>
-				<span class="text-[oklch(0.80_0_0)]">{tooltipData.open}</span>
-				<span class="text-[oklch(0.50_0_0)]">H</span>
-				<span class="text-[oklch(0.80_0_0)]">{tooltipData.high}</span>
-				<span class="text-[oklch(0.50_0_0)]">L</span>
-				<span class="text-[oklch(0.80_0_0)]">{tooltipData.low}</span>
-				<span class="text-[oklch(0.50_0_0)]">C</span>
-				<span class="text-[oklch(0.80_0_0)]">{tooltipData.close}</span>
-				<span
-					class="{tooltipData.bullish
-						? 'text-[oklch(0.62_0.17_145)]'
-						: 'text-[oklch(0.55_0.2_25)]'}"
-				>
+			<div class="ohlc-bar">
+				<span class="ohlc-label">O</span>
+				<span class="ohlc-value">{tooltipData.open}</span>
+				<span class="ohlc-label">H</span>
+				<span class="ohlc-value">{tooltipData.high}</span>
+				<span class="ohlc-label">L</span>
+				<span class="ohlc-value">{tooltipData.low}</span>
+				<span class="ohlc-label">C</span>
+				<span class="ohlc-value">{tooltipData.close}</span>
+				<span class={tooltipData.bullish ? 'change-bullish' : 'change-bearish'}>
 					{tooltipData.changePercent}
 				</span>
 				{#if tooltipData.volume}
-					<span class="text-[oklch(0.50_0_0)]">V</span>
-					<span class="text-[oklch(0.80_0_0)]">{tooltipData.volume}</span>
+					<span class="ohlc-label">V</span>
+					<span class="ohlc-value">{tooltipData.volume}</span>
 				{/if}
 			</div>
 		{/if}
 	</div>
 
 	<!-- Chart container -->
-	<div class="relative w-full" style="height: {height}px;">
-		<div bind:this={container} class="w-full h-full"></div>
+	<div class="chart-area" style="height: {height}px;">
+		<div bind:this={container} class="chart-container"></div>
 
 		<!-- Floating tooltip -->
 		{#if tooltipVisible && tooltipData}
 			<div
-				class="pointer-events-none absolute z-50 rounded-lg border border-[oklch(0.25_0_0)]
-					bg-[oklch(0.14_0_0/0.92)] px-3 py-2 shadow-xl backdrop-blur-sm"
+				class="tooltip"
 				style="left: {Math.min(tooltipX + 16, (container?.clientWidth ?? 500) - 200)}px;
 					top: {Math.max(tooltipY - 80, 8)}px;"
 			>
-				<div class="text-[10px] text-[oklch(0.50_0_0)] mb-1.5">{tooltipData.time}</div>
-				<div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[11px] font-mono">
-					<span class="text-[oklch(0.50_0_0)]">Open</span>
-					<span class="text-[oklch(0.80_0_0)] text-right">{tooltipData.open}</span>
-					<span class="text-[oklch(0.50_0_0)]">High</span>
-					<span class="text-[oklch(0.80_0_0)] text-right">{tooltipData.high}</span>
-					<span class="text-[oklch(0.50_0_0)]">Low</span>
-					<span class="text-[oklch(0.80_0_0)] text-right">{tooltipData.low}</span>
-					<span class="text-[oklch(0.50_0_0)]">Close</span>
-					<span class="text-[oklch(0.80_0_0)] text-right">{tooltipData.close}</span>
+				<div class="tooltip-time">{tooltipData.time}</div>
+				<div class="tooltip-grid">
+					<span class="ohlc-label">Open</span>
+					<span class="ohlc-value tooltip-value-right">{tooltipData.open}</span>
+					<span class="ohlc-label">High</span>
+					<span class="ohlc-value tooltip-value-right">{tooltipData.high}</span>
+					<span class="ohlc-label">Low</span>
+					<span class="ohlc-value tooltip-value-right">{tooltipData.low}</span>
+					<span class="ohlc-label">Close</span>
+					<span class="ohlc-value tooltip-value-right">{tooltipData.close}</span>
 					{#if tooltipData.volume}
-						<span class="text-[oklch(0.50_0_0)]">Vol</span>
-						<span class="text-[oklch(0.80_0_0)] text-right">{tooltipData.volume}</span>
+						<span class="ohlc-label">Vol</span>
+						<span class="ohlc-value tooltip-value-right">{tooltipData.volume}</span>
 					{/if}
 				</div>
 				<div
-					class="mt-1.5 pt-1.5 border-t border-[oklch(0.22_0_0)] text-[11px] font-mono text-right
-						{tooltipData.bullish
-						? 'text-[oklch(0.62_0.17_145)]'
-						: 'text-[oklch(0.55_0.2_25)]'}"
+					class="tooltip-change {tooltipData.bullish ? 'change-bullish' : 'change-bearish'}"
 				>
 					{tooltipData.change} ({tooltipData.changePercent})
 				</div>
@@ -356,3 +343,143 @@
 		{/if}
 	</div>
 </div>
+
+<style>
+	.chart-wrapper {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+	}
+
+	.timeframe-bar {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		padding-inline: 12px;
+		padding-block: 8px;
+		border-bottom: 1px solid oklch(0.22 0 0);
+	}
+
+	.symbol-label {
+		font-size: var(--text-xs, 0.75rem);
+		font-weight: 600;
+		color: oklch(0.90 0 0);
+		letter-spacing: 0.05em;
+		margin-right: 12px;
+		font-family: var(--font-mono, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace);
+	}
+
+	.timeframe-group {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		border-radius: 6px;
+		background-color: oklch(0.14 0 0);
+		padding: 2px;
+	}
+
+	.tf-btn {
+		padding-inline: 10px;
+		padding-block: 4px;
+		font-size: 11px;
+		font-weight: 500;
+		border-radius: var(--radius-lg, 8px);
+		transition: all 150ms;
+		color: oklch(0.55 0 0);
+		background: transparent;
+		border: none;
+		cursor: pointer;
+	}
+
+	.tf-btn:hover {
+		color: oklch(0.75 0 0);
+		background-color: oklch(0.18 0 0);
+	}
+
+	.tf-btn-active {
+		background-color: oklch(0.24 0.005 270);
+		color: white;
+		box-shadow: 0 1px 2px oklch(0 0 0 / 0.05);
+	}
+
+	.tf-btn-active:hover {
+		background-color: oklch(0.24 0.005 270);
+		color: white;
+	}
+
+	.ohlc-bar {
+		margin-left: auto;
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		font-size: 11px;
+		font-family: var(--font-mono, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace);
+	}
+
+	.ohlc-label {
+		color: oklch(0.50 0 0);
+	}
+
+	.ohlc-value {
+		color: oklch(0.80 0 0);
+	}
+
+	.change-bullish {
+		color: oklch(0.62 0.17 145);
+	}
+
+	.change-bearish {
+		color: oklch(0.55 0.2 25);
+	}
+
+	.chart-area {
+		position: relative;
+		width: 100%;
+	}
+
+	.chart-container {
+		width: 100%;
+		height: 100%;
+	}
+
+	.tooltip {
+		pointer-events: none;
+		position: absolute;
+		z-index: 50;
+		border-radius: var(--radius-lg, 8px);
+		border: 1px solid oklch(0.25 0 0);
+		background-color: oklch(0.14 0 0 / 0.92);
+		padding-inline: 12px;
+		padding-block: 8px;
+		box-shadow: 0 20px 25px -5px oklch(0 0 0 / 0.25);
+		backdrop-filter: blur(4px);
+	}
+
+	.tooltip-time {
+		font-size: 10px;
+		color: oklch(0.50 0 0);
+		margin-bottom: 6px;
+	}
+
+	.tooltip-grid {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		column-gap: 12px;
+		row-gap: 2px;
+		font-size: 11px;
+		font-family: var(--font-mono, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace);
+	}
+
+	.tooltip-value-right {
+		text-align: right;
+	}
+
+	.tooltip-change {
+		margin-top: 6px;
+		padding-top: 6px;
+		border-top: 1px solid oklch(0.22 0 0);
+		font-size: 11px;
+		font-family: var(--font-mono, ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace);
+		text-align: right;
+	}
+</style>

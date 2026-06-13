@@ -75,8 +75,8 @@
 	});
 </script>
 
-<div class="relative {className}" role="tablist" aria-orientation="horizontal">
-	<div class="flex border-b border-[oklch(0.22_0_0)]">
+<div class="tabs-container {className}" role="tablist" aria-orientation="horizontal">
+	<div class="tabs-list">
 		{#each tabs as tab, i (tab.id)}
 			<button
 				bind:this={tabRefs[i]}
@@ -86,15 +86,13 @@
 				aria-selected={activeTab === tab.id}
 				aria-controls="tabpanel-{tab.id}"
 				tabindex={activeTab === tab.id ? 0 : -1}
-				class="relative flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors duration-150 outline-none
-					{activeTab === tab.id
-						? 'text-[oklch(0.90_0_0)]'
-						: 'text-[oklch(0.50_0_0)] hover:text-[oklch(0.70_0_0)]'}"
+				class="tab-button"
+				class:is-active={activeTab === tab.id}
 				onclick={() => selectTab(tab.id)}
 				onkeydown={(e) => handleKeydown(e, i)}
 			>
 				{#if tab.icon}
-					<span class="text-base leading-none">{tab.icon}</span>
+					<span class="tab-icon">{tab.icon}</span>
 				{/if}
 				{tab.label}
 			</button>
@@ -103,7 +101,54 @@
 
 	<!-- Animated underline indicator -->
 	<div
-		class="absolute bottom-0 left-0 h-0.5 bg-[oklch(0.55_0.15_145)] transition-all duration-200 ease-out"
+		class="tab-indicator"
 		style={indicatorStyle}
 	></div>
 </div>
+
+<style>
+	.tabs-container {
+		position: relative;
+	}
+
+	.tabs-list {
+		display: flex;
+		border-bottom: 1px solid oklch(0.22 0 0);
+	}
+
+	.tab-button {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding-inline: 16px;
+		padding-block: 10px;
+		font-size: var(--text-sm);
+		font-weight: 500;
+		transition: color 150ms;
+		outline: none;
+		color: oklch(0.50 0 0);
+	}
+
+	.tab-button:hover {
+		color: oklch(0.70 0 0);
+	}
+
+	.tab-button.is-active {
+		color: oklch(0.90 0 0);
+	}
+
+	.tab-icon {
+		font-size: var(--text-base);
+		line-height: 1;
+	}
+
+	.tab-indicator {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		height: 2px;
+		background-color: oklch(0.55 0.15 145);
+		transition: all 200ms ease-out;
+	}
+</style>

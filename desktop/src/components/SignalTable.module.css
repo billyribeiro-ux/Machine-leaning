@@ -1,0 +1,310 @@
+.tableCard {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.signalCountLabel {
+  color: var(--scanify-primary);
+}
+
+.scrollArea {
+  flex: 1;
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tableHead {
+  position: sticky;
+  top: 0;
+  background-color: var(--scanify-dark-800);
+}
+
+.columnHeader {
+  text-align: left;
+  padding-bottom: 8px;
+  padding-right: 16px;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: #6b7280;
+  text-transform: uppercase;
+  font-weight: 400;
+}
+
+.columnHeaderSortable {
+  cursor: pointer;
+}
+
+.columnHeaderSortable:hover {
+  color: #d1d5db;
+}
+
+.columnHeaderLast {
+  padding-right: 0;
+}
+
+.timeCell {
+  padding: 12px 16px 12px 0;
+}
+
+.timeContent {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #9ca3af;
+}
+
+.timeIcon {
+  width: 12px;
+  height: 12px;
+}
+
+.delayedLabel {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: #eab308;
+}
+
+.symbolCell {
+  padding: 12px 16px 12px 0;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.scannerCell {
+  padding: 12px 16px 12px 0;
+}
+
+.scannerBadge {
+  border: 1px solid;
+}
+
+/* Scanner badge color variants */
+.scannerMomentum {
+  background-color: rgba(30, 58, 138, 0.5);
+  color: #60a5fa;
+  border-color: #1e3a8a;
+}
+
+.scannerBreakout {
+  background-color: rgba(88, 28, 135, 0.5);
+  color: #c084fc;
+  border-color: #6b21a8;
+}
+
+.scannerReversal {
+  background-color: rgba(124, 45, 18, 0.5);
+  color: #fb923c;
+  border-color: #9a3412;
+}
+
+.scannerOptionsFlow {
+  background-color: rgba(22, 78, 99, 0.5);
+  color: #22d3ee;
+  border-color: #155e75;
+}
+
+.scannerSqueeze {
+  background-color: rgba(131, 24, 67, 0.5);
+  color: #f472b6;
+  border-color: #9d174d;
+}
+
+.scannerGamma {
+  background-color: rgba(49, 46, 129, 0.5);
+  color: #818cf8;
+  border-color: #3730a3;
+}
+
+.scannerMtf {
+  background-color: rgba(6, 78, 59, 0.5);
+  color: #34d399;
+  border-color: #065f46;
+}
+
+.scannerDefault {
+  background-color: rgba(17, 24, 39, 0.5);
+  color: #9ca3af;
+  border-color: #1f2937;
+}
+
+.directionCell {
+  padding: 12px 16px 12px 0;
+}
+
+.directionContent {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.directionLong {
+  color: #4ade80;
+}
+
+.directionShort {
+  color: #f87171;
+}
+
+.directionNeutral {
+  color: #9ca3af;
+}
+
+.directionIconUp {
+  width: 16px;
+  height: 16px;
+  color: #22c55e;
+}
+
+.directionIconDown {
+  width: 16px;
+  height: 16px;
+  color: #ef4444;
+}
+
+.directionIconNeutral {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+}
+
+.confidenceCell {
+  padding: 12px 16px 12px 0;
+}
+
+.confidenceContent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.confidenceBarTrack {
+  width: 64px;
+  height: 6px;
+  background-color: var(--scanify-dark-600);
+  border-radius: 9999px;
+  overflow: hidden;
+}
+
+.confidenceBarFill {
+  height: 100%;
+  border-radius: 9999px;
+}
+
+.confidenceHigh {
+  background-color: #22c55e;
+}
+
+.confidenceMedium {
+  background-color: #eab308;
+}
+
+.confidenceLow {
+  background-color: #6b7280;
+}
+
+.confidenceValue {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+}
+
+.confidenceTextHigh {
+  color: #4ade80;
+}
+
+.confidenceTextMedium {
+  color: #facc15;
+}
+
+.confidenceTextLow {
+  color: #9ca3af;
+}
+
+.entryCell {
+  padding: 12px 16px 12px 0;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #ffffff;
+}
+
+.targetsCell {
+  padding: 12px 16px 12px 0;
+}
+
+.targetsContent {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.targetsIcon {
+  width: 12px;
+  height: 12px;
+  color: var(--scanify-accent);
+}
+
+.targetsValue {
+  color: var(--scanify-accent);
+}
+
+.targetsEmpty {
+  color: #6b7280;
+}
+
+.rrCell {
+  padding: 12px 0;
+}
+
+.rrGood {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  color: #4ade80;
+}
+
+.rrOk {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  color: #facc15;
+}
+
+.rrLow {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.rrEmpty {
+  color: #6b7280;
+}
+
+.emptyState {
+  padding: 48px 0;
+  text-align: center;
+  color: #6b7280;
+}
+
+.emptyIcon {
+  width: 32px;
+  height: 32px;
+  margin: 0 auto 8px;
+  opacity: 0.5;
+}

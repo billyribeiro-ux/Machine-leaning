@@ -34,23 +34,61 @@
 </script>
 
 <div
-	class="relative inline-flex items-center gap-2 {className}"
+	class="volume-bar {className}"
 	style="width: {maxWidth + 40}px;"
 >
 	<div
-		class="relative h-4 overflow-hidden rounded-sm"
+		class="bar-track"
 		style="width: {maxWidth}px;"
 	>
-		<div class="absolute inset-0 rounded-sm bg-[oklch(0.18_0.005_270)]"></div>
+		<div class="bar-bg"></div>
 		<div
-			class="absolute inset-y-0 left-0 rounded-sm transition-all duration-300 ease-out"
+			class="bar-fill"
 			style="width: {barWidth}px; background-color: {barColor};"
 		></div>
 	</div>
 	<span
-		class="whitespace-nowrap font-mono text-xs tabular-nums"
+		class="bar-label"
 		style="color: {barColor}; font-variant-numeric: tabular-nums;"
 	>
 		{ratioText}
 	</span>
 </div>
+
+<style>
+	.volume-bar {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.bar-track {
+		position: relative;
+		height: 16px;
+		overflow: hidden;
+		border-radius: var(--radius-sm);
+	}
+
+	.bar-bg {
+		position: absolute;
+		inset: 0;
+		border-radius: var(--radius-sm);
+		background-color: oklch(0.18 0.005 270);
+	}
+
+	.bar-fill {
+		position: absolute;
+		inset-block: 0;
+		left: 0;
+		border-radius: var(--radius-sm);
+		transition: all 300ms ease-out;
+	}
+
+	.bar-label {
+		white-space: nowrap;
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		font-variant-numeric: tabular-nums;
+	}
+</style>

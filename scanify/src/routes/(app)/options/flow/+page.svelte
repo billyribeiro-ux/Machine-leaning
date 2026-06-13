@@ -51,57 +51,57 @@
   <title>Options Flow - Scanify</title>
 </svelte:head>
 
-<div class="flex flex-col h-full overflow-hidden">
+<div class="flow-layout">
   <!-- Header -->
-  <div class="flex items-center justify-between px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
-    <div class="flex items-center gap-3">
-      <h1 class="text-lg font-bold" style="color: var(--text-primary);">Options Flow</h1>
-      <div class="flex items-center gap-1.5">
-        <div class="w-2 h-2 rounded-full signal-ping" style="background: var(--bullish);"></div>
-        <span class="text-xs" style="color: var(--bullish);">Live</span>
+  <div class="flow-header" style="border-bottom: 1px solid var(--border-subtle);">
+    <div class="header-left">
+      <h1 class="flow-title" style="color: var(--text-primary);">Options Flow</h1>
+      <div class="live-indicator">
+        <div class="live-dot signal-ping" style="background: var(--bullish);"></div>
+        <span class="live-label" style="color: var(--bullish);">Live</span>
       </div>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="header-right">
       <ExportToolbar source="options-flow" />
-      <div class="w-px h-5" style="background: var(--border-subtle);"></div>
-      <a href="/options" class="text-xs" style="color: var(--text-tertiary);">Back to Options</a>
+      <div class="header-divider" style="background: var(--border-subtle);"></div>
+      <a href="/options" class="back-link" style="color: var(--text-tertiary);">Back to Options</a>
     </div>
   </div>
 
   <!-- Stats bar -->
-  <div class="flex items-center gap-6 px-5 py-3 shrink-0" style="background: var(--bg-base); border-bottom: 1px solid var(--border-subtle);">
-    <div class="flex flex-col">
-      <span class="text-[10px] uppercase tracking-wider" style="color: var(--text-tertiary);">Total Premium</span>
-      <span class="text-sm font-bold font-mono" style="color: var(--text-primary);">{formatPremiumLarge(totalPremium)}</span>
+  <div class="stats-bar" style="background: var(--bg-base); border-bottom: 1px solid var(--border-subtle);">
+    <div class="stat-item">
+      <span class="stat-label" style="color: var(--text-tertiary);">Total Premium</span>
+      <span class="stat-value" style="color: var(--text-primary);">{formatPremiumLarge(totalPremium)}</span>
     </div>
-    <div class="w-px h-8" style="background: var(--border-subtle);"></div>
-    <div class="flex flex-col">
-      <span class="text-[10px] uppercase tracking-wider" style="color: var(--text-tertiary);">Call/Put</span>
-      <span class="text-sm font-bold font-mono" style="color: var(--bullish);">{callPutRatio}</span>
+    <div class="stats-divider" style="background: var(--border-subtle);"></div>
+    <div class="stat-item">
+      <span class="stat-label" style="color: var(--text-tertiary);">Call/Put</span>
+      <span class="stat-value" style="color: var(--bullish);">{callPutRatio}</span>
     </div>
-    <div class="w-px h-8" style="background: var(--border-subtle);"></div>
-    <div class="flex flex-col">
-      <span class="text-[10px] uppercase tracking-wider" style="color: var(--text-tertiary);">Sweeps</span>
-      <span class="text-sm font-bold font-mono" style="color: var(--accent-bright);">{sweepCount}</span>
+    <div class="stats-divider" style="background: var(--border-subtle);"></div>
+    <div class="stat-item">
+      <span class="stat-label" style="color: var(--text-tertiary);">Sweeps</span>
+      <span class="stat-value" style="color: var(--accent-bright);">{sweepCount}</span>
     </div>
-    <div class="w-px h-8" style="background: var(--border-subtle);"></div>
-    <div class="flex flex-col">
-      <span class="text-[10px] uppercase tracking-wider" style="color: var(--text-tertiary);">Count</span>
-      <span class="text-sm font-bold font-mono" style="color: var(--text-primary);">{filteredItems.length}</span>
+    <div class="stats-divider" style="background: var(--border-subtle);"></div>
+    <div class="stat-item">
+      <span class="stat-label" style="color: var(--text-tertiary);">Count</span>
+      <span class="stat-value" style="color: var(--text-primary);">{filteredItems.length}</span>
     </div>
   </div>
 
   <!-- Filter row -->
-  <div class="flex items-center gap-4 px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
+  <div class="filter-row" style="border-bottom: 1px solid var(--border-subtle);">
     <!-- Type dropdown -->
-    <div class="flex items-center gap-2">
-      <span class="text-[11px]" style="color: var(--text-tertiary);">Type:</span>
-      <div class="flex gap-1 rounded-lg p-0.5" style="background: var(--bg-surface);">
+    <div class="filter-group">
+      <span class="filter-label" style="color: var(--text-tertiary);">Type:</span>
+      <div class="filter-buttons" style="background: var(--bg-surface);">
         {#each [['all', 'All'], ['calls', 'Calls'], ['puts', 'Puts']] as [key, label]}
           <button
             type="button"
             onclick={() => typeFilter = key as typeof typeFilter}
-            class="rounded-md px-3 py-1.5 text-xs font-medium transition-all"
+            class="filter-button"
             style="background: {typeFilter === key ? 'var(--bg-elevated)' : 'transparent'};
                    color: {typeFilter === key ? 'var(--text-primary)' : 'var(--text-tertiary)'};"
           >
@@ -112,18 +112,156 @@
     </div>
 
     <!-- Min premium input -->
-    <div class="flex items-center gap-2">
-      <span class="text-[11px]" style="color: var(--text-tertiary);">Min Premium ($K):</span>
+    <div class="filter-group">
+      <span class="filter-label" style="color: var(--text-tertiary);">Min Premium ($K):</span>
       <input
         type="number"
         bind:value={minPremium}
         placeholder="0"
-        class="w-20 rounded-md px-2 py-1.5 text-xs outline-none font-mono"
+        class="premium-input"
         style="background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-subtle);"
       />
     </div>
   </div>
 
   <!-- Flow Feed -->
-  <FlowFeed items={filteredItems} class="flex-1 min-h-0" />
+  <FlowFeed items={filteredItems} class="flow-embed" />
 </div>
+
+<style>
+  .flow-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .flow-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    flex-shrink: 0;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .flow-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+  }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+  }
+
+  .live-label {
+    font-size: var(--text-xs);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 20px;
+  }
+
+  .back-link {
+    font-size: var(--text-xs);
+  }
+
+  /* Stats bar */
+  .stats-bar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 12px 20px;
+    flex-shrink: 0;
+  }
+
+  .stat-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .stat-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .stat-value {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .stats-divider {
+    width: 1px;
+    height: 32px;
+  }
+
+  /* Filter row */
+  .filter-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 20px;
+    flex-shrink: 0;
+  }
+
+  .filter-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .filter-label {
+    font-size: 11px;
+  }
+
+  .filter-buttons {
+    display: flex;
+    gap: 4px;
+    border-radius: var(--radius-lg);
+    padding: 2px;
+  }
+
+  .filter-button {
+    border-radius: var(--radius-md);
+    padding: 6px 12px;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    transition: all 150ms;
+  }
+
+  .premium-input {
+    width: 80px;
+    border-radius: var(--radius-md);
+    padding: 6px 8px;
+    font-size: var(--text-xs);
+    outline: none;
+    font-family: var(--font-mono);
+  }
+
+  :global(.flow-embed) {
+    flex: 1;
+    min-height: 0;
+  }
+</style>

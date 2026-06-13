@@ -22,42 +22,42 @@
 
   let tickColor = $derived(
     tick > 500
-      ? 'text-[var(--bullish-bright)]'
+      ? 'var(--bullish-bright)'
       : tick < -500
-        ? 'text-[var(--bearish-bright)]'
-        : 'text-[var(--warning-bright)]'
+        ? 'var(--bearish-bright)'
+        : 'var(--warning-bright)'
   );
 
   let trinColor = $derived(
     trin < 0.8
-      ? 'text-[var(--bullish-bright)]'
+      ? 'var(--bullish-bright)'
       : trin > 1.2
-        ? 'text-[var(--bearish-bright)]'
-        : 'text-[var(--text-primary)]'
+        ? 'var(--bearish-bright)'
+        : 'var(--text-primary)'
   );
 
   let vixColor = $derived(
     vix < 15
-      ? 'text-[var(--bullish-bright)]'
+      ? 'var(--bullish-bright)'
       : vix < 20
-        ? 'text-[var(--bullish)]'
+        ? 'var(--bullish)'
         : vix < 25
-          ? 'text-[var(--warning)]'
+          ? 'var(--warning)'
           : vix < 30
-            ? 'text-[var(--warning-bright)]'
+            ? 'var(--warning-bright)'
             : vix < 40
-              ? 'text-[var(--bearish)]'
-              : 'text-[var(--bearish-bright)]'
+              ? 'var(--bearish)'
+              : 'var(--bearish-bright)'
   );
 
   let adColor = $derived(
     advDecRatio >= 1.5
-      ? 'text-[var(--bullish-bright)]'
+      ? 'var(--bullish-bright)'
       : advDecRatio >= 1.0
-        ? 'text-[var(--bullish)]'
+        ? 'var(--bullish)'
         : advDecRatio >= 0.7
-          ? 'text-[var(--warning)]'
-          : 'text-[var(--bearish-bright)]'
+          ? 'var(--warning)'
+          : 'var(--bearish-bright)'
   );
 
   function formatTick(val: number): string {
@@ -66,44 +66,83 @@
   }
 </script>
 
-<div
-  class="flex items-center gap-4 px-4 py-2 rounded-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] overflow-x-auto {className}"
->
+<div class="internals-bar {className}">
   <!-- TICK -->
-  <div class="flex items-center gap-2 shrink-0">
-    <span class="text-2xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider">TICK</span>
-    <span class="mono-nums text-sm font-bold {tickColor}">
+  <div class="metric-group">
+    <span class="metric-label">TICK</span>
+    <span class="mono-nums metric-value" style="color: {tickColor};">
       {formatTick(tick)}
     </span>
   </div>
 
-  <div class="w-px h-4 bg-[var(--border-subtle)] shrink-0"></div>
+  <div class="divider"></div>
 
   <!-- TRIN -->
-  <div class="flex items-center gap-2 shrink-0">
-    <span class="text-2xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider">TRIN</span>
-    <span class="mono-nums text-sm font-bold {trinColor}">
+  <div class="metric-group">
+    <span class="metric-label">TRIN</span>
+    <span class="mono-nums metric-value" style="color: {trinColor};">
       {trin.toFixed(2)}
     </span>
   </div>
 
-  <div class="w-px h-4 bg-[var(--border-subtle)] shrink-0"></div>
+  <div class="divider"></div>
 
   <!-- VIX -->
-  <div class="flex items-center gap-2 shrink-0">
-    <span class="text-2xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider">VIX</span>
-    <span class="mono-nums text-sm font-bold {vixColor}">
+  <div class="metric-group">
+    <span class="metric-label">VIX</span>
+    <span class="mono-nums metric-value" style="color: {vixColor};">
       {vix.toFixed(2)}
     </span>
   </div>
 
-  <div class="w-px h-4 bg-[var(--border-subtle)] shrink-0"></div>
+  <div class="divider"></div>
 
   <!-- A/D Ratio -->
-  <div class="flex items-center gap-2 shrink-0">
-    <span class="text-2xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider">A/D</span>
-    <span class="mono-nums text-sm font-bold {adColor}">
+  <div class="metric-group">
+    <span class="metric-label">A/D</span>
+    <span class="mono-nums metric-value" style="color: {adColor};">
       {advDecRatio.toFixed(2)}
     </span>
   </div>
 </div>
+
+<style>
+  .internals-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-inline: 16px;
+    padding-block: 8px;
+    border-radius: var(--radius-lg);
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    overflow-x: auto;
+  }
+
+  .metric-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .metric-label {
+    font-size: var(--text-2xs);
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .metric-value {
+    font-size: var(--text-sm);
+    font-weight: 700;
+  }
+
+  .divider {
+    width: 1px;
+    height: 16px;
+    background-color: var(--border-subtle);
+    flex-shrink: 0;
+  }
+</style>

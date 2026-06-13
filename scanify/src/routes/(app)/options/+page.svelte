@@ -45,20 +45,20 @@
   <title>Options - Scanify</title>
 </svelte:head>
 
-<div class="flex flex-col h-full overflow-hidden">
+<div class="options-layout">
   <!-- Header -->
-  <div class="flex items-center justify-between px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
-    <h1 class="text-lg font-bold" style="color: var(--text-primary);">Options</h1>
-    <a href="/options/flow" class="text-xs font-medium" style="color: var(--accent);">Full Flow View</a>
+  <div class="options-header" style="border-bottom: 1px solid var(--border-subtle);">
+    <h1 class="options-title" style="color: var(--text-primary);">Options</h1>
+    <a href="/options/flow" class="flow-link" style="color: var(--accent);">Full Flow View</a>
   </div>
 
   <!-- Tab switcher -->
-  <div class="flex gap-1 px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
+  <div class="tab-bar" style="border-bottom: 1px solid var(--border-subtle);">
     {#each tabs as tab (tab.id)}
       <button
         type="button"
         onclick={() => activeTab = tab.id}
-        class="rounded-lg px-4 py-2 text-xs font-medium transition-all"
+        class="tab-button"
         style="background: {activeTab === tab.id ? 'var(--accent-bg)' : 'var(--bg-elevated)'};
                color: {activeTab === tab.id ? 'var(--accent-bright)' : 'var(--text-secondary)'};
                border: 1px solid {activeTab === tab.id ? 'var(--accent-dim)' : 'var(--border-subtle)'};"
@@ -69,48 +69,48 @@
   </div>
 
   <!-- Tab content -->
-  <div class="flex-1 overflow-hidden min-h-0">
+  <div class="tab-content">
     {#if activeTab === 'flow'}
-      <FlowFeed items={flowItems} class="h-full" />
+      <FlowFeed items={flowItems} />
 
     {:else if activeTab === 'unusual'}
       <!-- Unusual Activity Table -->
-      <div class="h-full overflow-auto">
-        <div class="panel m-5 overflow-hidden">
-          <div class="flex items-center justify-between px-4 py-2.5" style="border-bottom: 1px solid var(--border-subtle);">
-            <span class="text-sm font-semibold" style="color: var(--text-primary);">Unusual Options Activity</span>
-            <span class="text-2xs" style="color: var(--text-tertiary);">{unusualData.length} entries</span>
+      <div class="unusual-scroll">
+        <div class="panel unusual-panel">
+          <div class="unusual-header" style="border-bottom: 1px solid var(--border-subtle);">
+            <span class="unusual-title" style="color: var(--text-primary);">Unusual Options Activity</span>
+            <span class="unusual-count" style="color: var(--text-tertiary);">{unusualData.length} entries</span>
           </div>
-          <div class="overflow-auto">
-            <table class="w-full text-xs">
-              <thead class="sticky top-0" style="background: var(--bg-elevated);">
+          <div class="table-scroll">
+            <table class="unusual-table">
+              <thead class="table-head" style="background: var(--bg-elevated);">
                 <tr style="border-bottom: 1px solid var(--border-subtle);">
-                  <th class="text-left px-4 py-2.5 font-medium" style="color: var(--text-tertiary);">Symbol</th>
-                  <th class="text-left px-3 py-2.5 font-medium" style="color: var(--text-tertiary);">Strike</th>
-                  <th class="text-left px-3 py-2.5 font-medium" style="color: var(--text-tertiary);">Expiry</th>
-                  <th class="text-right px-3 py-2.5 font-medium" style="color: var(--text-tertiary);">Volume</th>
-                  <th class="text-right px-3 py-2.5 font-medium" style="color: var(--text-tertiary);">OI</th>
-                  <th class="text-right px-3 py-2.5 font-medium" style="color: var(--text-tertiary);">Vol/OI</th>
-                  <th class="text-right px-3 py-2.5 font-medium" style="color: var(--text-tertiary);">Premium</th>
-                  <th class="text-center px-3 py-2.5 font-medium" style="color: var(--text-tertiary);">Sentiment</th>
+                  <th class="th-cell th-left th-first" style="color: var(--text-tertiary);">Symbol</th>
+                  <th class="th-cell th-left" style="color: var(--text-tertiary);">Strike</th>
+                  <th class="th-cell th-left" style="color: var(--text-tertiary);">Expiry</th>
+                  <th class="th-cell th-right" style="color: var(--text-tertiary);">Volume</th>
+                  <th class="th-cell th-right" style="color: var(--text-tertiary);">OI</th>
+                  <th class="th-cell th-right" style="color: var(--text-tertiary);">Vol/OI</th>
+                  <th class="th-cell th-right" style="color: var(--text-tertiary);">Premium</th>
+                  <th class="th-cell th-center" style="color: var(--text-tertiary);">Sentiment</th>
                 </tr>
               </thead>
               <tbody>
                 {#each unusualData as row, i (row.symbol + row.strike)}
                   <tr
-                    class="transition-colors"
+                    class="table-row"
                     style="background: {i % 2 === 0 ? 'var(--bg-surface)' : 'transparent'}; border-bottom: 1px solid var(--border-subtle);"
                   >
-                    <td class="px-4 py-2.5 font-bold font-mono" style="color: var(--text-primary);">{row.symbol}</td>
-                    <td class="px-3 py-2.5 font-mono" style="color: var(--text-secondary);">{row.strike}</td>
-                    <td class="px-3 py-2.5" style="color: var(--text-tertiary);">{row.expiry}</td>
-                    <td class="px-3 py-2.5 text-right font-mono" style="color: var(--text-secondary);">{row.volume.toLocaleString()}</td>
-                    <td class="px-3 py-2.5 text-right font-mono" style="color: var(--text-secondary);">{row.oi.toLocaleString()}</td>
-                    <td class="px-3 py-2.5 text-right font-mono font-bold" style="color: var(--warning-bright);">{row.ratio.toFixed(1)}x</td>
-                    <td class="px-3 py-2.5 text-right font-mono font-semibold" style="color: var(--text-primary);">{row.premium}</td>
-                    <td class="px-3 py-2.5 text-center">
+                    <td class="td-symbol" style="color: var(--text-primary);">{row.symbol}</td>
+                    <td class="td-cell td-mono" style="color: var(--text-secondary);">{row.strike}</td>
+                    <td class="td-cell" style="color: var(--text-tertiary);">{row.expiry}</td>
+                    <td class="td-cell td-right td-mono" style="color: var(--text-secondary);">{row.volume.toLocaleString()}</td>
+                    <td class="td-cell td-right td-mono" style="color: var(--text-secondary);">{row.oi.toLocaleString()}</td>
+                    <td class="td-cell td-right td-mono td-bold" style="color: var(--warning-bright);">{row.ratio.toFixed(1)}x</td>
+                    <td class="td-cell td-right td-mono td-semibold" style="color: var(--text-primary);">{row.premium}</td>
+                    <td class="td-cell td-center">
                       <span
-                        class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
+                        class="sentiment-badge"
                         style="background: {sentimentBg(row.sentiment)};
                                color: {sentimentColor(row.sentiment)};
                                border: 1px solid {row.sentiment === 'Bullish' ? 'oklch(0.45 0.12 155 / 0.3)' : 'oklch(0.42 0.12 25 / 0.3)'};"
@@ -128,15 +128,203 @@
 
     {:else if activeTab === 'chain'}
       <!-- Chain placeholder -->
-      <div class="flex flex-col items-center justify-center h-full gap-4">
-        <div class="w-16 h-16 rounded-xl flex items-center justify-center" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle);">
-          <svg class="h-8 w-8" style="color: var(--text-disabled);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+      <div class="chain-placeholder">
+        <div class="chain-icon-box" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle);">
+          <svg class="chain-icon" style="color: var(--text-disabled);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
         </div>
-        <p class="text-sm font-medium" style="color: var(--text-secondary);">Select a symbol to view options chain</p>
-        <p class="text-xs" style="color: var(--text-tertiary);">Use the search bar or click a symbol from the flow</p>
+        <p class="chain-title" style="color: var(--text-secondary);">Select a symbol to view options chain</p>
+        <p class="chain-subtitle" style="color: var(--text-tertiary);">Use the search bar or click a symbol from the flow</p>
       </div>
     {/if}
   </div>
 </div>
+
+<style>
+  .options-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .options-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    flex-shrink: 0;
+  }
+
+  .options-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+  }
+
+  .flow-link {
+    font-size: var(--text-xs);
+    font-weight: 500;
+  }
+
+  .tab-bar {
+    display: flex;
+    gap: 4px;
+    padding: 12px 20px;
+    flex-shrink: 0;
+  }
+
+  .tab-button {
+    border-radius: var(--radius-lg);
+    padding: 8px 16px;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    transition: all 150ms;
+  }
+
+  .tab-content {
+    flex: 1;
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* Unusual Activity */
+  .unusual-scroll {
+    height: 100%;
+    overflow: auto;
+  }
+
+  .unusual-panel {
+    margin: 20px;
+    overflow: hidden;
+  }
+
+  .unusual-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+  }
+
+  .unusual-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .unusual-count {
+    font-size: var(--text-2xs);
+  }
+
+  .table-scroll {
+    overflow: auto;
+  }
+
+  .unusual-table {
+    width: 100%;
+    font-size: var(--text-xs);
+  }
+
+  .table-head {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .th-cell {
+    padding: 10px 12px;
+    font-weight: 500;
+  }
+
+  .th-first {
+    padding-left: 16px;
+  }
+
+  .th-left {
+    text-align: left;
+  }
+
+  .th-right {
+    text-align: right;
+  }
+
+  .th-center {
+    text-align: center;
+  }
+
+  .table-row {
+    transition: color 150ms, background-color 150ms;
+  }
+
+  .td-symbol {
+    padding: 10px 16px;
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .td-cell {
+    padding: 10px 12px;
+  }
+
+  .td-mono {
+    font-family: var(--font-mono);
+  }
+
+  .td-right {
+    text-align: right;
+  }
+
+  .td-center {
+    text-align: center;
+  }
+
+  .td-bold {
+    font-weight: 700;
+  }
+
+  .td-semibold {
+    font-weight: 600;
+  }
+
+  .sentiment-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-full);
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  /* Chain placeholder */
+  .chain-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+  }
+
+  .chain-icon-box {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .chain-icon {
+    height: 32px;
+    width: 32px;
+  }
+
+  .chain-title {
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+
+  .chain-subtitle {
+    font-size: var(--text-xs);
+  }
+</style>

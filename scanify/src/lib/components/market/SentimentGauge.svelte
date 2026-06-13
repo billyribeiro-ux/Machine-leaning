@@ -71,14 +71,14 @@
   }
 </script>
 
-<div class="flex flex-col items-center gap-2 {className}">
-  <span class="text-xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider">{label}</span>
+<div class="gauge-wrapper {className}">
+  <span class="gauge-label">{label}</span>
 
   <svg
     width={WIDTH}
     height={HEIGHT}
     viewBox="0 0 {WIDTH} {HEIGHT}"
-    class="select-none"
+    class="gauge-svg"
     role="img"
     aria-label="{label}: {clampedValue}"
   >
@@ -147,7 +147,7 @@
       y={CY - 22}
       text-anchor="middle"
       dominant-baseline="auto"
-      class="text-xl font-bold font-mono"
+      class="gauge-value-text"
       fill={sentimentColor}
     >
       {clampedValue > 0 ? '+' : ''}{clampedValue.toFixed(0)}
@@ -159,14 +159,50 @@
       y={CY - 8}
       text-anchor="middle"
       dominant-baseline="hanging"
-      class="text-[10px]"
+      class="gauge-sentiment-text"
       fill="oklch(0.55 0.01 260)"
     >
       {sentimentLabel}
     </text>
 
     <!-- Scale labels -->
-    <text x="10" y={CY + 4} text-anchor="start" class="text-[9px] font-mono" fill="oklch(0.45 0 0)">-100</text>
-    <text x={WIDTH - 10} y={CY + 4} text-anchor="end" class="text-[9px] font-mono" fill="oklch(0.45 0 0)">+100</text>
+    <text x="10" y={CY + 4} text-anchor="start" class="gauge-scale-text" fill="oklch(0.45 0 0)">-100</text>
+    <text x={WIDTH - 10} y={CY + 4} text-anchor="end" class="gauge-scale-text" fill="oklch(0.45 0 0)">+100</text>
   </svg>
 </div>
+
+<style>
+  .gauge-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .gauge-label {
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .gauge-svg {
+    user-select: none;
+  }
+
+  .gauge-value-text {
+    font-size: 1.25rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .gauge-sentiment-text {
+    font-size: 10px;
+  }
+
+  .gauge-scale-text {
+    font-size: 9px;
+    font-family: var(--font-mono);
+  }
+</style>

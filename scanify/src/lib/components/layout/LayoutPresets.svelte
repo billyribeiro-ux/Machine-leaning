@@ -65,22 +65,16 @@
   });
 </script>
 
-<div bind:this={containerEl} class="relative inline-block {className}">
+<div bind:this={containerEl} class="preset-container {className}">
   <!-- Trigger button -->
   <button
-    class="
-      flex items-center gap-2 px-3 py-1.5
-      rounded-lg border border-[oklch(0.24_0_0)]
-      bg-[oklch(0.14_0_0)] hover:bg-[oklch(0.17_0_0)]
-      text-xs font-medium text-[oklch(0.80_0_0)]
-      transition-colors duration-150 cursor-pointer
-    "
+    class="trigger-btn"
     onclick={toggleDropdown}
     aria-haspopup="listbox"
     aria-expanded={isOpen}
   >
     <!-- Grid icon -->
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-[oklch(0.55_0_0)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <svg xmlns="http://www.w3.org/2000/svg" class="grid-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <rect x="3" y="3" width="7" height="7" />
       <rect x="14" y="3" width="7" height="7" />
       <rect x="3" y="14" width="7" height="7" />
@@ -90,7 +84,8 @@
     <!-- Chevron -->
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      class="w-3 h-3 text-[oklch(0.45_0_0)] transition-transform duration-150 {isOpen ? 'rotate-180' : ''}"
+      class="chevron-icon"
+      class:chevron-open={isOpen}
       viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
     >
       <polyline points="6 9 12 15 18 9" />
@@ -100,45 +95,34 @@
   <!-- Dropdown menu -->
   {#if isOpen}
     <div
-      class="
-        absolute top-full left-0 mt-1 z-50
-        w-64 py-1
-        rounded-lg border border-[oklch(0.24_0_0)]
-        bg-[oklch(0.13_0_0)]
-        shadow-[0_8px_32px_oklch(0_0_0/0.5)]
-      "
+      class="dropdown-menu"
       role="listbox"
       aria-label="Layout presets"
     >
       {#each presets as preset (preset.id)}
         {@const isActive = activePreset === preset.id}
         <button
-          class="
-            flex items-center gap-3 w-full px-3 py-2.5 text-left
-            transition-colors duration-100 cursor-pointer
-            {isActive
-              ? 'bg-[oklch(0.17_0.02_250)]'
-              : 'hover:bg-[oklch(0.16_0_0)]'}
-          "
+          class="preset-option"
+          class:active={isActive}
           role="option"
           aria-selected={isActive}
           onclick={() => selectPreset(preset.id)}
         >
           <!-- Checkmark column -->
-          <span class="w-4 shrink-0 flex items-center justify-center">
+          <span class="check-column">
             {#if isActive}
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 text-[oklch(0.65_0.15_250)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <svg xmlns="http://www.w3.org/2000/svg" class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
             {/if}
           </span>
 
           <!-- Label and description -->
-          <div class="flex flex-col gap-0.5 min-w-0">
-            <span class="text-xs font-medium {isActive ? 'text-[oklch(0.88_0_0)]' : 'text-[oklch(0.75_0_0)]'}">
+          <div class="preset-info">
+            <span class="preset-label">
               {preset.label}
             </span>
-            <span class="text-[11px] text-[oklch(0.45_0_0)] truncate">
+            <span class="preset-description">
               {preset.description}
             </span>
           </div>
@@ -147,3 +131,125 @@
     </div>
   {/if}
 </div>
+
+<style>
+  .preset-container {
+    position: relative;
+    display: inline-block;
+  }
+
+  .trigger-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 1px solid oklch(0.24 0 0);
+    background-color: oklch(0.14 0 0);
+    font-size: 12px;
+    font-weight: 500;
+    color: oklch(0.80 0 0);
+    transition: background-color 150ms;
+    cursor: pointer;
+  }
+
+  .trigger-btn:hover {
+    background-color: oklch(0.17 0 0);
+  }
+
+  .grid-icon {
+    width: 14px;
+    height: 14px;
+    color: oklch(0.55 0 0);
+  }
+
+  .chevron-icon {
+    width: 12px;
+    height: 12px;
+    color: oklch(0.45 0 0);
+    transition: transform 150ms;
+  }
+
+  .chevron-icon.chevron-open {
+    transform: rotate(180deg);
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 4px;
+    z-index: 50;
+    width: 256px;
+    padding: 4px 0;
+    border-radius: 8px;
+    border: 1px solid oklch(0.24 0 0);
+    background-color: oklch(0.13 0 0);
+    box-shadow: 0 8px 32px oklch(0 0 0 / 0.5);
+  }
+
+  .preset-option {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    text-align: left;
+    background: none;
+    border: none;
+    transition: background-color 100ms;
+    cursor: pointer;
+    color: inherit;
+  }
+
+  .preset-option:hover {
+    background-color: oklch(0.16 0 0);
+  }
+
+  .preset-option.active {
+    background-color: oklch(0.17 0.02 250);
+  }
+
+  .preset-option.active:hover {
+    background-color: oklch(0.17 0.02 250);
+  }
+
+  .check-column {
+    width: 16px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .check-icon {
+    width: 14px;
+    height: 14px;
+    color: oklch(0.65 0.15 250);
+  }
+
+  .preset-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .preset-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: oklch(0.75 0 0);
+  }
+
+  .preset-option.active .preset-label {
+    color: oklch(0.88 0 0);
+  }
+
+  .preset-description {
+    font-size: 11px;
+    color: oklch(0.45 0 0);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+</style>

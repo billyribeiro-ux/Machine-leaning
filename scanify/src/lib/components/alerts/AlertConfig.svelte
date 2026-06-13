@@ -110,52 +110,53 @@
 	};
 </script>
 
-<div class="flex flex-col gap-6 rounded-xl border border-[oklch(0.20_0_0)] bg-[oklch(0.14_0_0)] p-5 {className}">
+<div class="config-root {className}">
 	<!-- Header with enable toggle -->
-	<div class="flex items-center justify-between">
-		<h3 class="text-sm font-semibold text-[oklch(0.88_0_0)]">Alert Configuration</h3>
-		<div class="flex items-center gap-2.5">
-			<span class="text-xs text-[oklch(0.55_0_0)]">
+	<div class="header">
+		<h3 class="header-title">Alert Configuration</h3>
+		<div class="header-toggle-group">
+			<span class="active-label">
 				{config.isActive ? 'Active' : 'Inactive'}
 			</span>
 			<button
 				type="button"
 				role="switch"
 				aria-checked={config.isActive}
-				class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200
-					{config.isActive ? 'bg-[oklch(0.55_0.15_145)]' : 'bg-[oklch(0.24_0_0)]'}"
+				class="toggle-switch-lg"
+				class:toggle-on={config.isActive}
+				class:toggle-off={!config.isActive}
 				onclick={() => (config.isActive = !config.isActive)}
 			>
 				<span
-					class="inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200
-						{config.isActive ? 'translate-x-5' : 'translate-x-0.5'}"
+					class="toggle-thumb-lg"
+					class:toggle-thumb-lg-on={config.isActive}
+					class:toggle-thumb-lg-off={!config.isActive}
 				></span>
 			</button>
 		</div>
 	</div>
 
 	<!-- Name input -->
-	<div class="flex flex-col gap-1.5">
-		<label for="alert-name" class="text-xs font-medium text-[oklch(0.65_0_0)]">Alert Name</label>
+	<div class="field-group">
+		<label for="alert-name" class="field-label">Alert Name</label>
 		<input
 			id="alert-name"
 			type="text"
 			bind:value={config.name}
 			placeholder="e.g., Bullish Momentum Scanner"
-			class="w-full rounded-lg border border-[oklch(0.24_0_0)] bg-[oklch(0.13_0_0)] px-3 py-2 text-sm text-[oklch(0.88_0_0)] placeholder-[oklch(0.40_0_0)] outline-none transition-all duration-150 focus:border-[oklch(0.45_0.12_250)] focus:ring-2 focus:ring-[oklch(0.45_0.12_250/0.3)]"
+			class="text-input"
 		/>
 	</div>
 
 	<!-- Scan Selection -->
-	<div class="flex flex-col gap-2">
-		<label class="text-xs font-medium text-[oklch(0.65_0_0)]">Scans to Monitor</label>
-		<div class="grid grid-cols-2 gap-1.5">
+	<div class="field-group-md">
+		<label class="field-label">Scans to Monitor</label>
+		<div class="scan-grid">
 			{#each availableScans as scan (scan.id)}
 				<label
-					class="flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 transition-all duration-150
-						{config.scanIds.includes(scan.id)
-						? 'border-[oklch(0.40_0.10_250)] bg-[oklch(0.17_0.02_250)]'
-						: 'border-[oklch(0.20_0_0)] bg-[oklch(0.11_0_0)] hover:border-[oklch(0.28_0_0)]'}"
+					class="scan-option"
+					class:scan-option-selected={config.scanIds.includes(scan.id)}
+					class:scan-option-unselected={!config.scanIds.includes(scan.id)}
 				>
 					<input
 						type="checkbox"
@@ -164,15 +165,14 @@
 						class="sr-only"
 					/>
 					<span
-						class="flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-all duration-150
-							{config.scanIds.includes(scan.id)
-							? 'border-[oklch(0.50_0.12_250)] bg-[oklch(0.45_0.12_250)]'
-							: 'border-[oklch(0.30_0_0)] bg-[oklch(0.13_0_0)]'}"
+						class="checkbox-indicator"
+						class:checkbox-checked={config.scanIds.includes(scan.id)}
+						class:checkbox-unchecked={!config.scanIds.includes(scan.id)}
 					>
 						{#if config.scanIds.includes(scan.id)}
 							<svg
 								xmlns="http://www.w3.org/2000/svg"
-								class="h-3 w-3 text-white"
+								class="check-icon"
 								viewBox="0 0 20 20"
 								fill="currentColor"
 							>
@@ -184,22 +184,22 @@
 							</svg>
 						{/if}
 					</span>
-					<span class="text-xs text-[oklch(0.75_0_0)]">{scan.label}</span>
+					<span class="scan-label">{scan.label}</span>
 				</label>
 			{/each}
 		</div>
 		{#if config.scanIds.length > 0}
-			<p class="text-[11px] text-[oklch(0.50_0_0)]">
+			<p class="scan-count">
 				{config.scanIds.length} scan{config.scanIds.length !== 1 ? 's' : ''} selected
 			</p>
 		{/if}
 	</div>
 
 	<!-- Minimum Strength -->
-	<div class="flex flex-col gap-2">
-		<div class="flex items-center justify-between">
-			<label class="text-xs font-medium text-[oklch(0.65_0_0)]">Minimum Signal Strength</label>
-			<span class="text-xs font-medium text-[oklch(0.75_0.10_250)]">
+	<div class="field-group-md">
+		<div class="strength-header">
+			<label class="field-label">Minimum Signal Strength</label>
+			<span class="strength-value">
 				{config.minStrength} - {strengthLabels[config.minStrength] ?? ''}
 			</span>
 		</div>
@@ -209,31 +209,15 @@
 			min="1"
 			max="5"
 			step="1"
-			class="slider-track h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[oklch(0.20_0_0)] outline-none
-				[&::-webkit-slider-thumb]:h-4
-				[&::-webkit-slider-thumb]:w-4
-				[&::-webkit-slider-thumb]:appearance-none
-				[&::-webkit-slider-thumb]:rounded-full
-				[&::-webkit-slider-thumb]:bg-[oklch(0.55_0.15_145)]
-				[&::-webkit-slider-thumb]:shadow-[0_0_0_3px_oklch(0.14_0_0)]
-				[&::-webkit-slider-thumb]:transition-all
-				[&::-webkit-slider-thumb]:duration-150
-				[&::-webkit-slider-thumb]:hover:bg-[oklch(0.60_0.16_145)]
-				[&::-webkit-slider-thumb]:hover:scale-110
-				[&::-moz-range-thumb]:h-4
-				[&::-moz-range-thumb]:w-4
-				[&::-moz-range-thumb]:rounded-full
-				[&::-moz-range-thumb]:border-0
-				[&::-moz-range-thumb]:bg-[oklch(0.55_0.15_145)]
-				[&::-moz-range-thumb]:shadow-[0_0_0_3px_oklch(0.14_0_0)]"
+			class="slider-track"
 			style="background: linear-gradient(to right, oklch(0.45 0.12 145) 0%, oklch(0.45 0.12 145) {((config.minStrength - 1) / 4) * 100}%, oklch(0.20 0 0) {((config.minStrength - 1) / 4) * 100}%, oklch(0.20 0 0) 100%);"
 		/>
-		<div class="flex justify-between px-0.5">
+		<div class="strength-ticks">
 			{#each [1, 2, 3, 4, 5] as n}
 				<span
-					class="text-[10px] {config.minStrength >= n
-						? 'text-[oklch(0.60_0.10_145)]'
-						: 'text-[oklch(0.35_0_0)]'}"
+					class="tick-label"
+					class:tick-active={config.minStrength >= n}
+					class:tick-inactive={config.minStrength < n}
 				>
 					{n}
 				</span>
@@ -242,35 +226,32 @@
 	</div>
 
 	<!-- Direction Toggles -->
-	<div class="flex flex-col gap-2">
-		<label class="text-xs font-medium text-[oklch(0.65_0_0)]">Signal Direction</label>
-		<div class="flex gap-1.5">
+	<div class="field-group-md">
+		<label class="field-label">Signal Direction</label>
+		<div class="direction-group">
 			<button
 				type="button"
-				class="flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-150
-					{config.directions.includes('bullish') && !isBothDirections
-					? 'border-[oklch(0.40_0.10_145)] bg-[oklch(0.18_0.04_145)] text-[oklch(0.75_0.15_145)]'
-					: 'border-[oklch(0.20_0_0)] bg-[oklch(0.11_0_0)] text-[oklch(0.55_0_0)] hover:border-[oklch(0.28_0_0)]'}"
+				class="direction-btn"
+				class:direction-bullish-active={config.directions.includes('bullish') && !isBothDirections}
+				class:direction-inactive={!(config.directions.includes('bullish') && !isBothDirections)}
 				onclick={() => setDirection('bullish')}
 			>
 				Bullish Only
 			</button>
 			<button
 				type="button"
-				class="flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-150
-					{isBothDirections
-					? 'border-[oklch(0.40_0.10_250)] bg-[oklch(0.17_0.02_250)] text-[oklch(0.72_0.12_250)]'
-					: 'border-[oklch(0.20_0_0)] bg-[oklch(0.11_0_0)] text-[oklch(0.55_0_0)] hover:border-[oklch(0.28_0_0)]'}"
+				class="direction-btn"
+				class:direction-both-active={isBothDirections}
+				class:direction-inactive={!isBothDirections}
 				onclick={() => setDirection('both')}
 			>
 				Both
 			</button>
 			<button
 				type="button"
-				class="flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all duration-150
-					{config.directions.includes('bearish') && !isBothDirections
-					? 'border-[oklch(0.40_0.10_25)] bg-[oklch(0.18_0.04_25)] text-[oklch(0.70_0.16_25)]'
-					: 'border-[oklch(0.20_0_0)] bg-[oklch(0.11_0_0)] text-[oklch(0.55_0_0)] hover:border-[oklch(0.28_0_0)]'}"
+				class="direction-btn"
+				class:direction-bearish-active={config.directions.includes('bearish') && !isBothDirections}
+				class:direction-inactive={!(config.directions.includes('bearish') && !isBothDirections)}
 				onclick={() => setDirection('bearish')}
 			>
 				Bearish Only
@@ -279,15 +260,15 @@
 	</div>
 
 	<!-- Notification Settings -->
-	<div class="flex flex-col gap-3">
-		<label class="text-xs font-medium text-[oklch(0.65_0_0)]">Notifications</label>
+	<div class="notifications-section">
+		<label class="field-label">Notifications</label>
 
 		<!-- Sound Toggle -->
-		<div class="flex items-center justify-between rounded-lg border border-[oklch(0.20_0_0)] bg-[oklch(0.11_0_0)] px-4 py-3">
-			<div class="flex items-center gap-3">
+		<div class="notification-row">
+			<div class="notification-info">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					class="h-4 w-4 text-[oklch(0.55_0_0)]"
+					class="notification-icon"
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
@@ -299,16 +280,16 @@
 						d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
 					/>
 				</svg>
-				<div class="flex flex-col">
-					<span class="text-xs font-medium text-[oklch(0.80_0_0)]">Sound Alert</span>
-					<span class="text-[11px] text-[oklch(0.50_0_0)]">Play a sound when triggered</span>
+				<div class="notification-text">
+					<span class="notification-title">Sound Alert</span>
+					<span class="notification-desc">Play a sound when triggered</span>
 				</div>
 			</div>
-			<div class="flex items-center gap-3">
+			<div class="notification-controls">
 				{#if config.soundEnabled}
 					<select
 						bind:value={selectedSoundType}
-						class="rounded-md border border-[oklch(0.24_0_0)] bg-[oklch(0.13_0_0)] px-2 py-1 text-[11px] text-[oklch(0.75_0_0)] outline-none focus:border-[oklch(0.45_0.12_250)]"
+						class="sound-select"
 					>
 						{#each soundTypes as st (st.value)}
 							<option value={st.value}>{st.label}</option>
@@ -319,24 +300,26 @@
 					type="button"
 					role="switch"
 					aria-checked={config.soundEnabled}
-					class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200
-						{config.soundEnabled ? 'bg-[oklch(0.55_0.15_145)]' : 'bg-[oklch(0.24_0_0)]'}"
+					class="toggle-switch-sm"
+					class:toggle-on={config.soundEnabled}
+					class:toggle-off={!config.soundEnabled}
 					onclick={() => (config.soundEnabled = !config.soundEnabled)}
 				>
 					<span
-						class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200
-							{config.soundEnabled ? 'translate-x-[18px]' : 'translate-x-0.5'}"
+						class="toggle-thumb-sm"
+						class:toggle-thumb-sm-on={config.soundEnabled}
+						class:toggle-thumb-sm-off={!config.soundEnabled}
 					></span>
 				</button>
 			</div>
 		</div>
 
 		<!-- Push Toggle -->
-		<div class="flex items-center justify-between rounded-lg border border-[oklch(0.20_0_0)] bg-[oklch(0.11_0_0)] px-4 py-3">
-			<div class="flex items-center gap-3">
+		<div class="notification-row">
+			<div class="notification-info">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
-					class="h-4 w-4 text-[oklch(0.55_0_0)]"
+					class="notification-icon"
 					fill="none"
 					viewBox="0 0 24 24"
 					stroke="currentColor"
@@ -348,43 +331,45 @@
 						d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
 					/>
 				</svg>
-				<div class="flex flex-col">
-					<span class="text-xs font-medium text-[oklch(0.80_0_0)]">Push Notifications</span>
-					<span class="text-[11px] text-[oklch(0.50_0_0)]">Receive browser push alerts</span>
+				<div class="notification-text">
+					<span class="notification-title">Push Notifications</span>
+					<span class="notification-desc">Receive browser push alerts</span>
 				</div>
 			</div>
 			<button
 				type="button"
 				role="switch"
 				aria-checked={config.pushEnabled}
-				class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors duration-200
-					{config.pushEnabled ? 'bg-[oklch(0.55_0.15_145)]' : 'bg-[oklch(0.24_0_0)]'}"
+				class="toggle-switch-sm"
+				class:toggle-on={config.pushEnabled}
+				class:toggle-off={!config.pushEnabled}
 				onclick={() => (config.pushEnabled = !config.pushEnabled)}
 			>
 				<span
-					class="inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm transition-transform duration-200
-						{config.pushEnabled ? 'translate-x-[18px]' : 'translate-x-0.5'}"
+					class="toggle-thumb-sm"
+					class:toggle-thumb-sm-on={config.pushEnabled}
+					class:toggle-thumb-sm-off={!config.pushEnabled}
 				></span>
 			</button>
 		</div>
 	</div>
 
 	<!-- Action Buttons -->
-	<div class="flex items-center justify-between border-t border-[oklch(0.20_0_0)] pt-4">
+	<div class="actions-bar">
 		<div>
 			{#if showDeleteConfirm}
-				<div class="flex items-center gap-2">
-					<span class="text-xs text-[oklch(0.65_0.16_25)]">Confirm delete?</span>
+				<div class="delete-confirm-group">
+					<span class="delete-confirm-text">Confirm delete?</span>
 					<button
 						type="button"
-						class="rounded-md bg-[oklch(0.50_0.18_25)] px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[oklch(0.55_0.19_25)]"
+						class="delete-confirm-btn"
 						onclick={handleDelete}
 					>
 						Delete
 					</button>
 					<button
 						type="button"
-						class="rounded-md px-3 py-1.5 text-xs font-medium text-[oklch(0.65_0_0)] transition-colors hover:text-[oklch(0.80_0_0)]"
+						class="delete-cancel-btn"
 						onclick={cancelDelete}
 					>
 						Cancel
@@ -393,7 +378,7 @@
 			{:else}
 				<button
 					type="button"
-					class="rounded-md px-3 py-1.5 text-xs font-medium text-[oklch(0.55_0.10_25)] transition-colors hover:bg-[oklch(0.18_0.02_25)] hover:text-[oklch(0.65_0.14_25)]"
+					class="delete-btn"
 					onclick={handleDelete}
 				>
 					Delete Alert
@@ -403,10 +388,510 @@
 
 		<button
 			type="button"
-			class="rounded-lg bg-[oklch(0.55_0.15_145)] px-5 py-2 text-sm font-medium text-white shadow-sm shadow-[oklch(0.55_0.15_145/0.25)] transition-all duration-150 hover:bg-[oklch(0.60_0.16_145)] active:bg-[oklch(0.50_0.14_145)]"
+			class="save-btn"
 			onclick={handleSave}
 		>
 			Save Configuration
 		</button>
 	</div>
 </div>
+
+<style>
+	/* ── Root container ── */
+	.config-root {
+		display: flex;
+		flex-direction: column;
+		gap: 24px;
+		border-radius: var(--radius-xl, 12px);
+		border: 1px solid oklch(0.20 0 0);
+		background: oklch(0.14 0 0);
+		padding: 20px;
+	}
+
+	/* ── Header ── */
+	.header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.header-title {
+		font-size: 0.875rem;
+		font-weight: 600;
+		color: oklch(0.88 0 0);
+	}
+
+	.header-toggle-group {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.active-label {
+		font-size: 0.75rem;
+		color: oklch(0.55 0 0);
+	}
+
+	/* ── Toggle switch (large - header) ── */
+	.toggle-switch-lg {
+		position: relative;
+		display: inline-flex;
+		height: 24px;
+		width: 44px;
+		flex-shrink: 0;
+		align-items: center;
+		border-radius: 9999px;
+		border: none;
+		cursor: pointer;
+		transition: background-color 200ms;
+		padding: 0;
+	}
+
+	.toggle-thumb-lg {
+		display: inline-block;
+		height: 20px;
+		width: 20px;
+		border-radius: 9999px;
+		background: white;
+		box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+		transition: transform 200ms;
+	}
+
+	.toggle-thumb-lg-on {
+		transform: translateX(20px);
+	}
+
+	.toggle-thumb-lg-off {
+		transform: translateX(2px);
+	}
+
+	/* ── Toggle switch (small - notifications) ── */
+	.toggle-switch-sm {
+		position: relative;
+		display: inline-flex;
+		height: 20px;
+		width: 36px;
+		flex-shrink: 0;
+		align-items: center;
+		border-radius: 9999px;
+		border: none;
+		cursor: pointer;
+		transition: background-color 200ms;
+		padding: 0;
+	}
+
+	.toggle-thumb-sm {
+		display: inline-block;
+		height: 14px;
+		width: 14px;
+		border-radius: 9999px;
+		background: white;
+		box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+		transition: transform 200ms;
+	}
+
+	.toggle-thumb-sm-on {
+		transform: translateX(18px);
+	}
+
+	.toggle-thumb-sm-off {
+		transform: translateX(2px);
+	}
+
+	/* ── Toggle on/off shared colours ── */
+	.toggle-on {
+		background: oklch(0.55 0.15 145);
+	}
+
+	.toggle-off {
+		background: oklch(0.24 0 0);
+	}
+
+	/* ── Field groups ── */
+	.field-group {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+
+	.field-group-md {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.field-label {
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: oklch(0.65 0 0);
+	}
+
+	/* ── Text input ── */
+	.text-input {
+		width: 100%;
+		border-radius: var(--radius-lg, 8px);
+		border: 1px solid oklch(0.24 0 0);
+		background: oklch(0.13 0 0);
+		padding: 8px 12px;
+		font-size: 0.875rem;
+		color: oklch(0.88 0 0);
+		outline: none;
+		transition: all 150ms;
+	}
+
+	.text-input::placeholder {
+		color: oklch(0.40 0 0);
+	}
+
+	.text-input:focus {
+		border-color: oklch(0.45 0.12 250);
+		box-shadow: 0 0 0 2px oklch(0.45 0.12 250 / 0.3);
+	}
+
+	/* ── Scan grid ── */
+	.scan-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 6px;
+	}
+
+	.scan-option {
+		display: flex;
+		cursor: pointer;
+		align-items: center;
+		gap: 8px;
+		border-radius: var(--radius-lg, 8px);
+		border: 1px solid;
+		padding: 8px 12px;
+		transition: all 150ms;
+	}
+
+	.scan-option-selected {
+		border-color: oklch(0.40 0.10 250);
+		background: oklch(0.17 0.02 250);
+	}
+
+	.scan-option-unselected {
+		border-color: oklch(0.20 0 0);
+		background: oklch(0.11 0 0);
+	}
+
+	.scan-option-unselected:hover {
+		border-color: oklch(0.28 0 0);
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		border: 0;
+	}
+
+	.checkbox-indicator {
+		display: flex;
+		height: 16px;
+		width: 16px;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--radius-sm, 4px);
+		border: 1px solid;
+		transition: all 150ms;
+	}
+
+	.checkbox-checked {
+		border-color: oklch(0.50 0.12 250);
+		background: oklch(0.45 0.12 250);
+	}
+
+	.checkbox-unchecked {
+		border-color: oklch(0.30 0 0);
+		background: oklch(0.13 0 0);
+	}
+
+	.check-icon {
+		height: 12px;
+		width: 12px;
+		color: white;
+	}
+
+	.scan-label {
+		font-size: 0.75rem;
+		color: oklch(0.75 0 0);
+	}
+
+	.scan-count {
+		font-size: 11px;
+		color: oklch(0.50 0 0);
+	}
+
+	/* ── Strength slider ── */
+	.strength-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.strength-value {
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: oklch(0.75 0.10 250);
+	}
+
+	.slider-track {
+		height: 6px;
+		width: 100%;
+		cursor: pointer;
+		appearance: none;
+		border-radius: 9999px;
+		background: oklch(0.20 0 0);
+		outline: none;
+	}
+
+	.slider-track::-webkit-slider-thumb {
+		height: 16px;
+		width: 16px;
+		appearance: none;
+		border-radius: 9999px;
+		background: oklch(0.55 0.15 145);
+		box-shadow: 0 0 0 3px oklch(0.14 0 0);
+		transition: all 150ms;
+	}
+
+	.slider-track::-webkit-slider-thumb:hover {
+		background: oklch(0.60 0.16 145);
+		transform: scale(1.1);
+	}
+
+	.slider-track::-moz-range-thumb {
+		height: 16px;
+		width: 16px;
+		border-radius: 9999px;
+		border: 0;
+		background: oklch(0.55 0.15 145);
+		box-shadow: 0 0 0 3px oklch(0.14 0 0);
+	}
+
+	.strength-ticks {
+		display: flex;
+		justify-content: space-between;
+		padding-inline: 2px;
+	}
+
+	.tick-label {
+		font-size: 10px;
+	}
+
+	.tick-active {
+		color: oklch(0.60 0.10 145);
+	}
+
+	.tick-inactive {
+		color: oklch(0.35 0 0);
+	}
+
+	/* ── Direction buttons ── */
+	.direction-group {
+		display: flex;
+		gap: 6px;
+	}
+
+	.direction-btn {
+		flex: 1;
+		border-radius: var(--radius-lg, 8px);
+		border: 1px solid;
+		padding: 8px 12px;
+		font-size: 0.75rem;
+		font-weight: 500;
+		cursor: pointer;
+		transition: all 150ms;
+	}
+
+	.direction-bullish-active {
+		border-color: oklch(0.40 0.10 145);
+		background: oklch(0.18 0.04 145);
+		color: oklch(0.75 0.15 145);
+	}
+
+	.direction-both-active {
+		border-color: oklch(0.40 0.10 250);
+		background: oklch(0.17 0.02 250);
+		color: oklch(0.72 0.12 250);
+	}
+
+	.direction-bearish-active {
+		border-color: oklch(0.40 0.10 25);
+		background: oklch(0.18 0.04 25);
+		color: oklch(0.70 0.16 25);
+	}
+
+	.direction-inactive {
+		border-color: oklch(0.20 0 0);
+		background: oklch(0.11 0 0);
+		color: oklch(0.55 0 0);
+	}
+
+	.direction-inactive:hover {
+		border-color: oklch(0.28 0 0);
+	}
+
+	/* ── Notifications section ── */
+	.notifications-section {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.notification-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		border-radius: var(--radius-lg, 8px);
+		border: 1px solid oklch(0.20 0 0);
+		background: oklch(0.11 0 0);
+		padding: 12px 16px;
+	}
+
+	.notification-info {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.notification-icon {
+		height: 16px;
+		width: 16px;
+		color: oklch(0.55 0 0);
+	}
+
+	.notification-text {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.notification-title {
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: oklch(0.80 0 0);
+	}
+
+	.notification-desc {
+		font-size: 11px;
+		color: oklch(0.50 0 0);
+	}
+
+	.notification-controls {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	/* ── Sound select ── */
+	.sound-select {
+		border-radius: var(--radius-md, 6px);
+		border: 1px solid oklch(0.24 0 0);
+		background: oklch(0.13 0 0);
+		padding: 4px 8px;
+		font-size: 11px;
+		color: oklch(0.75 0 0);
+		outline: none;
+	}
+
+	.sound-select:focus {
+		border-color: oklch(0.45 0.12 250);
+	}
+
+	/* ── Actions bar ── */
+	.actions-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		border-top: 1px solid oklch(0.20 0 0);
+		padding-top: 16px;
+	}
+
+	.delete-confirm-group {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.delete-confirm-text {
+		font-size: 0.75rem;
+		color: oklch(0.65 0.16 25);
+	}
+
+	.delete-confirm-btn {
+		border-radius: var(--radius-md, 6px);
+		border: none;
+		background: oklch(0.50 0.18 25);
+		padding: 6px 12px;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: white;
+		cursor: pointer;
+		transition: background-color 200ms;
+	}
+
+	.delete-confirm-btn:hover {
+		background: oklch(0.55 0.19 25);
+	}
+
+	.delete-cancel-btn {
+		border-radius: var(--radius-md, 6px);
+		border: none;
+		background: transparent;
+		padding: 6px 12px;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: oklch(0.65 0 0);
+		cursor: pointer;
+		transition: color 200ms;
+	}
+
+	.delete-cancel-btn:hover {
+		color: oklch(0.80 0 0);
+	}
+
+	.delete-btn {
+		border-radius: var(--radius-md, 6px);
+		border: none;
+		background: transparent;
+		padding: 6px 12px;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: oklch(0.55 0.10 25);
+		cursor: pointer;
+		transition: all 200ms;
+	}
+
+	.delete-btn:hover {
+		background: oklch(0.18 0.02 25);
+		color: oklch(0.65 0.14 25);
+	}
+
+	.save-btn {
+		border-radius: var(--radius-lg, 8px);
+		border: none;
+		background: oklch(0.55 0.15 145);
+		padding: 8px 20px;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: white;
+		cursor: pointer;
+		box-shadow: 0 1px 2px 0 oklch(0.55 0.15 145 / 0.25);
+		transition: all 150ms;
+	}
+
+	.save-btn:hover {
+		background: oklch(0.60 0.16 145);
+	}
+
+	.save-btn:active {
+		background: oklch(0.50 0.14 145);
+	}
+</style>

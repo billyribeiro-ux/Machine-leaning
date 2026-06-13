@@ -65,8 +65,8 @@
   }
 
   function sortIndicator(key: SortKey): string {
-    if (sortBy !== key) return ' \u25B3';
-    return sortDir === 'asc' ? ' \u25B2' : ' \u25BC';
+    if (sortBy !== key) return ' △';
+    return sortDir === 'asc' ? ' ▲' : ' ▼';
   }
 
   function flowBarWidth(flow: number): number {
@@ -74,55 +74,55 @@
   }
 </script>
 
-<div class="panel flex flex-col overflow-hidden {className}">
+<div class="panel etf-flows-root {className}">
   <!-- Header -->
-  <div class="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)]">
-    <span class="text-sm font-semibold text-[var(--text-primary)]">ETF Flows</span>
-    <span class="text-2xs text-[var(--text-tertiary)]">{data.length} funds</span>
+  <div class="etf-header">
+    <span class="etf-header-title">ETF Flows</span>
+    <span class="etf-header-count">{data.length} funds</span>
   </div>
 
   <!-- Table -->
-  <div class="flex-1 overflow-auto">
-    <table class="w-full min-w-[700px]">
-      <thead class="sticky top-0 z-10 bg-[var(--bg-elevated)]">
-        <tr class="border-b border-[var(--border-subtle)]">
-          <th class="px-3 py-2 text-left">
+  <div class="etf-table-wrap">
+    <table class="etf-table">
+      <thead class="etf-thead">
+        <tr class="etf-thead-row">
+          <th class="etf-th etf-th-left">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="etf-sort-btn"
               onclick={() => handleSort('symbol')}
             >
               Symbol{sortIndicator('symbol')}
             </button>
           </th>
-          <th class="px-3 py-2 text-left">
-            <span class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">Name</span>
+          <th class="etf-th etf-th-left">
+            <span class="etf-col-label">Name</span>
           </th>
-          <th class="px-3 py-2 text-right">
+          <th class="etf-th etf-th-right">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="etf-sort-btn"
               onclick={() => handleSort('flow')}
             >
               Flow ($){sortIndicator('flow')}
             </button>
           </th>
-          <th class="px-3 py-2 text-left w-[140px]">
-            <span class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">Flow Bar</span>
+          <th class="etf-th etf-th-left etf-th-flowbar">
+            <span class="etf-col-label">Flow Bar</span>
           </th>
-          <th class="px-3 py-2 text-right">
+          <th class="etf-th etf-th-right">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="etf-sort-btn"
               onclick={() => handleSort('aum')}
             >
               AUM{sortIndicator('aum')}
             </button>
           </th>
-          <th class="px-3 py-2 text-right">
+          <th class="etf-th etf-th-right">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="etf-sort-btn"
               onclick={() => handleSort('flowPercent')}
             >
               Flow %{sortIndicator('flowPercent')}
@@ -133,22 +133,22 @@
       <tbody>
         {#each sorted as entry, idx (entry.symbol + idx)}
           {@const isInflow = entry.flow >= 0}
-          <tr class="border-b border-[var(--border-subtle)] transition-colors duration-75 hover:bg-[var(--hover-overlay)]">
-            <td class="px-3 py-2 text-xs font-semibold text-[var(--text-primary)]">{entry.symbol}</td>
-            <td class="px-3 py-2 text-xs text-[var(--text-secondary)] truncate max-w-[180px]">{entry.name}</td>
-            <td class="px-3 py-2 mono-nums text-xs text-right font-semibold {isInflow ? 'text-[var(--bullish)]' : 'text-[var(--bearish)]'}">
+          <tr class="etf-row">
+            <td class="etf-td etf-td-symbol">{entry.symbol}</td>
+            <td class="etf-td etf-td-name">{entry.name}</td>
+            <td class="etf-td mono-nums etf-td-flow {isInflow ? 'flow-positive' : 'flow-negative'}">
               {isInflow ? '+' : ''}{formatMarketCap(entry.flow)}
             </td>
-            <td class="px-3 py-2">
-              <div class="w-full h-3 bg-[var(--bg-void)] rounded-full overflow-hidden">
+            <td class="etf-td">
+              <div class="flow-bar-track">
                 <div
-                  class="h-full rounded-full transition-all duration-300 {isInflow ? 'bg-[var(--bullish-dim)]' : 'bg-[var(--bearish-dim)]'}"
+                  class="flow-bar-fill {isInflow ? 'flow-bar-inflow' : 'flow-bar-outflow'}"
                   style="width: {flowBarWidth(entry.flow)}%;"
                 ></div>
               </div>
             </td>
-            <td class="px-3 py-2 mono-nums text-xs text-right text-[var(--text-secondary)]">{formatMarketCap(entry.aum)}</td>
-            <td class="px-3 py-2 mono-nums text-xs text-right font-semibold {isInflow ? 'text-[var(--bullish)]' : 'text-[var(--bearish)]'}">
+            <td class="etf-td mono-nums etf-td-aum">{formatMarketCap(entry.aum)}</td>
+            <td class="etf-td mono-nums etf-td-pct {isInflow ? 'flow-positive' : 'flow-negative'}">
               {entry.flowPercent > 0 ? '+' : ''}{entry.flowPercent.toFixed(2)}%
             </td>
           </tr>
@@ -157,9 +157,190 @@
     </table>
 
     {#if data.length === 0}
-      <div class="flex items-center justify-center h-32 text-sm text-[var(--text-tertiary)]">
+      <div class="etf-empty">
         No ETF flow data available
       </div>
     {/if}
   </div>
 </div>
+
+<style>
+  .etf-flows-root {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Header ── */
+  .etf-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .etf-header-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .etf-header-count {
+    font-size: var(--text-2xs);
+    color: var(--text-tertiary);
+  }
+
+  /* ── Table wrapper ── */
+  .etf-table-wrap {
+    flex: 1;
+    overflow: auto;
+  }
+
+  .etf-table {
+    width: 100%;
+    min-width: 700px;
+  }
+
+  /* ── Thead ── */
+  .etf-thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--bg-elevated);
+  }
+
+  .etf-thead-row {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  /* ── Th ── */
+  .etf-th {
+    padding: 8px 12px;
+  }
+
+  .etf-th-left {
+    text-align: left;
+  }
+
+  .etf-th-right {
+    text-align: right;
+  }
+
+  .etf-th-flowbar {
+    width: 140px;
+  }
+
+  /* ── Column labels (non-sortable) ── */
+  .etf-col-label {
+    font-size: var(--text-2xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+  }
+
+  /* ── Sort buttons ── */
+  .etf-sort-btn {
+    font-size: var(--text-2xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+  }
+
+  .etf-sort-btn:hover {
+    color: var(--text-secondary);
+  }
+
+  /* ── Body rows ── */
+  .etf-row {
+    border-bottom: 1px solid var(--border-subtle);
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+  }
+
+  .etf-row:hover {
+    background-color: var(--hover-overlay);
+  }
+
+  /* ── Td base ── */
+  .etf-td {
+    padding: 8px 12px;
+  }
+
+  .etf-td-symbol {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .etf-td-name {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+  }
+
+  .etf-td-flow {
+    font-size: var(--text-xs);
+    text-align: right;
+    font-weight: 600;
+  }
+
+  .etf-td-aum {
+    font-size: var(--text-xs);
+    text-align: right;
+    color: var(--text-secondary);
+  }
+
+  .etf-td-pct {
+    font-size: var(--text-xs);
+    text-align: right;
+    font-weight: 600;
+  }
+
+  /* ── Flow colour modifiers ── */
+  .flow-positive {
+    color: var(--bullish);
+  }
+
+  .flow-negative {
+    color: var(--bearish);
+  }
+
+  /* ── Flow bar ── */
+  .flow-bar-track {
+    width: 100%;
+    height: 12px;
+    background-color: var(--bg-void);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+  }
+
+  .flow-bar-fill {
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: all 300ms;
+  }
+
+  .flow-bar-inflow {
+    background-color: var(--bullish-dim);
+  }
+
+  .flow-bar-outflow {
+    background-color: var(--bearish-dim);
+  }
+
+  /* ── Empty state ── */
+  .etf-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 128px;
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+  }
+</style>

@@ -37,39 +37,39 @@
   <title>Settings - Scanify</title>
 </svelte:head>
 
-<div class="flex flex-col h-full overflow-auto">
+<div class="settings-page">
   <!-- Header -->
-  <div class="flex items-center justify-between px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
-    <h1 class="text-lg font-bold" style="color: var(--text-primary);">Settings</h1>
+  <div class="settings-header" style="border-bottom: 1px solid var(--border-subtle);">
+    <h1 class="settings-title" style="color: var(--text-primary);">Settings</h1>
   </div>
 
-  <div class="p-5">
+  <div class="settings-body">
     <!-- 2-column grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="settings-grid">
       {#each settingsCards as card (card.title)}
         <a
           href={card.href}
-          class="panel p-5 flex items-center gap-4 transition-colors duration-150 no-underline group"
+          class="panel settings-card"
           style="color: inherit;"
         >
           <!-- Icon -->
           <div
-            class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+            class="card-icon-wrapper"
             style="background: var(--bg-base); border: 1px solid var(--border-subtle);"
           >
-            <svg class="h-5 w-5" style="color: var(--accent);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <svg class="card-icon" style="color: var(--accent);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
               <path stroke-linecap="round" stroke-linejoin="round" d={card.icon} />
             </svg>
           </div>
 
           <!-- Text -->
-          <div class="flex-1 min-w-0">
-            <div class="text-sm font-semibold" style="color: var(--text-primary);">{card.title}</div>
-            <div class="text-xs mt-0.5" style="color: var(--text-tertiary);">{card.description}</div>
+          <div class="card-content">
+            <div class="card-title" style="color: var(--text-primary);">{card.title}</div>
+            <div class="card-description" style="color: var(--text-tertiary);">{card.description}</div>
           </div>
 
           <!-- Arrow -->
-          <svg class="h-4 w-4 shrink-0 transition-transform duration-150" style="color: var(--text-disabled);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <svg class="card-arrow" style="color: var(--text-disabled);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </a>
@@ -77,3 +77,92 @@
     </div>
   </div>
 </div>
+
+<style>
+  .settings-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: auto;
+  }
+
+  .settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    flex-shrink: 0;
+  }
+
+  .settings-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+  }
+
+  .settings-body {
+    padding: 20px;
+  }
+
+  .settings-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (min-width: 768px) {
+    .settings-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .settings-card {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: color 150ms, background-color 150ms;
+    transition-duration: 150ms;
+    text-decoration: none;
+  }
+
+  .settings-card:hover .card-arrow {
+    transform: translateX(2px);
+  }
+
+  .card-icon-wrapper {
+    display: flex;
+    height: 40px;
+    width: 40px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--radius-lg);
+  }
+
+  .card-icon {
+    height: 20px;
+    width: 20px;
+  }
+
+  .card-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .card-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .card-description {
+    font-size: var(--text-xs);
+    margin-top: 2px;
+  }
+
+  .card-arrow {
+    height: 16px;
+    width: 16px;
+    flex-shrink: 0;
+    transition: transform 150ms;
+  }
+</style>

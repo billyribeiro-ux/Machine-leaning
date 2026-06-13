@@ -98,12 +98,12 @@
 	}
 </script>
 
-<div class="relative inline-block">
+<div class="heatmap-container">
 	<svg
 		width={svgWidth}
 		{height}
 		viewBox="0 0 {svgWidth} {height}"
-		class="select-none"
+		class="chart-svg"
 		role="img"
 		aria-label={title || 'Heatmap Chart'}
 	>
@@ -113,7 +113,7 @@
 				x={Y_LABEL_WIDTH + gridWidth / 2}
 				y={18}
 				text-anchor="middle"
-				class="text-xs fill-[oklch(0.75_0_0)] font-medium"
+				class="chart-title"
 			>
 				{title}
 			</text>
@@ -126,7 +126,7 @@
 				y={getCellY(rowIdx) + cellHeight / 2}
 				text-anchor="end"
 				dominant-baseline="middle"
-				class="text-[9px] fill-[oklch(0.55_0_0)] font-mono"
+				class="axis-label"
 			>
 				{label}
 			</text>
@@ -140,7 +140,7 @@
 				text-anchor="start"
 				dominant-baseline="hanging"
 				transform="rotate(45 {getCellX(colIdx) + cellWidth / 2} {chartTop + gridHeight + 8})"
-				class="text-[9px] fill-[oklch(0.55_0_0)] font-mono"
+				class="axis-label"
 			>
 				{label}
 			</text>
@@ -157,7 +157,7 @@
 					height={cellHeight}
 					fill={getColor(value)}
 					rx="2"
-					class="cursor-crosshair transition-opacity duration-100"
+					class="cell"
 					opacity={hoveredCell && (hoveredCell.x !== xLabel || hoveredCell.y !== yLabel)
 						? 0.6
 						: 1}
@@ -191,7 +191,7 @@
 			x={svgWidth - PADDING_RIGHT + 32}
 			y={chartTop + 4}
 			dominant-baseline="hanging"
-			class="text-[8px] fill-[oklch(0.50_0_0)] font-mono"
+			class="legend-label"
 		>
 			+{absMax.toFixed(1)}
 		</text>
@@ -199,7 +199,7 @@
 			x={svgWidth - PADDING_RIGHT + 32}
 			y={chartTop + gridHeight / 2}
 			dominant-baseline="middle"
-			class="text-[8px] fill-[oklch(0.50_0_0)] font-mono"
+			class="legend-label"
 		>
 			0
 		</text>
@@ -207,7 +207,7 @@
 			x={svgWidth - PADDING_RIGHT + 32}
 			y={chartTop + gridHeight - 2}
 			dominant-baseline="auto"
-			class="text-[8px] fill-[oklch(0.50_0_0)] font-mono"
+			class="legend-label"
 		>
 			-{absMax.toFixed(1)}
 		</text>
@@ -216,25 +216,92 @@
 	<!-- Tooltip -->
 	{#if hoveredCell}
 		<div
-			class="pointer-events-none absolute z-50 rounded-lg border border-[oklch(0.25_0_0)]
-				bg-[oklch(0.14_0_0/0.94)] px-3 py-2 shadow-xl backdrop-blur-sm"
+			class="tooltip"
 			style="left: {mouseX + 14}px; top: {mouseY - 50}px;"
 		>
-			<div class="text-[10px] font-mono">
-				<div class="text-[oklch(0.50_0_0)] mb-1">
-					{hoveredCell.x} / {hoveredCell.y}
-				</div>
-				<div
-					class="text-sm font-semibold
-						{hoveredCell.value > 0
-						? 'text-[oklch(0.75_0.15_145)]'
-						: hoveredCell.value < 0
-							? 'text-[oklch(0.70_0.16_25)]'
-							: 'text-[oklch(0.70_0_0)]'}"
-				>
-					{hoveredCell.value >= 0 ? '+' : ''}{hoveredCell.value.toFixed(2)}
-				</div>
+			<div class="tooltip-header">
+				{hoveredCell.x} / {hoveredCell.y}
+			</div>
+			<div
+				class="tooltip-value {hoveredCell.value > 0
+					? 'tooltip-positive'
+					: hoveredCell.value < 0
+						? 'tooltip-negative'
+						: 'tooltip-neutral'}"
+			>
+				{hoveredCell.value >= 0 ? '+' : ''}{hoveredCell.value.toFixed(2)}
 			</div>
 		</div>
 	{/if}
 </div>
+
+<style>
+	.heatmap-container {
+		position: relative;
+		display: inline-block;
+	}
+
+	.chart-svg {
+		user-select: none;
+	}
+
+	.chart-title {
+		font-size: var(--text-xs, 0.75rem);
+		fill: oklch(0.75 0 0);
+		font-weight: 500;
+	}
+
+	.axis-label {
+		font-size: 9px;
+		fill: oklch(0.55 0 0);
+		font-family: var(--font-mono);
+	}
+
+	.cell {
+		cursor: crosshair;
+		transition: opacity 100ms;
+	}
+
+	.legend-label {
+		font-size: 8px;
+		fill: oklch(0.50 0 0);
+		font-family: var(--font-mono);
+	}
+
+	.tooltip {
+		pointer-events: none;
+		position: absolute;
+		z-index: 50;
+		border-radius: var(--radius-lg, 8px);
+		border: 1px solid oklch(0.25 0 0);
+		background: oklch(0.14 0 0 / 0.94);
+		padding-inline: 12px;
+		padding-block: 8px;
+		box-shadow: 0 20px 25px -5px oklch(0 0 0 / 0.25);
+		backdrop-filter: blur(4px);
+		font-family: var(--font-mono);
+		font-size: 10px;
+	}
+
+	.tooltip-header {
+		color: oklch(0.50 0 0);
+		margin-bottom: 4px;
+	}
+
+	.tooltip-value {
+		font-size: var(--text-sm, 0.875rem);
+		font-weight: 600;
+	}
+
+	.tooltip-positive {
+		color: oklch(0.75 0.15 145);
+	}
+
+	.tooltip-negative {
+		color: oklch(0.70 0.16 25);
+	}
+
+	.tooltip-neutral {
+		color: oklch(0.70 0 0);
+	}
+</style>

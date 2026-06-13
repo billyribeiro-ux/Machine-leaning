@@ -10,27 +10,27 @@
 	}: Props = $props();
 
 	const modifierMap: Record<string, string> = {
-		cmd: '\u2318',
-		command: '\u2318',
-		meta: '\u2318',
-		ctrl: '\u2303',
-		control: '\u2303',
-		alt: '\u2325',
-		option: '\u2325',
-		opt: '\u2325',
-		shift: '\u21E7',
-		enter: '\u23CE',
-		return: '\u23CE',
-		backspace: '\u232B',
-		delete: '\u2326',
+		cmd: '⌘',
+		command: '⌘',
+		meta: '⌘',
+		ctrl: '⌃',
+		control: '⌃',
+		alt: '⌥',
+		option: '⌥',
+		opt: '⌥',
+		shift: '⇧',
+		enter: '⏎',
+		return: '⏎',
+		backspace: '⌫',
+		delete: '⌦',
 		escape: 'Esc',
 		esc: 'Esc',
-		tab: '\u21E5',
-		space: '\u2423',
-		up: '\u2191',
-		down: '\u2193',
-		left: '\u2190',
-		right: '\u2192'
+		tab: '⇥',
+		space: '␣',
+		up: '↑',
+		down: '↓',
+		left: '←',
+		right: '→'
 	};
 
 	let parsedKeys = $derived(
@@ -45,15 +45,46 @@
 	);
 </script>
 
-<span class="inline-flex items-center gap-0.5 {className}" aria-label="Keyboard shortcut: {keys}">
+<span class="kbd-group {className}" aria-label="Keyboard shortcut: {keys}">
 	{#each parsedKeys as key, i (i)}
 		{#if i > 0}
-			<span class="text-[oklch(0.40_0_0)] text-[10px] mx-px select-none">+</span>
+			<span class="kbd-separator">+</span>
 		{/if}
-		<kbd
-			class="inline-flex h-5 min-w-5 items-center justify-center rounded border border-[oklch(0.28_0.005_270)] bg-[oklch(0.17_0.005_270)] px-1.5 font-mono text-[10px] font-medium text-[oklch(0.65_0_0)] shadow-[0_1px_0_1px_oklch(0.10_0_0)] leading-none"
-		>
+		<kbd class="kbd-key">
 			{key}
 		</kbd>
 	{/each}
 </span>
+
+<style>
+	.kbd-group {
+		display: inline-flex;
+		align-items: center;
+		gap: 2px;
+	}
+
+	.kbd-separator {
+		color: oklch(0.40 0 0);
+		font-size: 10px;
+		margin-inline: 1px;
+		user-select: none;
+	}
+
+	.kbd-key {
+		display: inline-flex;
+		height: 20px;
+		min-width: 20px;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--radius-DEFAULT);
+		border: 1px solid oklch(0.28 0.005 270);
+		background-color: oklch(0.17 0.005 270);
+		padding-inline: 6px;
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 500;
+		color: oklch(0.65 0 0);
+		box-shadow: 0 1px 0 1px oklch(0.10 0 0);
+		line-height: 1;
+	}
+</style>

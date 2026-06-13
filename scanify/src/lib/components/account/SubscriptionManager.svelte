@@ -107,60 +107,50 @@
   }
 </script>
 
-<div class="flex flex-col gap-8 {className}">
+<div class="subscription-root {className}">
   <!-- Section header -->
-  <div class="flex flex-col gap-1">
-    <h2 class="text-lg font-semibold text-[oklch(0.90_0_0)]">Subscription Plans</h2>
-    <p class="text-sm text-[oklch(0.55_0_0)]">Choose the plan that fits your trading needs</p>
+  <div class="section-header">
+    <h2 class="section-title">Subscription Plans</h2>
+    <p class="section-subtitle">Choose the plan that fits your trading needs</p>
   </div>
 
   <!-- Plan cards grid -->
-  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+  <div class="plan-grid">
     {#each plans as plan (plan.id)}
       {@const current = isCurrent(plan.id)}
       {@const downgrade = isDowngrade(plan.id)}
       <div
-        class="
-          relative flex flex-col rounded-xl border p-5 transition-all duration-200
-          {plan.recommended
-            ? 'border-[oklch(0.45_0.15_250)] bg-[oklch(0.14_0.01_250)] shadow-[0_0_24px_oklch(0.45_0.15_250/0.12)]'
-            : 'border-[oklch(0.22_0_0)] bg-[oklch(0.12_0_0)]'}
-          {current
-            ? 'ring-2 ring-[oklch(0.55_0.15_145)] ring-offset-1 ring-offset-[oklch(0.10_0_0)]'
-            : ''}
-        "
+        class="plan-card"
+        class:plan-card--recommended={plan.recommended}
+        class:plan-card--current={current}
       >
         <!-- Recommended badge -->
         {#if plan.recommended}
-          <div class="absolute -top-3 left-1/2 -translate-x-1/2">
-            <span class="inline-block px-3 py-0.5 rounded-full bg-[oklch(0.45_0.15_250)] text-[10px] font-bold uppercase tracking-widest text-white">
-              Recommended
-            </span>
+          <div class="recommended-badge-wrapper">
+            <span class="recommended-badge">Recommended</span>
           </div>
         {/if}
 
         <!-- Plan name and price -->
-        <div class="flex flex-col gap-2 mb-4 {plan.recommended ? 'mt-2' : ''}">
-          <div class="flex items-center gap-2">
-            <h3 class="text-base font-bold text-[oklch(0.88_0_0)]">{plan.name}</h3>
+        <div class="plan-header" class:plan-header--with-badge={plan.recommended}>
+          <div class="plan-name-row">
+            <h3 class="plan-name">{plan.name}</h3>
             {#if current}
-              <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-[oklch(0.22_0.04_145)] text-[10px] font-semibold text-[oklch(0.65_0.15_145)]">
-                Current
-              </span>
+              <span class="current-badge">Current</span>
             {/if}
           </div>
-          <p class="text-xs text-[oklch(0.50_0_0)]">{plan.tagline}</p>
-          <div class="flex items-baseline gap-1 mt-1">
-            <span class="text-2xl font-bold text-[oklch(0.92_0_0)]">{plan.price}</span>
-            <span class="text-xs text-[oklch(0.45_0_0)]">{plan.period}</span>
+          <p class="plan-tagline">{plan.tagline}</p>
+          <div class="plan-price-row">
+            <span class="plan-price">{plan.price}</span>
+            <span class="plan-period">{plan.period}</span>
           </div>
         </div>
 
         <!-- Highlights list -->
-        <ul class="flex flex-col gap-2 mb-6 flex-1">
+        <ul class="highlights-list">
           {#each plan.highlights as highlight}
-            <li class="flex items-center gap-2 text-xs text-[oklch(0.72_0_0)]">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 shrink-0 text-[oklch(0.55_0.15_145)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <li class="highlight-item">
+              <svg xmlns="http://www.w3.org/2000/svg" class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <polyline points="20 6 9 17 4 12" />
               </svg>
               {highlight}
@@ -170,36 +160,18 @@
 
         <!-- Action button -->
         {#if current}
-          <button
-            class="
-              w-full py-2.5 rounded-lg text-sm font-medium
-              border border-[oklch(0.30_0_0)] bg-[oklch(0.16_0_0)]
-              text-[oklch(0.55_0_0)] cursor-default
-            "
-            disabled
-          >
+          <button class="plan-btn plan-btn--current" disabled>
             Current Plan
           </button>
         {:else if downgrade}
-          <button
-            class="
-              w-full py-2.5 rounded-lg text-sm font-medium
-              border border-[oklch(0.28_0_0)] bg-transparent
-              text-[oklch(0.60_0_0)] hover:bg-[oklch(0.16_0_0)]
-              transition-colors duration-150 cursor-pointer
-            "
-          >
+          <button class="plan-btn plan-btn--downgrade">
             Downgrade
           </button>
         {:else}
           <button
-            class="
-              w-full py-2.5 rounded-lg text-sm font-semibold
-              border-none cursor-pointer transition-all duration-150
-              {plan.recommended
-                ? 'bg-[oklch(0.50_0.15_250)] hover:bg-[oklch(0.55_0.16_250)] text-white shadow-sm shadow-[oklch(0.50_0.15_250/0.3)]'
-                : 'bg-[oklch(0.55_0.15_145)] hover:bg-[oklch(0.60_0.16_145)] text-white shadow-sm shadow-[oklch(0.55_0.15_145/0.25)]'}
-            "
+            class="plan-btn plan-btn--upgrade"
+            class:plan-btn--upgrade-recommended={plan.recommended}
+            class:plan-btn--upgrade-default={!plan.recommended}
           >
             Upgrade to {plan.name}
           </button>
@@ -209,15 +181,15 @@
   </div>
 
   <!-- Feature comparison table -->
-  <div class="flex flex-col gap-3">
-    <h3 class="text-sm font-semibold text-[oklch(0.80_0_0)]">Feature Comparison</h3>
-    <div class="overflow-x-auto rounded-lg border border-[oklch(0.20_0_0)]">
-      <table class="w-full text-xs">
+  <div class="comparison-section">
+    <h3 class="comparison-title">Feature Comparison</h3>
+    <div class="comparison-table-wrapper">
+      <table class="comparison-table">
         <thead>
-          <tr class="border-b border-[oklch(0.20_0_0)] bg-[oklch(0.11_0_0)]">
-            <th class="text-left px-4 py-3 font-medium text-[oklch(0.60_0_0)]">Feature</th>
+          <tr class="comparison-thead-row">
+            <th class="comparison-th comparison-th--feature">Feature</th>
             {#each plans as plan (plan.id)}
-              <th class="text-center px-4 py-3 font-medium {isCurrent(plan.id) ? 'text-[oklch(0.65_0.15_145)]' : 'text-[oklch(0.60_0_0)]'}">
+              <th class="comparison-th comparison-th--plan" class:comparison-th--active={isCurrent(plan.id)}>
                 {plan.name}
               </th>
             {/each}
@@ -225,16 +197,16 @@
         </thead>
         <tbody>
           {#each features as feature, i (feature.label)}
-            <tr class="border-b border-[oklch(0.16_0_0)] {i % 2 === 0 ? 'bg-[oklch(0.12_0_0)]' : 'bg-[oklch(0.13_0_0)]'}">
-              <td class="px-4 py-2.5 text-[oklch(0.72_0_0)]">{feature.label}</td>
+            <tr class="comparison-row" class:comparison-row--even={i % 2 === 0} class:comparison-row--odd={i % 2 !== 0}>
+              <td class="comparison-td comparison-td--label">{feature.label}</td>
               {#each tierOrder as tier}
-                <td class="text-center px-4 py-2.5">
+                <td class="comparison-td comparison-td--value">
                   {#if featureForTier(feature, tier)}
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 mx-auto text-[oklch(0.55_0.15_145)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="check-icon-table" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                       <polyline points="20 6 9 17 4 12" />
                     </svg>
                   {:else}
-                    <span class="text-[oklch(0.30_0_0)]">&mdash;</span>
+                    <span class="feature-dash">&mdash;</span>
                   {/if}
                 </td>
               {/each}
@@ -245,3 +217,318 @@
     </div>
   </div>
 </div>
+
+<style>
+  /* ── Root layout ── */
+  .subscription-root {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* ── Section header ── */
+  .section-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .section-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: oklch(0.90 0 0);
+  }
+
+  .section-subtitle {
+    font-size: 0.875rem;
+    color: oklch(0.55 0 0);
+  }
+
+  /* ── Plan cards grid ── */
+  .plan-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  @media (min-width: 768px) {
+    .plan-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .plan-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* ── Plan card ── */
+  .plan-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0.75rem;
+    border: 1px solid oklch(0.22 0 0);
+    padding: 1.25rem;
+    background-color: oklch(0.12 0 0);
+    transition: all 200ms;
+  }
+
+  .plan-card--recommended {
+    border-color: oklch(0.45 0.15 250);
+    background-color: oklch(0.14 0.01 250);
+    box-shadow: 0 0 24px oklch(0.45 0.15 250 / 0.12);
+  }
+
+  .plan-card--current {
+    outline: 2px solid oklch(0.55 0.15 145);
+    outline-offset: 1px;
+  }
+
+  /* ── Recommended badge ── */
+  .recommended-badge-wrapper {
+    position: absolute;
+    top: -0.75rem;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .recommended-badge {
+    display: inline-block;
+    padding: 0.125rem 0.75rem;
+    border-radius: 9999px;
+    background-color: oklch(0.45 0.15 250);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: white;
+  }
+
+  /* ── Plan header (name + price) ── */
+  .plan-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .plan-header--with-badge {
+    margin-top: 0.5rem;
+  }
+
+  .plan-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .plan-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: oklch(0.88 0 0);
+  }
+
+  .current-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    background-color: oklch(0.22 0.04 145);
+    font-size: 10px;
+    font-weight: 600;
+    color: oklch(0.65 0.15 145);
+  }
+
+  .plan-tagline {
+    font-size: 0.75rem;
+    color: oklch(0.50 0 0);
+  }
+
+  .plan-price-row {
+    display: flex;
+    align-items: baseline;
+    gap: 0.25rem;
+    margin-top: 0.25rem;
+  }
+
+  .plan-price {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: oklch(0.92 0 0);
+  }
+
+  .plan-period {
+    font-size: 0.75rem;
+    color: oklch(0.45 0 0);
+  }
+
+  /* ── Highlights list ── */
+  .highlights-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex: 1;
+    list-style: none;
+    padding: 0;
+    margin-top: 0;
+  }
+
+  .highlight-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: oklch(0.72 0 0);
+  }
+
+  .check-icon {
+    width: 0.875rem;
+    height: 0.875rem;
+    flex-shrink: 0;
+    color: oklch(0.55 0.15 145);
+  }
+
+  /* ── Action buttons ── */
+  .plan-btn {
+    width: 100%;
+    padding: 0.625rem 0;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .plan-btn--current {
+    font-weight: 500;
+    border: 1px solid oklch(0.30 0 0);
+    background-color: oklch(0.16 0 0);
+    color: oklch(0.55 0 0);
+    cursor: default;
+  }
+
+  .plan-btn--downgrade {
+    font-weight: 500;
+    border: 1px solid oklch(0.28 0 0);
+    background-color: transparent;
+    color: oklch(0.60 0 0);
+    transition: color 150ms, background-color 150ms;
+    cursor: pointer;
+  }
+
+  .plan-btn--downgrade:hover {
+    background-color: oklch(0.16 0 0);
+  }
+
+  .plan-btn--upgrade {
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 150ms;
+    color: white;
+  }
+
+  .plan-btn--upgrade-recommended {
+    background-color: oklch(0.50 0.15 250);
+    box-shadow: 0 1px 2px oklch(0.50 0.15 250 / 0.3);
+  }
+
+  .plan-btn--upgrade-recommended:hover {
+    background-color: oklch(0.55 0.16 250);
+  }
+
+  .plan-btn--upgrade-default {
+    background-color: oklch(0.55 0.15 145);
+    box-shadow: 0 1px 2px oklch(0.55 0.15 145 / 0.25);
+  }
+
+  .plan-btn--upgrade-default:hover {
+    background-color: oklch(0.60 0.16 145);
+  }
+
+  /* ── Feature comparison section ── */
+  .comparison-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .comparison-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: oklch(0.80 0 0);
+  }
+
+  .comparison-table-wrapper {
+    overflow-x: auto;
+    border-radius: 0.5rem;
+    border: 1px solid oklch(0.20 0 0);
+  }
+
+  .comparison-table {
+    width: 100%;
+    font-size: 0.75rem;
+    border-collapse: collapse;
+  }
+
+  /* ── Table head ── */
+  .comparison-thead-row {
+    border-bottom: 1px solid oklch(0.20 0 0);
+    background-color: oklch(0.11 0 0);
+  }
+
+  .comparison-th {
+    padding: 0.75rem 1rem;
+    font-weight: 500;
+    color: oklch(0.60 0 0);
+  }
+
+  .comparison-th--feature {
+    text-align: left;
+  }
+
+  .comparison-th--plan {
+    text-align: center;
+  }
+
+  .comparison-th--active {
+    color: oklch(0.65 0.15 145);
+  }
+
+  /* ── Table body rows ── */
+  .comparison-row {
+    border-bottom: 1px solid oklch(0.16 0 0);
+  }
+
+  .comparison-row--even {
+    background-color: oklch(0.12 0 0);
+  }
+
+  .comparison-row--odd {
+    background-color: oklch(0.13 0 0);
+  }
+
+  /* ── Table cells ── */
+  .comparison-td {
+    padding: 0.625rem 1rem;
+  }
+
+  .comparison-td--label {
+    color: oklch(0.72 0 0);
+  }
+
+  .comparison-td--value {
+    text-align: center;
+  }
+
+  .check-icon-table {
+    width: 1rem;
+    height: 1rem;
+    margin-inline: auto;
+    color: oklch(0.55 0.15 145);
+  }
+
+  .feature-dash {
+    color: oklch(0.30 0 0);
+  }
+</style>

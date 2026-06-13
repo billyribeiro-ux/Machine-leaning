@@ -94,12 +94,12 @@
 	}
 </script>
 
-<div class="inline-block relative">
+<div class="radar-container">
 	<svg
 		width={size}
 		height={TOTAL_HEIGHT}
 		viewBox="0 0 {size} {TOTAL_HEIGHT}"
-		class="select-none"
+		class="chart-svg"
 		role="img"
 		aria-label={title || 'Radar Chart'}
 	>
@@ -109,7 +109,7 @@
 				x={size / 2}
 				y={14}
 				text-anchor="middle"
-				class="text-xs fill-[oklch(0.75_0_0)] font-medium"
+				class="chart-title"
 			>
 				{title}
 			</text>
@@ -144,7 +144,7 @@
 			<text
 				x={p.x + 3}
 				y={p.y - 3}
-				class="text-[7px] fill-[oklch(0.40_0_0)] font-mono"
+				class="grid-label"
 			>
 				{Math.round(level * 100)}%
 			</text>
@@ -169,7 +169,7 @@
 				fill={hoveredIndex === i ? 'oklch(0.70 0.17 145)' : 'oklch(0.60 0.16 145)'}
 				stroke="oklch(0.13 0 0)"
 				stroke-width="1.5"
-				class="cursor-crosshair transition-all duration-100"
+				class="data-point"
 				onmouseenter={() => (hoveredIndex = i)}
 				onmouseleave={() => (hoveredIndex = null)}
 			/>
@@ -184,9 +184,7 @@
 				y={pos.y}
 				text-anchor={pos.anchor}
 				dominant-baseline={getDominantBaseline(angle)}
-				class="text-[9px] font-mono {hoveredIndex === i
-					? 'fill-[oklch(0.90_0_0)]'
-					: 'fill-[oklch(0.55_0_0)]'}"
+				class="axis-label {hoveredIndex === i ? 'axis-label-highlight' : ''}"
 			>
 				{axis.label}
 			</text>
@@ -212,7 +210,7 @@
 					y={point.y - 12}
 					text-anchor="middle"
 					dominant-baseline="middle"
-					class="text-[9px] fill-[oklch(0.85_0.10_145)] font-mono font-semibold"
+					class="value-label"
 				>
 					{axis.value.toFixed(1)} / {axis.max.toFixed(0)}
 				</text>
@@ -220,3 +218,48 @@
 		{/if}
 	</svg>
 </div>
+
+<style>
+	.radar-container {
+		display: inline-block;
+		position: relative;
+	}
+
+	.chart-svg {
+		user-select: none;
+	}
+
+	.chart-title {
+		font-size: var(--text-xs, 0.75rem);
+		fill: oklch(0.75 0 0);
+		font-weight: 500;
+	}
+
+	.grid-label {
+		font-size: 7px;
+		fill: oklch(0.40 0 0);
+		font-family: var(--font-mono);
+	}
+
+	.axis-label {
+		font-size: 9px;
+		font-family: var(--font-mono);
+		fill: oklch(0.55 0 0);
+	}
+
+	.axis-label.axis-label-highlight {
+		fill: oklch(0.90 0 0);
+	}
+
+	.data-point {
+		cursor: crosshair;
+		transition: all 100ms;
+	}
+
+	.value-label {
+		font-size: 9px;
+		fill: oklch(0.85 0.10 145);
+		font-family: var(--font-mono);
+		font-weight: 600;
+	}
+</style>

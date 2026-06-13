@@ -160,12 +160,12 @@
 	}
 </script>
 
-<div class="relative w-full" bind:this={containerEl}>
+<div class="gex-container" bind:this={containerEl}>
 	<svg
 		width={containerWidth}
 		{height}
 		viewBox="0 0 {containerWidth} {height}"
-		class="select-none"
+		class="chart-svg"
 		role="img"
 		aria-label="Gamma Exposure Chart"
 		onmousemove={handleHover}
@@ -176,7 +176,7 @@
 			x={containerWidth / 2}
 			y={16}
 			text-anchor="middle"
-			class="text-[11px] fill-[oklch(0.65_0_0)] font-medium"
+			class="chart-title"
 		>
 			Gamma Exposure (GEX) by Strike
 		</text>
@@ -196,7 +196,7 @@
 				y={yScaleGamma(tick)}
 				text-anchor="end"
 				dominant-baseline="middle"
-				class="text-[8px] fill-[oklch(0.42_0_0)] font-mono"
+				class="axis-tick"
 			>
 				{formatGamma(tick)}
 			</text>
@@ -225,7 +225,7 @@
 					? 'oklch(0.55 0.15 145 / 0.8)'
 					: 'oklch(0.45 0.13 145 / 0.6)'}
 				rx="1"
-				class="transition-[fill] duration-75"
+				class="bar-fill"
 			/>
 		{/each}
 
@@ -243,7 +243,7 @@
 					? 'oklch(0.50 0.18 25 / 0.8)'
 					: 'oklch(0.42 0.15 25 / 0.6)'}
 				rx="1"
-				class="transition-[fill] duration-75"
+				class="bar-fill"
 			/>
 		{/each}
 
@@ -286,7 +286,7 @@
 				x={currentPriceX}
 				y={PADDING_TOP - 4}
 				text-anchor="middle"
-				class="text-[8px] fill-[oklch(0.80_0.14_80)] font-mono font-semibold"
+				class="price-label"
 			>
 				${currentPrice?.toFixed(2)}
 			</text>
@@ -298,7 +298,7 @@
 				x={xScale(idx)}
 				y={height - PADDING_BOTTOM + 14}
 				text-anchor="middle"
-				class="text-[8px] fill-[oklch(0.45_0_0)] font-mono"
+				class="axis-tick"
 			>
 				{sortedData[idx].strike}
 			</text>
@@ -309,7 +309,7 @@
 			x={PADDING_LEFT - 4}
 			y={PADDING_TOP - 6}
 			text-anchor="end"
-			class="text-[7px] fill-[oklch(0.40_0_0)] font-mono"
+			class="axis-label"
 		>
 			Gamma ($)
 		</text>
@@ -318,7 +318,7 @@
 			x={PADDING_LEFT + chartWidth / 2}
 			y={height - 4}
 			text-anchor="middle"
-			class="text-[8px] fill-[oklch(0.40_0_0)] font-mono"
+			class="axis-label-x"
 		>
 			Strike Price
 		</text>
@@ -351,11 +351,11 @@
 		<g transform="translate({PADDING_LEFT + chartWidth - 195}, {PADDING_TOP + 6})">
 			<rect x="0" y="-4" width="190" height="18" rx="4" fill="oklch(0.12 0 0 / 0.85)" />
 			<rect x="6" y="0" width="8" height="8" rx="1" fill="oklch(0.45 0.13 145 / 0.7)" />
-			<text x="18" y="8" class="text-[8px] fill-[oklch(0.60_0_0)] font-mono">Call GEX</text>
+			<text x="18" y="8" class="legend-label">Call GEX</text>
 			<rect x="68" y="0" width="8" height="8" rx="1" fill="oklch(0.42 0.15 25 / 0.7)" />
-			<text x="80" y="8" class="text-[8px] fill-[oklch(0.60_0_0)] font-mono">Put GEX</text>
+			<text x="80" y="8" class="legend-label">Put GEX</text>
 			<line x1="130" y1="4" x2="146" y2="4" stroke="oklch(0.70 0.12 250)" stroke-width="2" />
-			<text x="150" y="8" class="text-[8px] fill-[oklch(0.60_0_0)] font-mono">Net</text>
+			<text x="150" y="8" class="legend-label">Net</text>
 		</g>
 	</svg>
 
@@ -363,32 +363,32 @@
 	{#if hoveredIndex !== null && sortedData[hoveredIndex]}
 		{@const point = sortedData[hoveredIndex]}
 		<div
-			class="pointer-events-none absolute z-50 rounded-lg border border-[oklch(0.25_0_0)]
-				bg-[oklch(0.14_0_0/0.94)] px-3 py-2 shadow-xl backdrop-blur-sm"
+			class="tooltip"
 			style="left: {Math.min(mouseX + 14, containerWidth - 180)}px;
 				top: {Math.max(mouseY - 90, 4)}px;"
 		>
-			<div class="text-[10px] text-[oklch(0.50_0_0)] mb-1.5 font-mono">
-				Strike: <span class="text-[oklch(0.85_0_0)] font-semibold">{point.strike}</span>
+			<div class="tooltip-strike">
+				Strike: <span class="tooltip-strike-value">{point.strike}</span>
 			</div>
-			<div class="flex flex-col gap-1 text-[10px] font-mono">
-				<div class="flex items-center gap-2">
-					<span class="w-2 h-2 rounded-sm bg-[oklch(0.55_0.15_145)]"></span>
-					<span class="text-[oklch(0.55_0_0)]">Call GEX</span>
-					<span class="text-[oklch(0.75_0.15_145)] ml-auto">{formatGamma(point.callGamma)}</span>
+			<div class="tooltip-rows">
+				<div class="tooltip-row">
+					<span class="tooltip-dot" style="background: oklch(0.55 0.15 145);"></span>
+					<span class="tooltip-label">Call GEX</span>
+					<span class="tooltip-value" style="color: oklch(0.75 0.15 145);">{formatGamma(point.callGamma)}</span>
 				</div>
-				<div class="flex items-center gap-2">
-					<span class="w-2 h-2 rounded-sm bg-[oklch(0.50_0.18_25)]"></span>
-					<span class="text-[oklch(0.55_0_0)]">Put GEX</span>
-					<span class="text-[oklch(0.70_0.16_25)] ml-auto">{formatGamma(point.putGamma)}</span>
+				<div class="tooltip-row">
+					<span class="tooltip-dot" style="background: oklch(0.50 0.18 25);"></span>
+					<span class="tooltip-label">Put GEX</span>
+					<span class="tooltip-value" style="color: oklch(0.70 0.16 25);">{formatGamma(point.putGamma)}</span>
 				</div>
-				<div class="flex items-center gap-2 pt-1 mt-0.5 border-t border-[oklch(0.22_0_0)]">
-					<span class="w-2 h-2 rounded-sm bg-[oklch(0.65_0.12_250)]"></span>
-					<span class="text-[oklch(0.55_0_0)]">Net GEX</span>
+				<div class="tooltip-divider">
+					<span class="tooltip-dot" style="background: oklch(0.65 0.12 250);"></span>
+					<span class="tooltip-label">Net GEX</span>
 					<span
-						class="ml-auto {point.netGamma >= 0
-							? 'text-[oklch(0.75_0.15_145)]'
-							: 'text-[oklch(0.70_0.16_25)]'}"
+						class="tooltip-net"
+						style="color: {point.netGamma >= 0
+							? 'oklch(0.75 0.15 145)'
+							: 'oklch(0.70 0.16 25)'};"
 					>
 						{point.netGamma >= 0 ? '+' : ''}{formatGamma(point.netGamma)}
 					</span>
@@ -397,3 +397,122 @@
 		</div>
 	{/if}
 </div>
+
+<style>
+	.gex-container {
+		position: relative;
+		width: 100%;
+	}
+
+	.chart-svg {
+		user-select: none;
+	}
+
+	.chart-title {
+		font-size: 11px;
+		fill: oklch(0.65 0 0);
+		font-weight: 500;
+	}
+
+	.axis-tick {
+		font-size: 8px;
+		fill: oklch(0.42 0 0);
+		font-family: var(--font-mono);
+	}
+
+	.axis-label {
+		font-size: 7px;
+		fill: oklch(0.40 0 0);
+		font-family: var(--font-mono);
+	}
+
+	.axis-label-x {
+		font-size: 8px;
+		fill: oklch(0.40 0 0);
+		font-family: var(--font-mono);
+	}
+
+	.price-label {
+		font-size: 8px;
+		fill: oklch(0.80 0.14 80);
+		font-family: var(--font-mono);
+		font-weight: 600;
+	}
+
+	.legend-label {
+		font-size: 8px;
+		fill: oklch(0.60 0 0);
+		font-family: var(--font-mono);
+	}
+
+	.bar-fill {
+		transition: fill 75ms;
+	}
+
+	.tooltip {
+		pointer-events: none;
+		position: absolute;
+		z-index: 50;
+		border-radius: var(--radius-lg, 8px);
+		border: 1px solid oklch(0.25 0 0);
+		background: oklch(0.14 0 0 / 0.94);
+		padding-inline: 12px;
+		padding-block: 8px;
+		box-shadow: 0 20px 25px -5px oklch(0 0 0 / 0.25);
+		backdrop-filter: blur(4px);
+	}
+
+	.tooltip-strike {
+		font-size: 10px;
+		color: oklch(0.50 0 0);
+		margin-bottom: 6px;
+		font-family: var(--font-mono);
+	}
+
+	.tooltip-strike-value {
+		color: oklch(0.85 0 0);
+		font-weight: 600;
+	}
+
+	.tooltip-rows {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		font-size: 10px;
+		font-family: var(--font-mono);
+	}
+
+	.tooltip-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.tooltip-dot {
+		width: 8px;
+		height: 8px;
+		border-radius: 2px;
+		flex-shrink: 0;
+	}
+
+	.tooltip-label {
+		color: oklch(0.55 0 0);
+	}
+
+	.tooltip-value {
+		margin-left: auto;
+	}
+
+	.tooltip-divider {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		padding-top: 4px;
+		margin-top: 2px;
+		border-top: 1px solid oklch(0.22 0 0);
+	}
+
+	.tooltip-net {
+		margin-left: auto;
+	}
+</style>

@@ -93,9 +93,9 @@
 	}
 
 	function changeColor(val: number): string {
-		if (val > 0) return 'text-[var(--bullish)]';
-		if (val < 0) return 'text-[var(--bearish)]';
-		return 'text-[var(--text-tertiary)]';
+		if (val > 0) return 'color-bullish';
+		if (val < 0) return 'color-bearish';
+		return 'color-tertiary';
 	}
 
 	function directionBadgeClass(dir: string): string {
@@ -107,32 +107,32 @@
 	function strengthDots(s: number): string {
 		let out = '';
 		for (let i = 0; i < 5; i++) {
-			out += i < s ? '\u25CF' : '\u25CB';
+			out += i < s ? '●' : '○';
 		}
 		return out;
 	}
 
 	function strengthColor(s: number): string {
 		const map: Record<number, string> = {
-			1: 'text-[var(--strength-1)]',
-			2: 'text-[var(--strength-2)]',
-			3: 'text-[var(--strength-3)]',
-			4: 'text-[var(--strength-4)]',
-			5: 'text-[var(--strength-5)]',
+			1: 'strength-1',
+			2: 'strength-2',
+			3: 'strength-3',
+			4: 'strength-4',
+			5: 'strength-5',
 		};
-		return map[s] || 'text-[var(--text-tertiary)]';
+		return map[s] || 'color-tertiary';
 	}
 
 	function signalCountColor(count: number): string {
-		if (count >= 5) return 'bg-[var(--warning-bg)] text-[var(--warning-bright)] border-[var(--warning-dim)]';
-		if (count >= 3) return 'bg-[var(--accent-bg)] text-[var(--accent-bright)] border-[var(--accent-dim)]';
-		return 'bg-[var(--bg-overlay)] text-[var(--text-secondary)] border-[var(--border-default)]';
+		if (count >= 5) return 'signal-count-warning';
+		if (count >= 3) return 'signal-count-accent';
+		return 'signal-count-default';
 	}
 
 	function signalDotClass(dir: string): string {
-		if (dir === 'bullish') return 'bg-[var(--bullish)]';
-		if (dir === 'bearish') return 'bg-[var(--bearish)]';
-		return 'bg-[var(--neutral)]';
+		if (dir === 'bullish') return 'dot-bullish';
+		if (dir === 'bearish') return 'dot-bearish';
+		return 'dot-neutral';
 	}
 
 	function relativeTime(ts: number): string {
@@ -144,26 +144,25 @@
 	}
 
 	function headerBorderClass(dir: string): string {
-		if (dir === 'bullish') return 'border-l-[var(--bullish-dim)]';
-		if (dir === 'bearish') return 'border-l-[var(--bearish-dim)]';
-		return 'border-l-[var(--neutral-dim)]';
+		if (dir === 'bullish') return 'border-left-bullish';
+		if (dir === 'bearish') return 'border-left-bearish';
+		return 'border-left-neutral';
 	}
 </script>
 
-<div class="space-y-1.5 {className}" role="list" aria-label="Composite scan results grouped by symbol">
+<div class="composite-list {className}" role="list" aria-label="Composite scan results grouped by symbol">
 	{#if groups.length === 0}
-		<div class="rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] px-6 py-10 text-center">
-			<p class="text-sm text-[var(--text-disabled)]">No results to display</p>
+		<div class="empty-state">
+			<p class="empty-text">No results to display</p>
 		</div>
 	{:else}
 		{#each groups as group (group.symbol)}
 			{@const isExpanded = expandedSymbol === group.symbol}
-			<div class="overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] transition-all duration-150">
+			<div class="group-card">
 				<!-- Group header -->
 				<button
 					type="button"
-					class="flex w-full items-center gap-3 border-l-2 px-4 py-2.5 text-left transition-colors hover:bg-[var(--bg-elevated)]
-						{headerBorderClass(group.direction)}"
+					class="group-header {headerBorderClass(group.direction)}"
 					onclick={() => toggleGroup(group.symbol)}
 					aria-expanded={isExpanded}
 				>
@@ -178,82 +177,81 @@
 						stroke-width="2"
 						stroke-linecap="round"
 						stroke-linejoin="round"
-						class="flex-shrink-0 text-[var(--text-disabled)] transition-transform duration-150 {isExpanded ? 'rotate-90' : ''}"
+						class="chevron-icon {isExpanded ? 'chevron-expanded' : ''}"
 					>
 						<path d="m9 18 6-6-6-6" />
 					</svg>
 
 					<!-- Symbol -->
-					<div class="min-w-[70px]">
-						<span class="font-mono text-sm font-bold uppercase text-[var(--text-primary)]" style="letter-spacing: 0.02em;">
+					<div class="symbol-cell">
+						<span class="symbol-label" style="letter-spacing: 0.02em;">
 							{group.symbol}
 						</span>
 					</div>
 
 					<!-- Name -->
-					<span class="hidden text-xs text-[var(--text-tertiary)] sm:inline truncate" style="max-width: 120px;">
+					<span class="group-name">
 						{group.name}
 					</span>
 
 					<!-- Price + Change -->
-					<div class="flex items-center gap-2 flex-shrink-0 ml-auto">
-						<span class="mono-nums text-sm text-[var(--text-primary)]">{formatPrice(group.price)}</span>
-						<span class="mono-nums text-sm font-medium {changeColor(group.changePercent)}">{formatPercent(group.changePercent)}</span>
+					<div class="price-change-group">
+						<span class="price-value mono-nums">{formatPrice(group.price)}</span>
+						<span class="change-value mono-nums {changeColor(group.changePercent)}">{formatPercent(group.changePercent)}</span>
 					</div>
 
 					<!-- Signal count badge -->
-					<span class="flex-shrink-0 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full border px-1.5 text-[10px] font-bold leading-none {signalCountColor(group.results.length)}">
+					<span class="signal-count-badge {signalCountColor(group.results.length)}">
 						{group.results.length}
 					</span>
 
 					<!-- Max strength indicator -->
-					<span class="flex-shrink-0 font-mono text-[10px] tracking-tight {strengthColor(group.maxStrength)}" title="Max strength: {group.maxStrength}/5">
+					<span class="strength-indicator {strengthColor(group.maxStrength)}" title="Max strength: {group.maxStrength}/5">
 						{strengthDots(group.maxStrength)}
 					</span>
 
 					<!-- Sector -->
-					<span class="hidden flex-shrink-0 text-2xs text-[var(--text-disabled)] lg:inline">
+					<span class="sector-label">
 						{group.sector}
 					</span>
 				</button>
 
 				<!-- Expanded signals list -->
 				{#if isExpanded}
-					<div class="border-t border-[var(--border-subtle)] bg-[var(--bg-base)]">
+					<div class="signals-panel">
 						{#each group.results as result, i (result.id)}
 							<div
-								class="flex items-center gap-3 px-5 py-2 transition-colors hover:bg-[var(--bg-surface)]
-									{i < group.results.length - 1 ? 'border-b border-[var(--border-subtle)]' : ''}"
+								class="signal-row {i < group.results.length - 1 ? 'signal-row-bordered' : ''}"
 							>
 								<!-- Timeline dot -->
-								<div class="h-2 w-2 flex-shrink-0 rounded-full {signalDotClass(result.direction)}"></div>
+								<div class="timeline-dot {signalDotClass(result.direction)}"></div>
 
 								<!-- Signal name badge -->
-								<span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium leading-none {directionBadgeClass(result.direction)}">
+								<span class="signal-name-badge {directionBadgeClass(result.direction)}">
 									{result.signalName}
 								</span>
 
 								<!-- Direction label -->
-								<span class="text-xs text-[var(--text-tertiary)]">{result.direction}</span>
+								<span class="direction-label">{result.direction}</span>
 
 								<!-- Strength -->
-								<span class="font-mono text-[10px] tracking-tight {strengthColor(result.strength)}" title="Strength: {result.strength}/5">
+								<span class="strength-indicator {strengthColor(result.strength)}" title="Strength: {result.strength}/5">
 									{strengthDots(result.strength)}
 								</span>
 
 								<!-- Category -->
-								<span class="hidden text-2xs text-[var(--text-disabled)] sm:inline">{result.category}</span>
+								<span class="category-label">{result.category}</span>
 
 								<!-- Spacer -->
-								<div class="flex-1"></div>
+								<div class="spacer"></div>
 
 								<!-- Relative volume -->
-								<span class="mono-nums text-xs {result.relativeVolume >= 2 ? 'text-[var(--warning)]' : 'text-[var(--text-tertiary)]'}">
+								<span class="relative-volume mono-nums {result.relativeVolume >= 2 ? 'volume-high' : 'volume-normal'}">
 									{result.relativeVolume.toFixed(1)}x
 								</span>
 
 								<!-- Timestamp -->
-								<span class="mono-nums text-2xs text-[var(--text-disabled)] flex-shrink-0">
+								<span class="timestamp mono-nums">
 									{relativeTime(result.timestamp)}
 								</span>
 							</div>
@@ -266,13 +264,350 @@
 
 	<!-- Summary footer -->
 	{#if groups.length > 0}
-		<div class="flex items-center justify-between px-2 pt-1">
-			<span class="text-2xs text-[var(--text-disabled)]">
+		<div class="summary-footer">
+			<span class="summary-text">
 				{groups.length} symbol{groups.length !== 1 ? 's' : ''} &middot; {results.length} total signal{results.length !== 1 ? 's' : ''}
 			</span>
-			<span class="text-2xs text-[var(--text-disabled)]">
+			<span class="summary-text">
 				Sorted by signal count
 			</span>
 		</div>
 	{/if}
 </div>
+
+<style>
+	/* Container */
+	.composite-list > :global(* + *) {
+		margin-top: 6px;
+	}
+
+	/* Empty state */
+	.empty-state {
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--border-subtle);
+		background-color: var(--bg-surface);
+		padding: 40px 24px;
+		text-align: center;
+	}
+
+	.empty-text {
+		font-size: var(--text-sm);
+		color: var(--text-disabled);
+	}
+
+	/* Group card */
+	.group-card {
+		overflow: hidden;
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--border-subtle);
+		background-color: var(--bg-surface);
+		transition: all 150ms;
+	}
+
+	/* Group header button */
+	.group-header {
+		display: flex;
+		width: 100%;
+		align-items: center;
+		gap: 12px;
+		border-left: 2px solid;
+		padding: 10px 16px;
+		text-align: left;
+		transition: color 150ms, background-color 150ms, border-color 150ms;
+	}
+
+	.group-header:hover {
+		background-color: var(--bg-elevated);
+	}
+
+	/* Header border-left color variants */
+	.border-left-bullish {
+		border-left-color: var(--bullish-dim);
+	}
+
+	.border-left-bearish {
+		border-left-color: var(--bearish-dim);
+	}
+
+	.border-left-neutral {
+		border-left-color: var(--neutral-dim);
+	}
+
+	/* Chevron icon */
+	.chevron-icon {
+		flex-shrink: 0;
+		color: var(--text-disabled);
+		transition: transform 150ms;
+	}
+
+	.chevron-expanded {
+		transform: rotate(90deg);
+	}
+
+	/* Symbol cell */
+	.symbol-cell {
+		min-width: 70px;
+	}
+
+	.symbol-label {
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		font-weight: 700;
+		text-transform: uppercase;
+		color: var(--text-primary);
+	}
+
+	/* Group name (responsive) */
+	.group-name {
+		display: none;
+		font-size: var(--text-xs);
+		color: var(--text-tertiary);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 120px;
+	}
+
+	@media (min-width: 640px) {
+		.group-name {
+			display: inline;
+		}
+	}
+
+	/* Price + Change group */
+	.price-change-group {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-shrink: 0;
+		margin-left: auto;
+	}
+
+	.price-value {
+		font-size: var(--text-sm);
+		color: var(--text-primary);
+	}
+
+	.change-value {
+		font-size: var(--text-sm);
+		font-weight: 500;
+	}
+
+	/* Change color variants */
+	.color-bullish {
+		color: var(--bullish);
+	}
+
+	.color-bearish {
+		color: var(--bearish);
+	}
+
+	.color-tertiary {
+		color: var(--text-tertiary);
+	}
+
+	/* Signal count badge */
+	.signal-count-badge {
+		flex-shrink: 0;
+		display: inline-flex;
+		height: 20px;
+		min-width: 20px;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--radius-full);
+		border: 1px solid;
+		padding: 0 6px;
+		font-size: 10px;
+		font-weight: 700;
+		line-height: 1;
+	}
+
+	.signal-count-warning {
+		background-color: var(--warning-bg);
+		color: var(--warning-bright);
+		border-color: var(--warning-dim);
+	}
+
+	.signal-count-accent {
+		background-color: var(--accent-bg);
+		color: var(--accent-bright);
+		border-color: var(--accent-dim);
+	}
+
+	.signal-count-default {
+		background-color: var(--bg-overlay);
+		color: var(--text-secondary);
+		border-color: var(--border-default);
+	}
+
+	/* Strength indicator */
+	.strength-indicator {
+		flex-shrink: 0;
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: -0.01em;
+	}
+
+	/* Strength color variants */
+	.strength-1 {
+		color: var(--strength-1);
+	}
+
+	.strength-2 {
+		color: var(--strength-2);
+	}
+
+	.strength-3 {
+		color: var(--strength-3);
+	}
+
+	.strength-4 {
+		color: var(--strength-4);
+	}
+
+	.strength-5 {
+		color: var(--strength-5);
+	}
+
+	/* Sector label (responsive) */
+	.sector-label {
+		display: none;
+		flex-shrink: 0;
+		font-size: var(--text-2xs);
+		color: var(--text-disabled);
+	}
+
+	@media (min-width: 1024px) {
+		.sector-label {
+			display: inline;
+		}
+	}
+
+	/* Expanded signals panel */
+	.signals-panel {
+		border-top: 1px solid var(--border-subtle);
+		background-color: var(--bg-base);
+	}
+
+	/* Signal row */
+	.signal-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+		padding: 8px 20px;
+		transition: color 150ms, background-color 150ms, border-color 150ms;
+	}
+
+	.signal-row:hover {
+		background-color: var(--bg-surface);
+	}
+
+	.signal-row-bordered {
+		border-bottom: 1px solid var(--border-subtle);
+	}
+
+	/* Timeline dot */
+	.timeline-dot {
+		height: 8px;
+		width: 8px;
+		flex-shrink: 0;
+		border-radius: var(--radius-full);
+	}
+
+	.dot-bullish {
+		background-color: var(--bullish);
+	}
+
+	.dot-bearish {
+		background-color: var(--bearish);
+	}
+
+	.dot-neutral {
+		background-color: var(--neutral);
+	}
+
+	/* Signal name badge */
+	.signal-name-badge {
+		display: inline-flex;
+		align-items: center;
+		border-radius: var(--radius-full);
+		padding: 2px 8px;
+		font-size: 10px;
+		font-weight: 500;
+		line-height: 1;
+	}
+
+	/* Direction badge variants (shared with signal-name-badge) */
+	.badge-bullish {
+		background-color: var(--bullish-bg, rgba(var(--bullish-rgb), 0.1));
+		color: var(--bullish);
+	}
+
+	.badge-bearish {
+		background-color: var(--bearish-bg, rgba(var(--bearish-rgb), 0.1));
+		color: var(--bearish);
+	}
+
+	.badge-neutral {
+		background-color: var(--neutral-bg, rgba(var(--neutral-rgb), 0.1));
+		color: var(--neutral);
+	}
+
+	/* Direction label */
+	.direction-label {
+		font-size: var(--text-xs);
+		color: var(--text-tertiary);
+	}
+
+	/* Category label (responsive) */
+	.category-label {
+		display: none;
+		font-size: var(--text-2xs);
+		color: var(--text-disabled);
+	}
+
+	@media (min-width: 640px) {
+		.category-label {
+			display: inline;
+		}
+	}
+
+	/* Spacer */
+	.spacer {
+		flex: 1;
+	}
+
+	/* Relative volume */
+	.relative-volume {
+		font-size: var(--text-xs);
+	}
+
+	.volume-high {
+		color: var(--warning);
+	}
+
+	.volume-normal {
+		color: var(--text-tertiary);
+	}
+
+	/* Timestamp */
+	.timestamp {
+		font-size: var(--text-2xs);
+		color: var(--text-disabled);
+		flex-shrink: 0;
+	}
+
+	/* Summary footer */
+	.summary-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0 8px;
+		padding-top: 4px;
+	}
+
+	.summary-text {
+		font-size: var(--text-2xs);
+		color: var(--text-disabled);
+	}
+</style>

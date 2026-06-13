@@ -120,7 +120,7 @@
 
   function sortArrow(col: string): string {
     if (sortBy !== col) return '';
-    return sortDir === 'asc' ? ' \u25B2' : ' \u25BC';
+    return sortDir === 'asc' ? ' ▲' : ' ▼';
   }
 
   function formatVolume(vol: number): string {
@@ -145,37 +145,37 @@
   <title>Scanner - Scanify</title>
 </svelte:head>
 
-<div class="flex flex-col h-full overflow-hidden">
+<div class="scanner-layout">
   <!-- Header -->
-  <div class="flex items-center justify-between px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
-    <div class="flex items-center gap-3">
-      <h1 class="text-lg font-bold" style="color: var(--text-primary);">Scanner</h1>
-      <span class="text-xs font-mono" style="color: var(--text-tertiary);">
+  <div class="scanner-header" style="border-bottom: 1px solid var(--border-subtle);">
+    <div class="header-left">
+      <h1 class="scanner-title" style="color: var(--text-primary);">Scanner</h1>
+      <span class="scanner-meta" style="color: var(--text-tertiary);">
         {filteredResults.length} signals &bull; Updated 2s ago
       </span>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="header-right">
       <ExportToolbar source="scanner" />
-      <div class="w-px h-5" style="background: var(--border-subtle);"></div>
-      <div class="flex items-center gap-2">
-        <div class="w-2 h-2 rounded-full signal-ping" style="background: var(--bullish);"></div>
-        <span class="text-xs" style="color: var(--bullish);">Live</span>
+      <div class="header-divider" style="background: var(--border-subtle);"></div>
+      <div class="live-indicator">
+        <div class="live-dot signal-ping" style="background: var(--bullish);"></div>
+        <span class="live-label" style="color: var(--bullish);">Live</span>
       </div>
     </div>
   </div>
 
   <!-- Presets bar -->
-  <div class="flex gap-2 px-5 py-3 overflow-x-auto shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
+  <div class="presets-bar" style="border-bottom: 1px solid var(--border-subtle);">
     {#each presets as preset (preset.id)}
       <button
         type="button"
         onclick={() => selectedPreset = preset.id}
-        class="flex items-center gap-2 rounded-lg px-3 py-2 text-xs font-medium whitespace-nowrap transition-all"
+        class="preset-button"
         style="background: {selectedPreset === preset.id ? 'var(--accent-bg)' : 'var(--bg-elevated)'};
                color: {selectedPreset === preset.id ? 'var(--accent-bright)' : 'var(--text-secondary)'};
                border: 1px solid {selectedPreset === preset.id ? 'var(--accent-dim)' : 'var(--border-subtle)'};"
       >
-        <span class="font-mono text-[10px] font-bold" style="color: {selectedPreset === preset.id ? 'var(--accent-bright)' : 'var(--text-tertiary)'};">
+        <span class="preset-icon" style="color: {selectedPreset === preset.id ? 'var(--accent-bright)' : 'var(--text-tertiary)'};">
           {preset.icon}
         </span>
         {preset.name}
@@ -184,25 +184,25 @@
   </div>
 
   <!-- Filters bar -->
-  <div class="flex items-center gap-4 px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle); background: var(--bg-base);">
+  <div class="filters-bar" style="border-bottom: 1px solid var(--border-subtle); background: var(--bg-base);">
     <!-- Search -->
-    <div class="relative flex-1 max-w-xs">
+    <div class="search-wrapper">
       <input
         type="text"
         bind:value={searchQuery}
         placeholder="Search symbols..."
-        class="w-full rounded-md px-3 py-1.5 text-xs outline-none"
+        class="search-input"
         style="background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-subtle);"
       />
     </div>
 
     <!-- Direction filter -->
-    <div class="flex gap-1 rounded-lg p-0.5" style="background: var(--bg-surface);">
+    <div class="direction-filter-group" style="background: var(--bg-surface);">
       {#each ['all', 'bullish', 'bearish', 'neutral'] as dir}
         <button
           type="button"
           onclick={() => directionFilter = dir as typeof directionFilter}
-          class="rounded-md px-2.5 py-1 text-[11px] font-medium transition-all"
+          class="direction-button"
           style="background: {directionFilter === dir ? 'var(--bg-elevated)' : 'transparent'};
                  color: {directionFilter === dir ? 'var(--text-primary)' : 'var(--text-tertiary)'};"
         >
@@ -212,14 +212,14 @@
     </div>
 
     <!-- Min strength -->
-    <div class="flex items-center gap-2">
-      <span class="text-[11px]" style="color: var(--text-tertiary);">Min Str:</span>
-      <div class="flex gap-0.5">
+    <div class="strength-filter">
+      <span class="strength-label" style="color: var(--text-tertiary);">Min Str:</span>
+      <div class="strength-buttons">
         {#each [1, 2, 3, 4, 5] as s}
           <button
             type="button"
             onclick={() => minStrength = s}
-            class="w-5 h-5 rounded text-[10px] font-bold transition-all"
+            class="strength-button"
             style="background: {minStrength <= s ? strengthBg(s) : 'var(--bg-overlay)'};
                    color: {minStrength <= s ? 'white' : 'var(--text-disabled)'};"
           >
@@ -231,36 +231,36 @@
   </div>
 
   <!-- Scanner table -->
-  <div class="flex-1 overflow-auto min-h-0">
-    <table class="w-full text-xs" style="border-collapse: separate; border-spacing: 0;">
+  <div class="table-container">
+    <table class="scanner-table" style="border-collapse: separate; border-spacing: 0;">
       <!-- Table header -->
-      <thead class="sticky top-0 z-10">
+      <thead class="table-head">
         <tr style="background: var(--bg-base);">
-          <th class="text-left px-4 py-2.5 font-medium cursor-pointer select-none" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('symbol')}>
+          <th class="th-left th-sortable" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('symbol')}>
             Symbol{sortArrow('symbol')}
           </th>
-          <th class="text-right px-3 py-2.5 font-medium cursor-pointer select-none" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('price')}>
+          <th class="th-right th-sortable" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('price')}>
             Price{sortArrow('price')}
           </th>
-          <th class="text-right px-3 py-2.5 font-medium cursor-pointer select-none" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('change')}>
+          <th class="th-right th-sortable" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('change')}>
             Change{sortArrow('change')}
           </th>
-          <th class="text-right px-3 py-2.5 font-medium cursor-pointer select-none" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('volume')}>
+          <th class="th-right th-sortable" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('volume')}>
             Volume{sortArrow('volume')}
           </th>
-          <th class="text-right px-3 py-2.5 font-medium cursor-pointer select-none" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('rvol')}>
+          <th class="th-right th-sortable" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('rvol')}>
             RVol{sortArrow('rvol')}
           </th>
-          <th class="text-center px-3 py-2.5 font-medium" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);">
+          <th class="th-center" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);">
             Direction
           </th>
-          <th class="text-center px-3 py-2.5 font-medium cursor-pointer select-none" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('strength')}>
+          <th class="th-center th-sortable" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('strength')}>
             Strength{sortArrow('strength')}
           </th>
-          <th class="text-left px-3 py-2.5 font-medium" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);">
+          <th class="th-left-nosort" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);">
             Sector
           </th>
-          <th class="text-center px-3 py-2.5 font-medium" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);">
+          <th class="th-center" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);">
             Spark
           </th>
         </tr>
@@ -268,36 +268,36 @@
       <tbody>
         {#each filteredResults as result, i (result.id)}
           <tr
-            class="transition-colors cursor-pointer"
+            class="table-row"
             style="background: {i % 2 === 0 ? 'var(--bg-surface)' : 'transparent'}; border-bottom: 1px solid var(--border-subtle);"
           >
             <!-- Symbol + Name -->
-            <td class="px-4 py-2.5">
-              <div class="flex flex-col">
-                <span class="font-bold font-mono" style="color: var(--text-primary);">{result.symbol}</span>
-                <span class="text-[10px] truncate max-w-[140px]" style="color: var(--text-tertiary);">{result.name}</span>
+            <td class="td-symbol">
+              <div class="symbol-cell">
+                <span class="symbol-ticker" style="color: var(--text-primary);">{result.symbol}</span>
+                <span class="symbol-name" style="color: var(--text-tertiary);">{result.name}</span>
               </div>
             </td>
             <!-- Price -->
-            <td class="text-right px-3 py-2.5 font-mono" style="color: var(--text-primary);">
+            <td class="td-right td-mono" style="color: var(--text-primary);">
               ${result.price.toFixed(2)}
             </td>
             <!-- Change -->
-            <td class="text-right px-3 py-2.5 font-mono font-medium" style="color: {result.changePercent >= 0 ? 'var(--bullish)' : 'var(--bearish)'};">
+            <td class="td-right td-mono td-medium" style="color: {result.changePercent >= 0 ? 'var(--bullish)' : 'var(--bearish)'};">
               {result.changePercent >= 0 ? '+' : ''}{result.changePercent.toFixed(2)}%
             </td>
             <!-- Volume -->
-            <td class="text-right px-3 py-2.5 font-mono" style="color: var(--text-secondary);">
+            <td class="td-right td-mono" style="color: var(--text-secondary);">
               {formatVolume(result.volume)}
             </td>
             <!-- Relative Volume -->
-            <td class="text-right px-3 py-2.5 font-mono" style="color: {result.relativeVolume >= 2 ? 'var(--warning-bright)' : 'var(--text-secondary)'};">
+            <td class="td-right td-mono" style="color: {result.relativeVolume >= 2 ? 'var(--warning-bright)' : 'var(--text-secondary)'};">
               {result.relativeVolume.toFixed(1)}x
             </td>
             <!-- Direction -->
-            <td class="text-center px-3 py-2.5">
+            <td class="td-center">
               <span
-                class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase"
+                class="direction-badge"
                 style="background: {result.direction === 'bullish' ? 'var(--bullish-bg)' : result.direction === 'bearish' ? 'var(--bearish-bg)' : 'var(--neutral-bg)'};
                        color: {directionColor(result.direction)};
                        border: 1px solid {result.direction === 'bullish' ? 'oklch(0.45 0.12 155 / 0.3)' : result.direction === 'bearish' ? 'oklch(0.42 0.12 25 / 0.3)' : 'oklch(0.45 0.08 250 / 0.3)'};"
@@ -306,22 +306,22 @@
               </span>
             </td>
             <!-- Strength -->
-            <td class="text-center px-3 py-2.5">
-              <div class="flex items-center justify-center gap-0.5">
+            <td class="td-center">
+              <div class="strength-meter">
                 {#each Array(5) as _, si}
                   <div
-                    class="h-1.5 w-2.5 rounded-full"
+                    class="strength-pip"
                     style="background: {si < result.strength ? strengthBg(result.strength) : 'var(--bg-overlay)'};"
                   ></div>
                 {/each}
               </div>
             </td>
             <!-- Sector -->
-            <td class="text-left px-3 py-2.5 text-[10px]" style="color: var(--text-tertiary);">
+            <td class="td-sector" style="color: var(--text-tertiary);">
               {result.sector}
             </td>
             <!-- Sparkline -->
-            <td class="text-center px-3 py-2.5">
+            <td class="td-center">
               <SparkLine data={result.sparklineData} width={80} height={20} showLastPoint={true} />
             </td>
           </tr>
@@ -329,7 +329,7 @@
 
         {#if filteredResults.length === 0}
           <tr>
-            <td colspan="9" class="text-center py-12 text-sm" style="color: var(--text-tertiary);">
+            <td colspan="9" class="td-empty" style="color: var(--text-tertiary);">
               No results match current filters
             </td>
           </tr>
@@ -338,3 +338,300 @@
     </table>
   </div>
 </div>
+
+<style>
+  /* ---- Layout ---- */
+  .scanner-layout {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* ---- Header ---- */
+  .scanner-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-inline: 20px;
+    padding-block: 12px;
+    flex-shrink: 0;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .scanner-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+  }
+
+  .scanner-meta {
+    font-size: var(--text-xs);
+    font-family: var(--font-mono);
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 20px;
+  }
+
+  .live-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+  }
+
+  .live-label {
+    font-size: var(--text-xs);
+  }
+
+  /* ---- Presets bar ---- */
+  .presets-bar {
+    display: flex;
+    gap: 8px;
+    padding-inline: 20px;
+    padding-block: 12px;
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+
+  .preset-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: var(--radius-lg);
+    padding-inline: 12px;
+    padding-block: 8px;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 150ms;
+  }
+
+  .preset-icon {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  /* ---- Filters bar ---- */
+  .filters-bar {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-inline: 20px;
+    padding-block: 12px;
+    flex-shrink: 0;
+  }
+
+  .search-wrapper {
+    position: relative;
+    flex: 1;
+    max-width: 20rem;
+  }
+
+  .search-input {
+    width: 100%;
+    border-radius: var(--radius-md);
+    padding-inline: 12px;
+    padding-block: 6px;
+    font-size: var(--text-xs);
+    outline: none;
+  }
+
+  .direction-filter-group {
+    display: flex;
+    gap: 4px;
+    border-radius: var(--radius-lg);
+    padding: 2px;
+  }
+
+  .direction-button {
+    border-radius: var(--radius-md);
+    padding-inline: 10px;
+    padding-block: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    transition: all 150ms;
+  }
+
+  .strength-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .strength-label {
+    font-size: 11px;
+  }
+
+  .strength-buttons {
+    display: flex;
+    gap: 2px;
+  }
+
+  .strength-button {
+    width: 20px;
+    height: 20px;
+    border-radius: var(--radius-md);
+    font-size: 10px;
+    font-weight: 700;
+    transition: all 150ms;
+  }
+
+  /* ---- Scanner table ---- */
+  .table-container {
+    flex: 1;
+    overflow: auto;
+    min-height: 0;
+  }
+
+  .scanner-table {
+    width: 100%;
+    font-size: var(--text-xs);
+  }
+
+  .table-head {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  /* ---- Table header cells ---- */
+  .th-left,
+  .th-left-nosort {
+    text-align: left;
+    padding-inline: 12px;
+    padding-block: 10px;
+    font-weight: 500;
+  }
+
+  .th-left {
+    padding-left: 16px;
+  }
+
+  .th-right {
+    text-align: right;
+    padding-inline: 12px;
+    padding-block: 10px;
+    font-weight: 500;
+  }
+
+  .th-center {
+    text-align: center;
+    padding-inline: 12px;
+    padding-block: 10px;
+    font-weight: 500;
+  }
+
+  .th-sortable {
+    cursor: pointer;
+    user-select: none;
+  }
+
+  /* ---- Table body rows ---- */
+  .table-row {
+    transition: color 150ms, background-color 150ms;
+    cursor: pointer;
+  }
+
+  /* ---- Table body cells ---- */
+  .td-symbol {
+    padding-left: 16px;
+    padding-right: 12px;
+    padding-block: 10px;
+  }
+
+  .symbol-cell {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .symbol-ticker {
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .symbol-name {
+    font-size: 10px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 140px;
+  }
+
+  .td-right {
+    text-align: right;
+    padding-inline: 12px;
+    padding-block: 10px;
+  }
+
+  .td-center {
+    text-align: center;
+    padding-inline: 12px;
+    padding-block: 10px;
+  }
+
+  .td-mono {
+    font-family: var(--font-mono);
+  }
+
+  .td-medium {
+    font-weight: 500;
+  }
+
+  .td-sector {
+    text-align: left;
+    padding-inline: 12px;
+    padding-block: 10px;
+    font-size: 10px;
+  }
+
+  .td-empty {
+    text-align: center;
+    padding-block: 48px;
+    font-size: var(--text-sm);
+  }
+
+  /* ---- Direction badge ---- */
+  .direction-badge {
+    display: inline-flex;
+    align-items: center;
+    border-radius: var(--radius-full);
+    padding-inline: 8px;
+    padding-block: 2px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+
+  /* ---- Strength meter ---- */
+  .strength-meter {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+
+  .strength-pip {
+    height: 6px;
+    width: 10px;
+    border-radius: var(--radius-full);
+  }
+</style>

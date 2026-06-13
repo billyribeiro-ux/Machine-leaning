@@ -125,23 +125,19 @@
   const COLUMNS = ['Last', 'Chg', 'Bid', 'Ask', 'Vol', 'OI', 'IV', 'Delta'] as const;
 </script>
 
-<div class="panel flex flex-col overflow-hidden {className}">
+<div class="panel chain-wrapper {className}">
   <!-- Header with symbol -->
-  <div class="flex items-center gap-3 px-4 py-2 border-b border-[var(--border-subtle)]">
-    <span class="text-sm font-semibold text-[var(--text-primary)]">{symbol}</span>
-    <span class="text-xs text-[var(--text-tertiary)]">Options Chain</span>
+  <div class="chain-header">
+    <span class="chain-symbol">{symbol}</span>
+    <span class="chain-label">Options Chain</span>
   </div>
 
   <!-- Expiration tabs -->
-  <div class="flex items-center gap-1 px-3 py-2 border-b border-[var(--border-subtle)] overflow-x-auto scrollbar-hidden">
+  <div class="expiry-tabs">
     {#each expirations as exp}
       <button
         type="button"
-        class="px-3 py-1.5 rounded text-xs font-medium whitespace-nowrap transition-colors duration-100
-          {selectedExpiry === exp
-            ? 'bg-[var(--accent-bg)] text-[var(--accent-bright)] border border-[oklch(0.44_0.14_290/0.3)]'
-            : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-overlay)]'
-          }"
+        class="expiry-btn {selectedExpiry === exp ? 'expiry-btn--active' : ''}"
         onclick={() => (selectedExpiry = exp)}
       >
         {formatExpiry(exp)}
@@ -150,22 +146,22 @@
   </div>
 
   <!-- Column headers -->
-  <div class="grid chain-grid text-2xs font-medium text-[var(--text-tertiary)] uppercase tracking-wider border-b border-[var(--border-subtle)] px-1">
+  <div class="chain-grid col-headers">
     <!-- Call headers (reversed for right-alignment feel) -->
     {#each COLUMNS as col}
-      <div class="px-1.5 py-1.5 text-right">{col}</div>
+      <div class="col-header-cell">{col}</div>
     {/each}
     <!-- Strike center -->
-    <div class="px-2 py-1.5 text-center font-semibold text-[var(--text-secondary)]">Strike</div>
+    <div class="col-header-strike">Strike</div>
     <!-- Put headers -->
     {#each COLUMNS as col}
-      <div class="px-1.5 py-1.5 text-right">{col}</div>
+      <div class="col-header-cell">{col}</div>
     {/each}
   </div>
 
   <!-- Virtual-scrolled rows -->
   <div
-    class="flex-1 overflow-y-auto min-h-0"
+    class="chain-scroll"
     bind:this={scrollContainer}
     onscroll={handleScroll}
     bind:clientHeight={containerHeight}
@@ -179,82 +175,82 @@
           {@const callItm = call?.inTheMoney ?? false}
           {@const putItm = put?.inTheMoney ?? false}
           <div
-            class="grid chain-grid text-xs mono-nums hover:bg-[var(--hover-overlay)] transition-colors duration-75 border-b border-[oklch(0.16_0.01_260)]"
+            class="chain-grid chain-row mono-nums"
             style="height: {ROW_HEIGHT}px;"
           >
             <!-- Call side -->
             {#if call}
-              <div class="px-1.5 flex items-center justify-end {callItm ? 'bg-[oklch(0.15_0.04_155/0.4)]' : ''}">
-                <span class="text-[var(--text-primary)]">{call.last.toFixed(2)}</span>
+              <div class="data-cell {callItm ? 'itm-call' : ''}">
+                <span class="text-primary">{call.last.toFixed(2)}</span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {callItm ? 'bg-[oklch(0.15_0.04_155/0.4)]' : ''}">
-                <span class="{call.last > call.bid ? 'text-[var(--bullish)]' : 'text-[var(--bearish)]'}">
+              <div class="data-cell {callItm ? 'itm-call' : ''}">
+                <span class="{call.last > call.bid ? 'text-bullish' : 'text-bearish'}">
                   {call.last > 0 ? (call.last - call.bid > 0 ? '+' : '') + (call.last - call.bid).toFixed(2) : '0.00'}
                 </span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {callItm ? 'bg-[oklch(0.15_0.04_155/0.4)]' : ''}">
-                <span class="text-[var(--text-secondary)]">{call.bid.toFixed(2)}</span>
+              <div class="data-cell {callItm ? 'itm-call' : ''}">
+                <span class="text-secondary">{call.bid.toFixed(2)}</span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {callItm ? 'bg-[oklch(0.15_0.04_155/0.4)]' : ''}">
-                <span class="text-[var(--text-secondary)]">{call.ask.toFixed(2)}</span>
+              <div class="data-cell {callItm ? 'itm-call' : ''}">
+                <span class="text-secondary">{call.ask.toFixed(2)}</span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {callItm ? 'bg-[oklch(0.15_0.04_155/0.4)]' : ''}">
-                <span class="text-[var(--text-secondary)]">{call.volume.toLocaleString()}</span>
+              <div class="data-cell {callItm ? 'itm-call' : ''}">
+                <span class="text-secondary">{call.volume.toLocaleString()}</span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {callItm ? 'bg-[oklch(0.15_0.04_155/0.4)]' : ''}">
-                <span class="text-[var(--text-tertiary)]">{call.openInterest.toLocaleString()}</span>
+              <div class="data-cell {callItm ? 'itm-call' : ''}">
+                <span class="text-tertiary">{call.openInterest.toLocaleString()}</span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {callItm ? 'bg-[oklch(0.15_0.04_155/0.4)]' : ''}">
-                <span class="text-[var(--warning-dim)]">{formatIV(call.iv)}</span>
+              <div class="data-cell {callItm ? 'itm-call' : ''}">
+                <span class="text-warning">{formatIV(call.iv)}</span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {callItm ? 'bg-[oklch(0.15_0.04_155/0.4)]' : ''}">
-                <span class="text-[var(--neutral)]">{formatDelta(call.delta)}</span>
+              <div class="data-cell {callItm ? 'itm-call' : ''}">
+                <span class="text-neutral">{formatDelta(call.delta)}</span>
               </div>
             {:else}
               {#each { length: 8 } as _}
-                <div class="px-1.5 flex items-center justify-end">
-                  <span class="text-[var(--text-disabled)]">--</span>
+                <div class="data-cell">
+                  <span class="text-disabled">--</span>
                 </div>
               {/each}
             {/if}
 
             <!-- Strike center -->
-            <div class="px-2 flex items-center justify-center bg-[var(--bg-elevated)] border-x border-[var(--border-subtle)]">
-              <span class="font-semibold text-[var(--text-primary)] text-xs">{strike.toFixed(0)}</span>
+            <div class="strike-cell">
+              <span class="strike-value">{strike.toFixed(0)}</span>
             </div>
 
             <!-- Put side -->
             {#if put}
-              <div class="px-1.5 flex items-center justify-end {putItm ? 'bg-[oklch(0.15_0.04_25/0.4)]' : ''}">
-                <span class="text-[var(--text-primary)]">{put.last.toFixed(2)}</span>
+              <div class="data-cell {putItm ? 'itm-put' : ''}">
+                <span class="text-primary">{put.last.toFixed(2)}</span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {putItm ? 'bg-[oklch(0.15_0.04_25/0.4)]' : ''}">
-                <span class="{put.last > put.bid ? 'text-[var(--bullish)]' : 'text-[var(--bearish)]'}">
+              <div class="data-cell {putItm ? 'itm-put' : ''}">
+                <span class="{put.last > put.bid ? 'text-bullish' : 'text-bearish'}">
                   {put.last > 0 ? (put.last - put.bid > 0 ? '+' : '') + (put.last - put.bid).toFixed(2) : '0.00'}
                 </span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {putItm ? 'bg-[oklch(0.15_0.04_25/0.4)]' : ''}">
-                <span class="text-[var(--text-secondary)]">{put.bid.toFixed(2)}</span>
+              <div class="data-cell {putItm ? 'itm-put' : ''}">
+                <span class="text-secondary">{put.bid.toFixed(2)}</span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {putItm ? 'bg-[oklch(0.15_0.04_25/0.4)]' : ''}">
-                <span class="text-[var(--text-secondary)]">{put.ask.toFixed(2)}</span>
+              <div class="data-cell {putItm ? 'itm-put' : ''}">
+                <span class="text-secondary">{put.ask.toFixed(2)}</span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {putItm ? 'bg-[oklch(0.15_0.04_25/0.4)]' : ''}">
-                <span class="text-[var(--text-secondary)]">{put.volume.toLocaleString()}</span>
+              <div class="data-cell {putItm ? 'itm-put' : ''}">
+                <span class="text-secondary">{put.volume.toLocaleString()}</span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {putItm ? 'bg-[oklch(0.15_0.04_25/0.4)]' : ''}">
-                <span class="text-[var(--text-tertiary)]">{put.openInterest.toLocaleString()}</span>
+              <div class="data-cell {putItm ? 'itm-put' : ''}">
+                <span class="text-tertiary">{put.openInterest.toLocaleString()}</span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {putItm ? 'bg-[oklch(0.15_0.04_25/0.4)]' : ''}">
-                <span class="text-[var(--warning-dim)]">{formatIV(put.iv)}</span>
+              <div class="data-cell {putItm ? 'itm-put' : ''}">
+                <span class="text-warning">{formatIV(put.iv)}</span>
               </div>
-              <div class="px-1.5 flex items-center justify-end {putItm ? 'bg-[oklch(0.15_0.04_25/0.4)]' : ''}">
-                <span class="text-[var(--neutral)]">{formatDelta(put.delta)}</span>
+              <div class="data-cell {putItm ? 'itm-put' : ''}">
+                <span class="text-neutral">{formatDelta(put.delta)}</span>
               </div>
             {:else}
               {#each { length: 8 } as _}
-                <div class="px-1.5 flex items-center justify-end">
-                  <span class="text-[var(--text-disabled)]">--</span>
+                <div class="data-cell">
+                  <span class="text-disabled">--</span>
                 </div>
               {/each}
             {/if}
@@ -265,17 +261,209 @@
   </div>
 
   <!-- Footer -->
-  <div class="flex items-center justify-between px-4 py-1.5 border-t border-[var(--border-subtle)] text-2xs text-[var(--text-tertiary)]">
+  <div class="chain-footer">
     <span>{strikes.length} strikes</span>
     <span>Exp: {selectedExpiry}</span>
   </div>
 </div>
 
 <style>
+  /* ---- Layout ---- */
+  .chain-wrapper {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
   .chain-grid {
+    display: grid;
     grid-template-columns:
       repeat(8, minmax(48px, 1fr))  /* calls */
       64px                           /* strike */
       repeat(8, minmax(48px, 1fr)); /* puts */
+  }
+
+  /* ---- Header ---- */
+  .chain-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .chain-symbol {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .chain-label {
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+  }
+
+  /* ---- Expiration tabs ---- */
+  .expiry-tabs {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .expiry-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .expiry-btn {
+    padding: 6px 12px;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+    color: var(--text-secondary);
+    border: 1px solid transparent;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .expiry-btn:hover {
+    color: var(--text-primary);
+    background-color: var(--hover-overlay);
+  }
+
+  .expiry-btn--active {
+    background-color: var(--accent-bg);
+    color: var(--accent-bright);
+    border-color: oklch(0.44 0.14 290 / 0.3);
+  }
+
+  .expiry-btn--active:hover {
+    background-color: var(--accent-bg);
+    color: var(--accent-bright);
+  }
+
+  /* ---- Column headers ---- */
+  .col-headers {
+    font-size: var(--text-2xs);
+    font-weight: 500;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-left: 4px;
+    padding-right: 4px;
+  }
+
+  .col-header-cell {
+    padding: 6px;
+    text-align: right;
+  }
+
+  .col-header-strike {
+    padding: 6px 8px;
+    text-align: center;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  /* ---- Scroll container ---- */
+  .chain-scroll {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+
+  /* ---- Data rows ---- */
+  .chain-row {
+    font-size: var(--text-xs);
+    transition: background-color 75ms;
+    border-bottom: 1px solid oklch(0.16 0.01 260);
+  }
+
+  .chain-row:hover {
+    background-color: var(--hover-overlay);
+  }
+
+  .data-cell {
+    padding-left: 6px;
+    padding-right: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .itm-call {
+    background-color: oklch(0.15 0.04 155 / 0.4);
+  }
+
+  .itm-put {
+    background-color: oklch(0.15 0.04 25 / 0.4);
+  }
+
+  /* ---- Strike column ---- */
+  .strike-cell {
+    padding-left: 8px;
+    padding-right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-elevated);
+    border-left: 1px solid var(--border-subtle);
+    border-right: 1px solid var(--border-subtle);
+  }
+
+  .strike-value {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: var(--text-xs);
+  }
+
+  /* ---- Text color utilities ---- */
+  .text-primary {
+    color: var(--text-primary);
+  }
+
+  .text-secondary {
+    color: var(--text-secondary);
+  }
+
+  .text-tertiary {
+    color: var(--text-tertiary);
+  }
+
+  .text-disabled {
+    color: var(--text-disabled);
+  }
+
+  .text-bullish {
+    color: var(--bullish);
+  }
+
+  .text-bearish {
+    color: var(--bearish);
+  }
+
+  .text-warning {
+    color: var(--warning-dim);
+  }
+
+  .text-neutral {
+    color: var(--neutral);
+  }
+
+  /* ---- Footer ---- */
+  .chain-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 16px;
+    border-top: 1px solid var(--border-subtle);
+    font-size: var(--text-2xs);
+    color: var(--text-tertiary);
   }
 </style>

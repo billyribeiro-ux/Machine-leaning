@@ -25,9 +25,7 @@
   let isHovered = $state(false);
   let startPos = $state(0);
 
-  let cursorClass = $derived(
-    orientation === 'vertical' ? 'cursor-col-resize' : 'cursor-row-resize'
-  );
+  let isVertical = $derived(orientation === 'vertical');
 
   let lineActive = $derived(isDragging || isHovered);
 
@@ -58,12 +56,9 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-  class="
-    relative flex items-center justify-center select-none
-    {orientation === 'vertical' ? 'w-[4px] h-full flex-col' : 'h-[4px] w-full flex-row'}
-    {cursorClass}
-    {className}
-  "
+  class="divider {className}"
+  class:vertical={isVertical}
+  class:horizontal={!isVertical}
   onmousedown={handleMouseDown}
   onmouseenter={() => { isHovered = true; }}
   onmouseleave={() => { isHovered = false; }}
@@ -73,37 +68,99 @@
 >
   <!-- Visible 1px line -->
   <div
-    class="
-      transition-colors duration-150
-      {orientation === 'vertical'
-        ? 'w-px h-full'
-        : 'h-px w-full'}
-      {lineActive
-        ? 'bg-[oklch(0.50_0_0)]'
-        : 'bg-[oklch(0.25_0_0)]'}
-    "
+    class="line"
+    class:line-vertical={isVertical}
+    class:line-horizontal={!isVertical}
+    class:line-active={lineActive}
+    class:line-inactive={!lineActive}
   ></div>
 
   <!-- Drag indicator dots (shown on hover/drag) -->
   {#if lineActive}
     <div
-      class="
-        absolute flex gap-[2px]
-        {orientation === 'vertical'
-          ? 'flex-col top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'
-          : 'flex-row top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}
-      "
+      class="dots"
+      class:dots-vertical={isVertical}
+      class:dots-horizontal={!isVertical}
     >
-      <span class="block w-[3px] h-[3px] rounded-full bg-[oklch(0.50_0_0)]"></span>
-      <span class="block w-[3px] h-[3px] rounded-full bg-[oklch(0.50_0_0)]"></span>
-      <span class="block w-[3px] h-[3px] rounded-full bg-[oklch(0.50_0_0)]"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
+      <span class="dot"></span>
     </div>
   {/if}
 </div>
 
 <style>
-  div[role="separator"]:focus-visible {
+  .divider {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+  }
+
+  .divider.vertical {
+    width: 4px;
+    height: 100%;
+    flex-direction: column;
+    cursor: col-resize;
+  }
+
+  .divider.horizontal {
+    height: 4px;
+    width: 100%;
+    flex-direction: row;
+    cursor: row-resize;
+  }
+
+  .divider:focus-visible {
     outline: 2px solid var(--focus-ring, oklch(0.55 0.15 250));
     outline-offset: -1px;
+  }
+
+  .line {
+    transition: background-color 150ms;
+  }
+
+  .line-vertical {
+    width: 1px;
+    height: 100%;
+  }
+
+  .line-horizontal {
+    height: 1px;
+    width: 100%;
+  }
+
+  .line-active {
+    background-color: oklch(0.50 0 0);
+  }
+
+  .line-inactive {
+    background-color: oklch(0.25 0 0);
+  }
+
+  .dots {
+    position: absolute;
+    display: flex;
+    gap: 2px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  .dots-vertical {
+    flex-direction: column;
+  }
+
+  .dots-horizontal {
+    flex-direction: row;
+  }
+
+  .dot {
+    display: block;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background-color: oklch(0.50 0 0);
   }
 </style>

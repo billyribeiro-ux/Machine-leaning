@@ -18,12 +18,6 @@
 	let flashClass = $state('');
 	let flashTimeout: ReturnType<typeof setTimeout> | undefined;
 
-	const sizeClasses: Record<string, string> = {
-		sm: 'text-xs',
-		md: 'text-sm',
-		lg: 'text-base'
-	};
-
 	let formatted = $derived.by(() => {
 		if (value == null || isNaN(value)) return '$--';
 		return '$' + value.toFixed(decimals);
@@ -54,13 +48,32 @@
 </script>
 
 <span
-	class="inline-block text-right font-mono tabular-nums {sizeClasses[size]} {flashClass} {className}"
+	class="price-cell size-{size} {flashClass} {className}"
 	style="font-variant-numeric: tabular-nums;"
 >
 	{formatted}
 </span>
 
 <style>
+	.price-cell {
+		display: inline-block;
+		text-align: right;
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.size-sm {
+		font-size: var(--text-xs);
+	}
+
+	.size-md {
+		font-size: var(--text-sm);
+	}
+
+	.size-lg {
+		font-size: var(--text-base, 1rem);
+	}
+
 	.flash-up {
 		animation: flash-green 400ms ease-out;
 	}

@@ -1,11 +1,10 @@
 import { sveltekit } from '@sveltejs/kit/vite';
-import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
 const isTauri = !!process.env.TAURI_PLATFORM;
 
 export default defineConfig({
-	plugins: [tailwindcss(), sveltekit()],
+	plugins: [sveltekit()],
 
 	// Tauri expects a fixed port during dev
 	server: {

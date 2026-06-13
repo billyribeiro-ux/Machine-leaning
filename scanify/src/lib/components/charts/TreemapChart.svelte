@@ -204,16 +204,16 @@
 	function truncateText(text: string, maxWidth: number): string {
 		const approxChars = Math.floor(maxWidth / 7);
 		if (text.length <= approxChars) return text;
-		return text.slice(0, Math.max(1, approxChars - 1)) + '\u2026';
+		return text.slice(0, Math.max(1, approxChars - 1)) + '…';
 	}
 </script>
 
-<div class="relative w-full" bind:this={containerEl}>
+<div class="treemap-container" bind:this={containerEl}>
 	<svg
 		width={containerWidth}
 		{height}
 		viewBox="0 0 {containerWidth} {height}"
-		class="select-none"
+		class="chart-svg"
 		role="img"
 		aria-label="Treemap Chart"
 	>
@@ -228,7 +228,7 @@
 				stroke="oklch(0.12 0 0)"
 				stroke-width="1"
 				rx="3"
-				class="cursor-pointer transition-[filter] duration-100"
+				class="cell"
 				opacity={hoveredNode && hoveredNode !== rect.node ? 0.75 : 1}
 				onmouseenter={(e) => handleHover(e, rect.node)}
 				onmousemove={(e) => handleHover(e, rect.node)}
@@ -241,7 +241,7 @@
 					<text
 						x={rect.x + 4}
 						y={rect.y + 11}
-						class="text-[9px] font-semibold fill-[oklch(0.70_0_0)] pointer-events-none"
+						class="cell-text parent-label"
 					>
 						{truncateText(rect.node.name, rect.w - 8)}
 					</text>
@@ -258,7 +258,7 @@
 						stroke="oklch(0.15 0 0)"
 						stroke-width="0.5"
 						rx="2"
-						class="cursor-pointer transition-[filter] duration-100"
+						class="cell"
 						opacity={hoveredNode && hoveredNode !== child.node ? 0.75 : 1}
 						onmouseenter={(e) => handleHover(e, child.node)}
 						onmousemove={(e) => handleHover(e, child.node)}
@@ -272,7 +272,7 @@
 							text-anchor="middle"
 							dominant-baseline="middle"
 							fill={getTextColor(child.node.change)}
-							class="text-[10px] font-bold pointer-events-none"
+							class="cell-text child-label"
 						>
 							{truncateText(child.node.name, child.w - 6)}
 						</text>
@@ -284,7 +284,7 @@
 							text-anchor="middle"
 							dominant-baseline="middle"
 							fill={getTextColor(child.node.change)}
-							class="text-[9px] font-mono pointer-events-none"
+							class="cell-text change-label"
 							opacity="0.8"
 						>
 							{child.node.change >= 0 ? '+' : ''}{child.node.change.toFixed(2)}%
@@ -300,7 +300,8 @@
 						text-anchor="middle"
 						dominant-baseline="middle"
 						fill={getTextColor(rect.node.change)}
-						class="text-[11px] font-bold pointer-events-none"
+						class="cell-text child-label"
+						style="font-size: 11px;"
 					>
 						{truncateText(rect.node.name, rect.w - 6)}
 					</text>
@@ -312,7 +313,7 @@
 						text-anchor="middle"
 						dominant-baseline="middle"
 						fill={getTextColor(rect.node.change)}
-						class="text-[10px] font-mono pointer-events-none"
+						class="cell-text change-label"
 						opacity="0.8"
 					>
 						{rect.node.change >= 0 ? '+' : ''}{rect.node.change.toFixed(2)}%
@@ -325,27 +326,27 @@
 	<!-- Tooltip -->
 	{#if hoveredNode}
 		<div
-			class="pointer-events-none absolute z-50 rounded-lg border border-[oklch(0.25_0_0)]
-				bg-[oklch(0.14_0_0/0.94)] px-3 py-2 shadow-xl backdrop-blur-sm"
+			class="tooltip"
 			style="left: {Math.min(mouseX + 14, containerWidth - 160)}px;
 				top: {Math.max(mouseY - 55, 4)}px;"
 		>
-			<div class="text-xs font-semibold text-[oklch(0.85_0_0)] mb-1">
+			<div class="tooltip-name">
 				{hoveredNode.name}
 			</div>
-			<div class="flex flex-col gap-0.5 text-[10px] font-mono">
-				<div class="flex items-center gap-3">
-					<span class="text-[oklch(0.50_0_0)]">Value</span>
-					<span class="text-[oklch(0.80_0_0)] ml-auto">
+			<div class="tooltip-details">
+				<div class="tooltip-row">
+					<span class="tooltip-label">Value</span>
+					<span class="tooltip-value">
 						{hoveredNode.value.toLocaleString()}
 					</span>
 				</div>
-				<div class="flex items-center gap-3">
-					<span class="text-[oklch(0.50_0_0)]">Change</span>
+				<div class="tooltip-row">
+					<span class="tooltip-label">Change</span>
 					<span
-						class="ml-auto {hoveredNode.change >= 0
-							? 'text-[oklch(0.75_0.15_145)]'
-							: 'text-[oklch(0.70_0.16_25)]'}"
+						class="tooltip-value"
+						style="color: {hoveredNode.change >= 0
+							? 'oklch(0.75 0.15 145)'
+							: 'oklch(0.70 0.16 25)'}"
 					>
 						{hoveredNode.change >= 0 ? '+' : ''}{hoveredNode.change.toFixed(2)}%
 					</span>
@@ -354,3 +355,82 @@
 		</div>
 	{/if}
 </div>
+
+<style>
+	.treemap-container {
+		position: relative;
+		width: 100%;
+	}
+
+	.chart-svg {
+		user-select: none;
+	}
+
+	.cell {
+		cursor: pointer;
+		transition: filter 100ms;
+	}
+
+	.cell-text {
+		pointer-events: none;
+	}
+
+	.parent-label {
+		font-size: 9px;
+		font-weight: 600;
+		fill: oklch(0.70 0 0);
+	}
+
+	.child-label {
+		font-size: 10px;
+		font-weight: 700;
+	}
+
+	.change-label {
+		font-size: 9px;
+		font-family: var(--font-mono);
+	}
+
+	.tooltip {
+		pointer-events: none;
+		position: absolute;
+		z-index: 50;
+		border-radius: var(--radius-lg, 8px);
+		border: 1px solid oklch(0.25 0 0);
+		background: oklch(0.14 0 0 / 0.94);
+		padding-inline: 12px;
+		padding-block: 8px;
+		box-shadow: 0 20px 25px -5px oklch(0 0 0 / 0.25);
+		backdrop-filter: blur(4px);
+	}
+
+	.tooltip-name {
+		font-size: 12px;
+		font-weight: 600;
+		color: oklch(0.85 0 0);
+		margin-bottom: 4px;
+	}
+
+	.tooltip-details {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		font-size: 10px;
+		font-family: var(--font-mono);
+	}
+
+	.tooltip-row {
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.tooltip-label {
+		color: oklch(0.50 0 0);
+	}
+
+	.tooltip-value {
+		color: oklch(0.80 0 0);
+		margin-left: auto;
+	}
+</style>

@@ -56,33 +56,33 @@
   }
 </script>
 
-<div class="panel flex flex-col gap-3 p-4 {className}">
-  <div class="flex items-center justify-between">
-    <span class="text-sm font-semibold text-[var(--text-primary)]">Institutional Flow Heatmap</span>
-    <div class="flex items-center gap-2 text-2xs text-[var(--text-tertiary)]">
-      <span class="flex items-center gap-1">
-        <span class="w-3 h-3 rounded-xs" style="background-color: oklch(0.30 0.14 155);"></span> Inflow
+<div class="panel heatmap-wrapper {className}">
+  <div class="header">
+    <span class="header-title">Institutional Flow Heatmap</span>
+    <div class="legend">
+      <span class="legend-item">
+        <span class="legend-swatch legend-inflow"></span> Inflow
       </span>
-      <span class="flex items-center gap-1">
-        <span class="w-3 h-3 rounded-xs" style="background-color: oklch(0.28 0.14 25);"></span> Outflow
+      <span class="legend-item">
+        <span class="legend-swatch legend-outflow"></span> Outflow
       </span>
     </div>
   </div>
 
-  <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
+  <div class="flow-grid">
     {#each sortedData as entry (entry.sector)}
       <div
-        class="relative rounded-md px-3 py-4 flex flex-col items-center justify-center gap-1 transition-all duration-200 hover:scale-[1.02] cursor-default"
+        class="flow-cell"
         style="background-color: {cellColor(entry.flow)};"
       >
         <span
-          class="text-xs font-semibold text-center truncate w-full"
+          class="cell-sector"
           style="color: {textColor(entry.flow)};"
         >
           {entry.sector}
         </span>
         <span
-          class="mono-nums text-sm font-bold"
+          class="cell-value mono-nums"
           style="color: {textColor(entry.flow)};"
         >
           {formatFlow(entry.flow)}
@@ -92,8 +92,116 @@
   </div>
 
   {#if data.length === 0}
-    <div class="flex items-center justify-center h-32 text-sm text-[var(--text-tertiary)]">
+    <div class="empty-state">
       No institutional flow data available
     </div>
   {/if}
 </div>
+
+<style>
+  .heatmap-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .header-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: var(--text-2xs);
+    color: var(--text-tertiary);
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .legend-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: var(--radius-xs);
+  }
+
+  .legend-inflow {
+    background-color: oklch(0.30 0.14 155);
+  }
+
+  .legend-outflow {
+    background-color: oklch(0.28 0.14 25);
+  }
+
+  .flow-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  @media (min-width: 640px) {
+    .flow-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .flow-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .flow-cell {
+    position: relative;
+    border-radius: var(--radius-md);
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    transition: all 200ms;
+    cursor: default;
+  }
+
+  .flow-cell:hover {
+    transform: scale(1.02);
+  }
+
+  .cell-sector {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+  }
+
+  .cell-value {
+    font-size: var(--text-sm);
+    font-weight: 700;
+  }
+
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 128px;
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+  }
+</style>

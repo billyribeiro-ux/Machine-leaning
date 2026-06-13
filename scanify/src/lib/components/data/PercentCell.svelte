@@ -13,16 +13,10 @@
 		class: className = ''
 	}: Props = $props();
 
-	const sizeClasses: Record<string, string> = {
-		sm: 'text-xs',
-		md: 'text-sm',
-		lg: 'text-base'
-	};
-
-	let colorClass = $derived.by(() => {
-		if (value > 0) return 'text-[oklch(0.72_0.14_145)]';
-		if (value < 0) return 'text-[oklch(0.72_0.16_25)]';
-		return 'text-[oklch(0.60_0_0)]';
+	let colorStyle = $derived.by(() => {
+		if (value > 0) return 'color: oklch(0.72 0.14 145);';
+		if (value < 0) return 'color: oklch(0.72 0.16 25);';
+		return 'color: oklch(0.60 0 0);';
 	});
 
 	let formatted = $derived.by(() => {
@@ -36,8 +30,29 @@
 </script>
 
 <span
-	class="inline-block text-right font-mono tabular-nums {sizeClasses[size]} {colorClass} {className}"
-	style="font-variant-numeric: tabular-nums;"
+	class="percent-cell size-{size} {className}"
+	style="{colorStyle} font-variant-numeric: tabular-nums;"
 >
 	{formatted}
 </span>
+
+<style>
+	.percent-cell {
+		display: inline-block;
+		text-align: right;
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.size-sm {
+		font-size: var(--text-xs);
+	}
+
+	.size-md {
+		font-size: var(--text-sm);
+	}
+
+	.size-lg {
+		font-size: var(--text-base, 1rem);
+	}
+</style>

@@ -33,15 +33,15 @@
 	}
 
 	function dotColor(direction: string): string {
-		if (direction === 'bullish') return 'bg-[var(--bullish)]';
-		if (direction === 'bearish') return 'bg-[var(--bearish)]';
-		return 'bg-[var(--neutral)]';
+		if (direction === 'bullish') return 'dot-bullish';
+		if (direction === 'bearish') return 'dot-bearish';
+		return 'dot-neutral';
 	}
 
 	function lineColor(direction: string): string {
-		if (direction === 'bullish') return 'bg-[var(--bullish-dim)]';
-		if (direction === 'bearish') return 'bg-[var(--bearish-dim)]';
-		return 'bg-[var(--neutral-dim)]';
+		if (direction === 'bullish') return 'line-bullish';
+		if (direction === 'bearish') return 'line-bearish';
+		return 'line-neutral';
 	}
 
 	function badgeClass(direction: string): string {
@@ -55,52 +55,188 @@
 	}
 </script>
 
-<div class="flex flex-col {className}" role="list" aria-label="Signal timeline">
+<div class="timeline-container {className}" role="list" aria-label="Signal timeline">
 	{#each sorted as signal, i (signal.time + signal.name)}
-		<div class="relative flex gap-3" role="listitem">
+		<div class="timeline-item" role="listitem">
 			<!-- Timeline line + dot -->
-			<div class="flex flex-col items-center">
+			<div class="timeline-track">
 				<!-- Dot -->
-				<div class="relative z-10 mt-1 h-2.5 w-2.5 shrink-0 rounded-full {dotColor(signal.direction)}">
+				<div class="timeline-dot {dotColor(signal.direction)}">
 					{#if i === 0}
-						<div class="absolute inset-0 rounded-full {dotColor(signal.direction)} signal-ping opacity-40"></div>
+						<div class="timeline-ping {dotColor(signal.direction)} signal-ping"></div>
 					{/if}
 				</div>
 				<!-- Connecting line -->
 				{#if i < sorted.length - 1}
-					<div class="w-px flex-1 min-h-6 {lineColor(signal.direction)}"></div>
+					<div class="timeline-line {lineColor(signal.direction)}"></div>
 				{/if}
 			</div>
 
 			<!-- Content -->
-			<div class="flex-1 pb-4 min-w-0">
-				<div class="flex items-center gap-2 flex-wrap">
-					<span class="text-sm font-medium text-[var(--text-primary)]">{signal.name}</span>
-					<span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium leading-none {badgeClass(signal.direction)}">
+			<div class="timeline-content">
+				<div class="signal-header">
+					<span class="signal-name">{signal.name}</span>
+					<span class="signal-badge {badgeClass(signal.direction)}">
 						{signal.direction}
 					</span>
 				</div>
 
-				<div class="mt-1 flex items-center gap-3">
+				<div class="signal-meta">
 					<!-- Strength indicator -->
-					<div class="flex items-center gap-0.5" title="Strength: {signal.strength}/5">
+					<div class="strength-bar" title="Strength: {signal.strength}/5">
 						{#each strengthDots(signal.strength) as _, idx}
 							<div
-								class="h-1 w-3 rounded-full transition-colors {idx < signal.strength ? `strength-${Math.min(signal.strength, 5) as SignalStrength}` : 'bg-[var(--bg-overlay)]'}"
+								class="strength-dot {idx < signal.strength ? `strength-${Math.min(signal.strength, 5) as SignalStrength}` : 'strength-empty'}"
 							></div>
 						{/each}
 					</div>
 
 					<!-- Timestamp -->
-					<span class="text-2xs text-[var(--text-tertiary)] mono-nums">
+					<span class="signal-timestamp mono-nums">
 						{formatTimestamp(signal.time)}
 					</span>
 				</div>
 			</div>
 		</div>
 	{:else}
-		<div class="py-4 text-center text-sm text-[var(--text-tertiary)]">
+		<div class="timeline-empty">
 			No signals recorded
 		</div>
 	{/each}
 </div>
+
+<style>
+	.timeline-container {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.timeline-item {
+		position: relative;
+		display: flex;
+		gap: 12px;
+	}
+
+	.timeline-track {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.timeline-dot {
+		position: relative;
+		z-index: 10;
+		margin-top: 4px;
+		height: 10px;
+		width: 10px;
+		flex-shrink: 0;
+		border-radius: var(--radius-full);
+	}
+
+	.timeline-ping {
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		border-radius: var(--radius-full);
+		opacity: 0.4;
+	}
+
+	.timeline-line {
+		width: 1px;
+		flex: 1;
+		min-height: 24px;
+	}
+
+	.timeline-content {
+		flex: 1;
+		padding-bottom: 16px;
+		min-width: 0;
+	}
+
+	.signal-header {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		flex-wrap: wrap;
+	}
+
+	.signal-name {
+		font-size: var(--text-sm);
+		font-weight: 500;
+		color: var(--text-primary);
+	}
+
+	.signal-badge {
+		display: inline-flex;
+		align-items: center;
+		border-radius: var(--radius-full);
+		padding: 2px 8px;
+		font-size: 10px;
+		font-weight: 500;
+		line-height: 1;
+	}
+
+	.signal-meta {
+		margin-top: 4px;
+		display: flex;
+		align-items: center;
+		gap: 12px;
+	}
+
+	.strength-bar {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+	}
+
+	.strength-dot {
+		height: 4px;
+		width: 12px;
+		border-radius: var(--radius-full);
+		transition: color 150ms, background-color 150ms;
+	}
+
+	.strength-empty {
+		background-color: var(--bg-overlay);
+	}
+
+	.signal-timestamp {
+		font-size: var(--text-2xs);
+		color: var(--text-tertiary);
+	}
+
+	.timeline-empty {
+		padding: 16px 0;
+		text-align: center;
+		font-size: var(--text-sm);
+		color: var(--text-tertiary);
+	}
+
+	/* Direction-specific dot colors */
+	.dot-bullish {
+		background-color: var(--bullish);
+	}
+
+	.dot-bearish {
+		background-color: var(--bearish);
+	}
+
+	.dot-neutral {
+		background-color: var(--neutral);
+	}
+
+	/* Direction-specific line colors */
+	.line-bullish {
+		background-color: var(--bullish-dim);
+	}
+
+	.line-bearish {
+		background-color: var(--bearish-dim);
+	}
+
+	.line-neutral {
+		background-color: var(--neutral-dim);
+	}
+</style>
