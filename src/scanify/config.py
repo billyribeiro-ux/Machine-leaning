@@ -151,6 +151,10 @@ class PremiumSellConfig:
     min_credit: float = 0.50
     target_credit_pct: float = 0.30  # 30% of spread width
     min_prob_otm: float = 0.80
+    # Max distance (points) a chain quote may sit from the target strike
+    # before it is rejected. Defaults to 3x the standard 5-pt interval so
+    # wide/illiquid chains still resolve a usable strike.
+    max_strike_distance: float = 15.0
 
     # Exit management
     close_at_profit_pct: float = 0.50  # 50% of max profit

@@ -1,41 +1,47 @@
 # Scanify - Trading Scanner Platform
 # Core Dependencies
+#
+# Version floors set to the latest releases on PyPI as of 2026-06-12.
+# (verified against the PyPI JSON API — upload dates noted inline)
 
 # ML/Data Science
-torch>=2.0.0
-numpy>=1.24.0
-pandas>=2.0.0
-scipy>=1.11.0
-scikit-learn>=1.3.0
-xgboost>=2.0.0
-lightgbm>=4.0.0
+torch>=2.12.0            # 2026-05-13
+numpy>=2.4.6             # 2026-05-18  (NumPy 2.x)
+pandas>=3.0.3            # 2026-05-11  (pandas 3.x)
+scipy>=1.17.1            # 2026-02-23
+scikit-learn>=1.9.0      # 2026-06-02
+xgboost>=3.2.0           # 2026-02-10
+lightgbm>=4.6.0          # 2025-02-15
 
 # API Framework
-fastapi>=0.100.0
-uvicorn>=0.23.0
-pydantic>=2.0.0
-python-jose[cryptography]>=3.3.0
-websockets>=12.0
-psutil>=5.9.0
+fastapi>=0.136.3         # 2026-05-23
+uvicorn>=0.49.0          # 2026-06-03
+pydantic>=2.13.4         # 2026-05-06
+python-jose[cryptography]>=3.5.0   # 2025-05-28
+websockets>=16.0         # 2026-01-10
+psutil>=7.2.2            # 2026-01-28
+
+# HTTP / Networking (requests + cryptography are used by the
+# FMP/EDGAR adapters and the encrypted credential store)
+requests>=2.34.2         # 2026-05-14
+cryptography>=49.0.0     # 2026-06-12
+httpx>=0.28.1            # 2024-12-06
+aiohttp>=3.14.1          # 2026-06-07
+asyncio-throttle>=1.0.2  # 2021-04-07
 
 # Terminal UI
-rich>=13.0.0
-
-# Async
-aiohttp>=3.8.0
-asyncio-throttle>=1.0.0
+rich>=15.0.0             # 2026-04-12
 
 # Testing
-pytest>=7.4.0
-pytest-asyncio>=0.21.0
-pytest-cov>=4.1.0
+pytest>=9.0.3            # 2026-04-07
+pytest-asyncio>=1.4.0    # 2026-05-26
+pytest-cov>=7.1.0        # 2026-03-21
 
 # Code Quality
-black>=23.0.0
-isort>=5.12.0
-mypy>=1.5.0
-ruff>=0.0.290
+black>=26.5.1            # 2026-05-18
+isort>=8.0.1             # 2026-02-28
+mypy>=2.1.0              # 2026-05-11
+ruff>=0.15.17            # 2026-06-11
 
 # Utilities
-python-dotenv>=1.0.0
-httpx>=0.24.0
+python-dotenv>=1.2.2     # 2026-03-01

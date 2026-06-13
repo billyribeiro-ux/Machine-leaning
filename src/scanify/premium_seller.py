@@ -512,13 +512,15 @@ class PremiumSellingScanner:
 
         # Find nearest available chain quotes
         short_quote = self._find_nearest_quote(
-            chain, target_short_strike, OptionType.PUT
+            chain, target_short_strike, OptionType.PUT,
+            self.config.premium_sell.max_strike_distance,
         )
         if short_quote is None:
             return None
 
         long_quote = self._find_nearest_quote(
-            chain, target_long_strike, OptionType.PUT
+            chain, target_long_strike, OptionType.PUT,
+            self.config.premium_sell.max_strike_distance,
         )
         if long_quote is None:
             return None
@@ -662,13 +664,15 @@ class PremiumSellingScanner:
 
         # Find nearest available chain quotes
         short_quote = self._find_nearest_quote(
-            chain, target_short_strike, OptionType.CALL
+            chain, target_short_strike, OptionType.CALL,
+            self.config.premium_sell.max_strike_distance,
         )
         if short_quote is None:
             return None
 
         long_quote = self._find_nearest_quote(
-            chain, target_long_strike, OptionType.CALL
+            chain, target_long_strike, OptionType.CALL,
+            self.config.premium_sell.max_strike_distance,
         )
         if long_quote is None:
             return None
@@ -1063,6 +1067,7 @@ class PremiumSellingScanner:
         chain: OptionsChain,
         target_strike: float,
         option_type: OptionType,
+        max_distance: float = 15.0,
     ) -> Optional[OptionQuote]:
         """Find the option quote with the nearest strike to *target_strike*.
 
@@ -1096,8 +1101,7 @@ class PremiumSellingScanner:
                 best_quote = quote
 
         # Sanity: reject quotes that are unreasonably far from target.
-        # Allow up to 2x the standard strike interval (5 pts -> 10 pts).
-        if best_quote is not None and best_distance > 10.0:
+        if best_quote is not None and best_distance > max_distance:
             return None
 
         return best_quote
