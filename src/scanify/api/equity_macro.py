@@ -1,6 +1,8 @@
 """
 SCANIFY Equity Macro API — Cross-asset context, VIX, vol regime.
 
+Uses Financial Modeling Prep (FMP) as the primary equity/macro data vendor.
+
 Endpoints:
     GET  /api/equity/macro/vix           VIX family data (VIX, VIX1D, VIX9D)
     GET  /api/equity/macro/vol-regime    Volatility regime classification
@@ -74,9 +76,9 @@ class MacroSnapshotResponse(BaseModel):
 @router.get("/vix", response_model=VIXResponse)
 async def vix_data(request: Request):
     """VIX family data: VIX (30d), VIX1D (1d), VIX9D (9d)."""
-    yahoo = request.app.state.yahoo
+    fmp = request.app.state.fmp
     try:
-        vix = yahoo.fetch_vix_data()
+        vix = fmp.fetch_vix_data()
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"VIX fetch failed: {exc}")
 
@@ -100,11 +102,11 @@ async def vix_data(request: Request):
 @router.get("/vol-regime", response_model=VolRegimeResponse)
 async def vol_regime(request: Request):
     """Volatility regime classification from VIX1D level."""
-    yahoo = request.app.state.yahoo
+    fmp = request.app.state.fmp
     analyzer = request.app.state.vix1d_analyzer
 
     try:
-        vix = yahoo.fetch_vix_data()
+        vix = fmp.fetch_vix_data()
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"VIX fetch failed: {exc}")
 
@@ -122,9 +124,9 @@ async def vol_regime(request: Request):
 @router.get("/cross-asset", response_model=CrossAssetResponse)
 async def cross_asset(request: Request):
     """Cross-asset context: 10Y Treasury yield and US Dollar Index."""
-    yahoo = request.app.state.yahoo
+    fmp = request.app.state.fmp
     try:
-        data = yahoo.fetch_cross_asset_data()
+        data = fmp.fetch_cross_asset_data()
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Cross-asset fetch failed: {exc}")
 
@@ -156,12 +158,12 @@ async def risk_premium(request: Request):
 
     VIX1D systematically overstates realized 1-day vol by ~0.16 pts.
     """
-    yahoo = request.app.state.yahoo
+    fmp = request.app.state.fmp
     analyzer = request.app.state.vix1d_analyzer
 
     try:
-        spot = yahoo.fetch_spx_price()
-        vix = yahoo.fetch_vix_data()
+        spot = fmp.get_spx_price()
+        vix = fmp.fetch_vix_data()
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Data fetch failed: {exc}")
 
@@ -181,12 +183,12 @@ async def risk_premium(request: Request):
 @router.get("/snapshot", response_model=MacroSnapshotResponse)
 async def macro_snapshot(request: Request):
     """Combined macro context: VIX, yields, DXY, vol regime, risk premium."""
-    yahoo = request.app.state.yahoo
+    fmp = request.app.state.fmp
     analyzer = request.app.state.vix1d_analyzer
 
     try:
-        vix = yahoo.fetch_vix_data()
-        cross = yahoo.fetch_cross_asset_data()
+        vix = fmp.fetch_vix_data()
+        cross = fmp.fetch_cross_asset_data()
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Macro snapshot failed: {exc}")
 

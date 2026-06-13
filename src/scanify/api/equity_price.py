@@ -1,9 +1,11 @@
 """
 SCANIFY Equity Price API — SPX price data, intraday bars, technicals.
 
+Uses Financial Modeling Prep (FMP) as the primary equity data vendor.
+
 Endpoints:
     GET  /api/equity/price/spx           Current SPX level
-    GET  /api/equity/price/bars          Intraday 1-min price bars
+    GET  /api/equity/price/bars          Intraday price bars
     GET  /api/equity/price/prior         Prior session reference levels
     GET  /api/equity/price/realized-vol  Realized volatility (annualized)
     GET  /api/equity/price/vwap          Session VWAP from intraday bars
@@ -71,9 +73,9 @@ class PriceSnapshotResponse(BaseModel):
 @router.get("/spx", response_model=SPXPriceResponse)
 async def spx_price(request: Request):
     """Current SPX cash index level."""
-    yahoo = request.app.state.yahoo
+    fmp = request.app.state.fmp
     try:
-        price = yahoo.fetch_spx_price()
+        price = fmp.get_spx_price()
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Price fetch failed: {exc}")
     return SPXPriceResponse(price=round(price, 2))
@@ -82,14 +84,13 @@ async def spx_price(request: Request):
 @router.get("/bars", response_model=List[PriceBarResponse])
 async def intraday_bars(
     request: Request,
-    period: str = Query("1d"),
-    interval: str = Query("1m"),
+    interval: str = Query("1min", description="Bar interval: 1min, 5min, 15min, 30min, 1hour, 4hour"),
     last: Optional[int] = Query(None, description="Return only the N most recent bars"),
 ):
-    """Intraday SPX price bars."""
-    yahoo = request.app.state.yahoo
+    """Intraday SPX price bars via FMP."""
+    fmp = request.app.state.fmp
     try:
-        bars = yahoo.fetch_price_bars(period=period, interval=interval)
+        bars = fmp.fetch_price_bars(symbol="^GSPC", interval=interval)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Bar fetch failed: {exc}")
 
@@ -112,9 +113,9 @@ async def intraday_bars(
 @router.get("/prior", response_model=PriorSessionResponse)
 async def prior_session(request: Request):
     """Prior trading session reference levels."""
-    yahoo = request.app.state.yahoo
+    fmp = request.app.state.fmp
     try:
-        prior = yahoo.fetch_prior_session()
+        prior = fmp.fetch_prior_session()
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Prior session fetch failed: {exc}")
     return PriorSessionResponse(
@@ -133,9 +134,9 @@ async def realized_vol(
     days: int = Query(20, ge=5, le=252),
 ):
     """Annualized realized volatility from daily log returns."""
-    yahoo = request.app.state.yahoo
+    fmp = request.app.state.fmp
     try:
-        rv = yahoo.compute_realized_vol(days=days)
+        rv = fmp.compute_realized_vol(days=days)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"RV computation failed: {exc}")
     return RealizedVolResponse(realized_vol=round(rv, 6), days=days, annualized=True)
@@ -144,9 +145,9 @@ async def realized_vol(
 @router.get("/vwap", response_model=VWAPResponse)
 async def session_vwap(request: Request):
     """Session VWAP computed from intraday bars."""
-    yahoo = request.app.state.yahoo
+    fmp = request.app.state.fmp
     try:
-        bars = yahoo.fetch_price_bars(period="1d", interval="1m")
+        bars = fmp.fetch_price_bars(symbol="^GSPC", interval="1min")
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"VWAP fetch failed: {exc}")
 
@@ -167,11 +168,11 @@ async def session_vwap(request: Request):
 @router.get("/snapshot", response_model=PriceSnapshotResponse)
 async def price_snapshot(request: Request):
     """Combined price snapshot: spot, prior close, change, VWAP, RV."""
-    yahoo = request.app.state.yahoo
+    fmp = request.app.state.fmp
     try:
-        spot = yahoo.fetch_spx_price()
-        prior = yahoo.fetch_prior_session()
-        bars = yahoo.fetch_price_bars(period="1d", interval="1m")
+        spot = fmp.get_spx_price()
+        prior = fmp.fetch_prior_session()
+        bars = fmp.fetch_price_bars(symbol="^GSPC", interval="1min")
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Snapshot fetch failed: {exc}")
 

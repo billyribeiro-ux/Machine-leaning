@@ -15,6 +15,7 @@ from .equity_price import router as equity_price_router
 from .equity_internals import router as equity_internals_router
 from .equity_institutional import router as equity_institutional_router
 from .equity_macro import router as equity_macro_router
+from .equity_market import router as equity_market_router
 from .admin_credentials import router as admin_router
 
 
@@ -23,6 +24,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Initialise shared adapters on startup, tear down on shutdown."""
     from ..yahoo_adapter import YahooFinanceAdapter
     from ..edgar_adapter import EDGARAdapter
+    from ..fmp_adapter import FMPAdapter
     from ..gex_engine import GEXEngine
     from ..config import GEXConfig
     from ..data_feeds import VIX1DAnalyzer
@@ -38,6 +40,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     app.state.yahoo = YahooFinanceAdapter()
     app.state.edgar = EDGARAdapter(user_agent=edgar_ua)
+    app.state.fmp = FMPAdapter(credential_store=store)
     app.state.gex_engine = GEXEngine(GEXConfig())
     app.state.vix1d_analyzer = VIX1DAnalyzer()
     app.state.internals_scorer = MarketInternalsScorer()
@@ -64,6 +67,7 @@ def create_app() -> FastAPI:
     app.include_router(equity_internals_router)
     app.include_router(equity_institutional_router)
     app.include_router(equity_macro_router)
+    app.include_router(equity_market_router)
     app.include_router(admin_router)
 
     @app.get("/", tags=["health"])
@@ -77,6 +81,7 @@ def create_app() -> FastAPI:
                 "equity_internals": "/api/equity/internals",
                 "equity_institutional": "/api/equity/institutional",
                 "equity_macro": "/api/equity/macro",
+                "equity_market": "/api/equity/market",
                 "admin_credentials": "/api/admin/credentials",
             },
         }

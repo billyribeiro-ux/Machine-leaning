@@ -89,6 +89,7 @@ async def direction_score(
     """
     scorer = request.app.state.internals_scorer
     yahoo = request.app.state.yahoo
+    fmp = request.app.state.fmp
     engine = request.app.state.gex_engine
 
     from ..data_feeds import MarketInternalsData
@@ -114,9 +115,9 @@ async def direction_score(
     try:
         chain = yahoo.fetch_spx_options_chain()
         spot = chain.underlying_price
-        vix_data = yahoo.fetch_vix_data()
+        vix_data = fmp.fetch_vix_data()
         gex = engine.compute_gex(chain, spot)
-        cross = yahoo.fetch_cross_asset_data()
+        cross = fmp.fetch_cross_asset_data()
     except Exception:
         spot = 0.0
         gex = None
@@ -294,11 +295,11 @@ async def options_flow(
 @router.get("/session", response_model=SessionInfoResponse)
 async def session_info(request: Request):
     """Session classification and vol regime assessment."""
-    yahoo = request.app.state.yahoo
+    fmp = request.app.state.fmp
     analyzer = request.app.state.vix1d_analyzer
 
     try:
-        vix_data = yahoo.fetch_vix_data()
+        vix_data = fmp.fetch_vix_data()
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"VIX fetch failed: {exc}")
 

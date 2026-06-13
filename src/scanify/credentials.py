@@ -103,6 +103,17 @@ VENDOR_REGISTRY: Dict[str, VendorSpec] = {
         default_values={"user_agent": "ScanifyScanner admin@scanify.dev"},
         rate_limit_per_sec=10.0,
     ),
+    "fmp": VendorSpec(
+        vendor_id="fmp",
+        display_name="Financial Modeling Prep (FMP)",
+        auth_type=AuthType.API_KEY,
+        required_fields=("api_key",),
+        optional_fields=("plan",),
+        env_prefix="SCANIFY_FMP",
+        base_url="https://financialmodelingprep.com/api",
+        docs_url="https://site.financialmodelingprep.com/developer/docs",
+        rate_limit_per_sec=5.0,
+    ),
     "polygon": VendorSpec(
         vendor_id="polygon",
         display_name="Polygon.io",

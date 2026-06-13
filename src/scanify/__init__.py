@@ -324,6 +324,22 @@ except ImportError as exc:
     )
 
 # ---------------------------------------------------------------------------
+# fmp_adapter — Financial Modeling Prep equity data adapter
+# ---------------------------------------------------------------------------
+try:
+    from .fmp_adapter import (
+        FMPAdapter,
+        run_fmp_test,
+    )
+except ImportError as exc:
+    _logger.warning("Failed to import scanify.fmp_adapter: %s", exc)
+    warnings.warn(
+        f"scanify.fmp_adapter could not be imported: {exc}",
+        ImportWarning,
+        stacklevel=2,
+    )
+
+# ---------------------------------------------------------------------------
 # api — FastAPI REST endpoints
 # ---------------------------------------------------------------------------
 try:
@@ -445,4 +461,7 @@ __all__ = [
     "InstitutionalSummary",
     "EDGARAdapter",
     "run_edgar_test",
+    # fmp_adapter
+    "FMPAdapter",
+    "run_fmp_test",
 ]
