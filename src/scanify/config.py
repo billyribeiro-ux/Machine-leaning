@@ -277,6 +277,16 @@ class RiskConfig:
 
 
 @dataclass
+class CredentialsConfig:
+    """API key management configuration."""
+    credentials_file: str = "~/.scanify/credentials.json"
+    master_key_env_var: str = "SCANIFY_MASTER_KEY"
+    admin_token_env_var: str = "SCANIFY_ADMIN_TOKEN"
+    api_host: str = "0.0.0.0"
+    api_port: int = 8000
+
+
+@dataclass
 class ScanifyConfig:
     """Master SCANIFY configuration."""
     # Sub-configs
@@ -288,6 +298,7 @@ class ScanifyConfig:
     exit: ExitConfig = field(default_factory=ExitConfig)
     calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
     risk: RiskConfig = field(default_factory=RiskConfig)
+    credentials: CredentialsConfig = field(default_factory=CredentialsConfig)
 
     # Expected move weights
     em_weight_vix1d: float = 0.40
