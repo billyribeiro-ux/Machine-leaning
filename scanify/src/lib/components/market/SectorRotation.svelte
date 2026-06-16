@@ -26,15 +26,15 @@
   );
 
   function changeColor(change: number): string {
-    if (change > 1.5) return 'text-[var(--bullish-bright)]';
-    if (change > 0) return 'text-[var(--bullish)]';
-    if (change > -1.5) return 'text-[var(--bearish)]';
-    return 'text-[var(--bearish-bright)]';
+    if (change > 1.5) return 'change-strong-bull';
+    if (change > 0) return 'change-bull';
+    if (change > -1.5) return 'change-bear';
+    return 'change-strong-bear';
   }
 
   function changeBg(change: number): string {
-    if (change > 0) return 'bg-[var(--bullish-bg)]';
-    return 'bg-[var(--bearish-bg)]';
+    if (change > 0) return 'change-bg-bull';
+    return 'change-bg-bear';
   }
 
   function rsBarColor(rs: number): string {
@@ -53,59 +53,237 @@
   }
 
   function momentumColor(m: number): string {
-    if (m > 50) return 'text-[var(--bullish-bright)]';
-    if (m > 20) return 'text-[var(--bullish)]';
-    if (m > -20) return 'text-[var(--text-secondary)]';
-    if (m > -50) return 'text-[var(--bearish)]';
-    return 'text-[var(--bearish-bright)]';
+    if (m > 50) return 'momentum-strong-bull';
+    if (m > 20) return 'momentum-bull';
+    if (m > -20) return 'momentum-neutral';
+    if (m > -50) return 'momentum-bear';
+    return 'momentum-strong-bear';
   }
 </script>
 
-<div class="flex flex-col gap-3 {className}">
-  <div class="flex items-center justify-between px-1">
-    <span class="text-sm font-semibold text-[var(--text-primary)]">Sector Rotation</span>
-    <span class="text-2xs text-[var(--text-tertiary)]">{sectors.length} sectors</span>
+<div class="sector-wrapper {className}">
+  <div class="header">
+    <span class="header-title">Sector Rotation</span>
+    <span class="text-2xs header-count">{ sectors.length } sectors</span>
   </div>
 
-  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+  <div class="sector-grid">
     {#each sortedSectors as sector (sector.name)}
-      <div class="panel p-4 flex flex-col gap-3 hover:bg-[var(--hover-overlay)] transition-colors duration-150">
+      <div class="panel sector-card">
         <!-- Header -->
-        <div class="flex items-center justify-between">
-          <span class="text-sm font-semibold text-[var(--text-primary)] truncate">{sector.name}</span>
+        <div class="sector-card-header">
+          <span class="sector-name">{sector.name}</span>
           <span
-            class="mono-nums text-sm font-bold px-2 py-0.5 rounded-sm {changeColor(sector.change)} {changeBg(sector.change)}"
+            class="mono-nums change-badge {changeColor(sector.change)} {changeBg(sector.change)}"
           >
             {sector.change > 0 ? '+' : ''}{sector.change.toFixed(2)}%
           </span>
         </div>
 
         <!-- Relative Strength bar -->
-        <div class="flex flex-col gap-1.5">
-          <div class="flex items-center justify-between">
-            <span class="text-2xs text-[var(--text-tertiary)]">Relative Strength</span>
-            <span class="mono-nums text-2xs text-[var(--text-secondary)]">{sector.relativeStrength.toFixed(0)}</span>
+        <div class="rs-section">
+          <div class="rs-header">
+            <span class="text-2xs rs-label">Relative Strength</span>
+            <span class="mono-nums text-2xs rs-value">{sector.relativeStrength.toFixed(0)}</span>
           </div>
-          <div class="w-full h-2 rounded-full bg-[var(--bg-void)] overflow-hidden">
+          <div class="rs-bar-bg">
             <div
-              class="h-full rounded-full transition-all duration-500"
+              class="rs-bar-fill"
               style="width: {Math.min(100, Math.max(0, sector.relativeStrength))}%; background-color: {rsBarColor(sector.relativeStrength)};"
             ></div>
           </div>
         </div>
 
         <!-- Momentum -->
-        <div class="flex items-center justify-between">
-          <span class="text-2xs text-[var(--text-tertiary)]">Momentum</span>
-          <span class="text-2xs font-medium {momentumColor(sector.momentum)}">{momentumLabel(sector.momentum)}</span>
+        <div class="momentum-row">
+          <span class="text-2xs momentum-label">Momentum</span>
+          <span class="text-2xs {momentumColor(sector.momentum)}">{momentumLabel(sector.momentum)}</span>
         </div>
       </div>
     {/each}
   </div>
 
   {#if sectors.length === 0}
-    <div class="flex items-center justify-center h-32 text-sm text-[var(--text-tertiary)]">
+    <div class="empty-state">
       No sector data available
     </div>
   {/if}
 </div>
+
+<style>
+  .sector-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-inline: 4px;
+  }
+
+  .header-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .header-count {
+    color: var(--text-tertiary);
+  }
+
+  .sector-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  @media (min-width: 640px) {
+    .sector-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .sector-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  .sector-card {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: color 150ms, background-color 150ms;
+  }
+
+  .sector-card:hover {
+    background: var(--hover-overlay);
+  }
+
+  .sector-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sector-name {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .change-badge {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    padding-inline: 8px;
+    padding-block: 2px;
+    border-radius: 2px;
+  }
+
+  .rs-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .rs-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .rs-label {
+    color: var(--text-tertiary);
+  }
+
+  .rs-value {
+    color: var(--text-secondary);
+  }
+
+  .rs-bar-bg {
+    width: 100%;
+    height: 8px;
+    border-radius: 9999px;
+    background-color: var(--bg-void);
+    overflow: hidden;
+  }
+
+  .rs-bar-fill {
+    height: 100%;
+    border-radius: 9999px;
+    transition: all 500ms;
+  }
+
+  .momentum-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .momentum-label {
+    color: var(--text-tertiary);
+  }
+
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 128px;
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+  }
+
+  /* Dynamic change color classes */
+  .change-strong-bull {
+    color: var(--bullish-bright);
+  }
+
+  .change-bull {
+    color: var(--bullish);
+  }
+
+  .change-bear {
+    color: var(--bearish);
+  }
+
+  .change-strong-bear {
+    color: var(--bearish-bright);
+  }
+
+  /* Dynamic change background classes */
+  .change-bg-bull {
+    background-color: var(--bullish-bg);
+  }
+
+  .change-bg-bear {
+    background-color: var(--bearish-bg);
+  }
+
+  /* Dynamic momentum color classes */
+  .momentum-strong-bull {
+    color: var(--bullish-bright);
+  }
+
+  .momentum-bull {
+    color: var(--bullish);
+  }
+
+  .momentum-neutral {
+    color: var(--text-secondary);
+  }
+
+  .momentum-bear {
+    color: var(--bearish);
+  }
+
+  .momentum-strong-bear {
+    color: var(--bearish-bright);
+  }
+</style>

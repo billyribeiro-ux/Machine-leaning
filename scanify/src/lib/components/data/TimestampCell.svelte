@@ -16,11 +16,6 @@
 	let now = $state(Date.now());
 	let intervalId: ReturnType<typeof setInterval> | undefined;
 
-	const sizeClasses: Record<string, string> = {
-		sm: 'text-xs',
-		md: 'text-sm'
-	};
-
 	let tsMs = $derived.by(() => {
 		if (timestamp instanceof Date) return timestamp.getTime();
 		if (typeof timestamp === 'number') {
@@ -86,9 +81,27 @@
 </script>
 
 <span
-	class="inline-block whitespace-nowrap font-mono tabular-nums text-[oklch(0.48_0_0)] {sizeClasses[size]} {className}"
+	class="timestamp-cell size-{size} {className}"
 	style="font-variant-numeric: tabular-nums;"
 	title={new Date(tsMs).toISOString()}
 >
 	{displayText}
 </span>
+
+<style>
+	.timestamp-cell {
+		display: inline-block;
+		white-space: nowrap;
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+		color: oklch(0.48 0 0);
+	}
+
+	.size-sm {
+		font-size: var(--text-xs);
+	}
+
+	.size-md {
+		font-size: var(--text-sm);
+	}
+</style>

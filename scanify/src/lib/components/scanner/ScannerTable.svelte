@@ -111,7 +111,7 @@
 
 	function sortIndicator(field: string): string {
 		if (sortField !== field) return '';
-		return sortDir === 'asc' ? ' \u25B2' : ' \u25BC';
+		return sortDir === 'asc' ? ' ▲' : ' ▼';
 	}
 
 	function formatPrice(val: number): string {
@@ -143,9 +143,9 @@
 	}
 
 	function changeColor(val: number): string {
-		if (val > 0) return 'text-[var(--bullish)]';
-		if (val < 0) return 'text-[var(--bearish)]';
-		return 'text-[var(--text-tertiary)]';
+		if (val > 0) return 'color-bullish';
+		if (val < 0) return 'color-bearish';
+		return 'color-tertiary';
 	}
 
 	function directionBadgeClass(dir: string): string {
@@ -157,27 +157,27 @@
 	function strengthDots(s: number): string {
 		let out = '';
 		for (let i = 0; i < 5; i++) {
-			out += i < s ? '\u25CF' : '\u25CB';
+			out += i < s ? '●' : '○';
 		}
 		return out;
 	}
 
 	function strengthColor(s: number): string {
 		const map: Record<number, string> = {
-			1: 'text-[var(--strength-1)]',
-			2: 'text-[var(--strength-2)]',
-			3: 'text-[var(--strength-3)]',
-			4: 'text-[var(--strength-4)]',
-			5: 'text-[var(--strength-5)]',
+			1: 'color-strength-1',
+			2: 'color-strength-2',
+			3: 'color-strength-3',
+			4: 'color-strength-4',
+			5: 'color-strength-5',
 		};
-		return map[s] || 'text-[var(--text-tertiary)]';
+		return map[s] || 'color-tertiary';
 	}
 
 	function relVolColor(rv: number): string {
-		if (rv >= 3) return 'text-[var(--warning-bright)]';
-		if (rv >= 2) return 'text-[var(--warning)]';
-		if (rv >= 1.5) return 'text-[var(--bullish)]';
-		return 'text-[var(--text-secondary)]';
+		if (rv >= 3) return 'color-warning-bright';
+		if (rv >= 2) return 'color-warning';
+		if (rv >= 1.5) return 'color-bullish';
+		return 'color-secondary';
 	}
 
 	$effect(() => {
@@ -193,32 +193,31 @@
 	});
 
 	const columns = [
-		{ key: 'symbol', label: 'Symbol', align: 'left' as const, width: 'w-[100px]' },
-		{ key: 'price', label: 'Price', align: 'right' as const, width: 'w-[90px]' },
-		{ key: 'changePercent', label: 'Change%', align: 'right' as const, width: 'w-[85px]' },
-		{ key: 'signalName', label: 'Signal', align: 'left' as const, width: 'w-[120px]' },
-		{ key: 'strength', label: 'Strength', align: 'center' as const, width: 'w-[80px]' },
-		{ key: 'volume', label: 'Volume', align: 'right' as const, width: 'w-[85px]' },
-		{ key: 'relativeVolume', label: 'RelVol', align: 'right' as const, width: 'w-[70px]' },
-		{ key: 'sector', label: 'Sector', align: 'left' as const, width: 'w-[100px]' },
-		{ key: 'timestamp', label: 'Time', align: 'right' as const, width: 'w-[70px]' },
+		{ key: 'symbol', label: 'Symbol', align: 'left' as const, widthClass: 'col-symbol' },
+		{ key: 'price', label: 'Price', align: 'right' as const, widthClass: 'col-price' },
+		{ key: 'changePercent', label: 'Change%', align: 'right' as const, widthClass: 'col-change' },
+		{ key: 'signalName', label: 'Signal', align: 'left' as const, widthClass: 'col-signal' },
+		{ key: 'strength', label: 'Strength', align: 'center' as const, widthClass: 'col-strength' },
+		{ key: 'volume', label: 'Volume', align: 'right' as const, widthClass: 'col-volume' },
+		{ key: 'relativeVolume', label: 'RelVol', align: 'right' as const, widthClass: 'col-relvol' },
+		{ key: 'sector', label: 'Sector', align: 'left' as const, widthClass: 'col-sector' },
+		{ key: 'timestamp', label: 'Time', align: 'right' as const, widthClass: 'col-time' },
 	];
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
-	class="flex flex-col overflow-hidden rounded-lg border border-[var(--border-subtle)] bg-[var(--bg-surface)] {className}"
+	class="table-container {className}"
 	onkeydown={handleKeydown}
 	tabindex="0"
 	role="grid"
 	aria-label="Scanner results table"
 >
 	<!-- Fixed header -->
-	<div class="flex items-center border-b border-[var(--border-default)] bg-[var(--bg-elevated)] px-1" style="height: 36px; min-height: 36px;">
+	<div class="table-header">
 		{#each columns as col}
 			<button
-				class="flex-shrink-0 {col.width} px-2 py-1.5 text-2xs font-semibold uppercase tracking-wider text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)] select-none
-					{col.align === 'right' ? 'text-right' : col.align === 'center' ? 'text-center' : 'text-left'}"
+				class="header-cell {col.widthClass} {col.align === 'right' ? 'align-right' : col.align === 'center' ? 'align-center' : 'align-left'}"
 				onclick={() => toggleSort(col.key)}
 				type="button"
 			>
@@ -229,7 +228,7 @@
 
 	<!-- Scrollable body with virtual scrolling -->
 	<div
-		class="flex-1 overflow-y-auto"
+		class="table-body"
 		bind:this={containerEl}
 		onscroll={handleScroll}
 		role="rowgroup"
@@ -243,9 +242,7 @@
 
 				<!-- Row -->
 				<div
-					class="absolute left-0 right-0 flex items-center px-1 transition-colors duration-75 cursor-pointer
-						{isSelected ? 'bg-[var(--accent-bg)] border-l-2 border-l-[var(--accent)]' : isEven ? 'bg-transparent' : 'bg-[oklch(0.12_0.02_260)]'}
-						{!isSelected ? 'hover:bg-[var(--hover-overlay)] hover:border-l-2 hover:border-l-[var(--border-strong)]' : ''}"
+					class="table-row {isSelected ? 'row-selected' : isEven ? 'row-even' : 'row-odd'}"
 					style="top: {actualIndex * ROW_HEIGHT}px; height: {ROW_HEIGHT}px;"
 					onclick={() => selectRow(result, actualIndex)}
 					ondblclick={() => toggleExpand(result)}
@@ -254,64 +251,64 @@
 					aria-rowindex={actualIndex + 1}
 				>
 					<!-- Symbol -->
-					<div class="flex-shrink-0 w-[100px] px-2">
-						<span class="font-mono text-sm font-semibold uppercase text-[var(--text-primary)]" style="letter-spacing: 0.02em;">
+					<div class="cell col-symbol">
+						<span class="symbol-text">
 							{result.symbol}
 						</span>
 					</div>
 
 					<!-- Price -->
-					<div class="flex-shrink-0 w-[90px] px-2 text-right">
-						<span class="mono-nums text-sm text-[var(--text-primary)]">
+					<div class="cell col-price align-right">
+						<span class="mono-nums price-text">
 							{formatPrice(result.price)}
 						</span>
 					</div>
 
 					<!-- Change% -->
-					<div class="flex-shrink-0 w-[85px] px-2 text-right">
-						<span class="mono-nums text-sm font-medium {changeColor(result.changePercent)}">
+					<div class="cell col-change align-right">
+						<span class="mono-nums change-text {changeColor(result.changePercent)}">
 							{formatPercent(result.changePercent)}
 						</span>
 					</div>
 
 					<!-- Signal -->
-					<div class="flex-shrink-0 w-[120px] px-2">
-						<span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium leading-none {directionBadgeClass(result.direction)}">
+					<div class="cell col-signal">
+						<span class="signal-badge {directionBadgeClass(result.direction)}">
 							{result.signalName}
 						</span>
 					</div>
 
 					<!-- Strength (dots) -->
-					<div class="flex-shrink-0 w-[80px] px-2 text-center">
-						<span class="font-mono text-xs tracking-tight {strengthColor(result.strength)}" title="Strength: {result.strength}/5">
+					<div class="cell col-strength align-center">
+						<span class="strength-dots {strengthColor(result.strength)}" title="Strength: {result.strength}/5">
 							{strengthDots(result.strength)}
 						</span>
 					</div>
 
 					<!-- Volume -->
-					<div class="flex-shrink-0 w-[85px] px-2 text-right">
-						<span class="mono-nums text-sm text-[var(--text-secondary)]">
+					<div class="cell col-volume align-right">
+						<span class="mono-nums volume-text">
 							{formatVolume(result.volume)}
 						</span>
 					</div>
 
 					<!-- RelVol -->
-					<div class="flex-shrink-0 w-[70px] px-2 text-right">
-						<span class="mono-nums text-sm font-medium {relVolColor(result.relativeVolume)}">
+					<div class="cell col-relvol align-right">
+						<span class="mono-nums relvol-text {relVolColor(result.relativeVolume)}">
 							{result.relativeVolume.toFixed(1)}x
 						</span>
 					</div>
 
 					<!-- Sector -->
-					<div class="flex-shrink-0 w-[100px] px-2 truncate">
-						<span class="text-xs text-[var(--text-tertiary)]">
+					<div class="cell col-sector sector-cell">
+						<span class="sector-text">
 							{result.sector}
 						</span>
 					</div>
 
 					<!-- Time -->
-					<div class="flex-shrink-0 w-[70px] px-2 text-right">
-						<span class="mono-nums text-xs text-[var(--text-tertiary)]">
+					<div class="cell col-time align-right">
+						<span class="mono-nums time-text">
 							{formatTimestamp(result.timestamp)}
 						</span>
 					</div>
@@ -320,39 +317,39 @@
 				<!-- Expanded detail row -->
 				{#if isExpanded}
 					<div
-						class="absolute left-0 right-0 border-y border-[var(--border-default)] bg-[var(--bg-elevated)] px-4 py-3"
+						class="expanded-row"
 						style="top: {(actualIndex + 1) * ROW_HEIGHT}px;"
 					>
-						<div class="grid grid-cols-2 gap-4 text-sm">
+						<div class="expanded-grid">
 							<!-- Left column: detail info -->
-							<div class="space-y-2">
-								<div class="flex items-center gap-2">
-									<span class="font-mono text-base font-bold text-[var(--text-primary)]">{result.symbol}</span>
-									<span class="text-[var(--text-tertiary)]">{result.name}</span>
+							<div class="expanded-col">
+								<div class="expanded-header">
+									<span class="expanded-symbol">{result.symbol}</span>
+									<span class="expanded-name">{result.name}</span>
 								</div>
-								<div class="grid grid-cols-3 gap-3">
+								<div class="detail-grid">
 									<div>
-										<div class="text-2xs uppercase text-[var(--text-tertiary)]">Price</div>
-										<div class="mono-nums text-[var(--text-primary)]">{formatPrice(result.price)}</div>
+										<div class="detail-label">Price</div>
+										<div class="mono-nums detail-value-primary">{formatPrice(result.price)}</div>
 									</div>
 									<div>
-										<div class="text-2xs uppercase text-[var(--text-tertiary)]">Change</div>
+										<div class="detail-label">Change</div>
 										<div class="mono-nums {changeColor(result.changePercent)}">{formatPercent(result.changePercent)}</div>
 									</div>
 									<div>
-										<div class="text-2xs uppercase text-[var(--text-tertiary)]">Volume</div>
-										<div class="mono-nums text-[var(--text-secondary)]">{formatVolume(result.volume)}</div>
+										<div class="detail-label">Volume</div>
+										<div class="mono-nums detail-value-secondary">{formatVolume(result.volume)}</div>
 									</div>
 								</div>
 							</div>
 
 							<!-- Right column: sparkline + signal -->
-							<div class="space-y-2">
-								<div class="flex items-center gap-2">
-									<span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium {directionBadgeClass(result.direction)}">
+							<div class="expanded-col">
+								<div class="expanded-signal-row">
+									<span class="signal-badge {directionBadgeClass(result.direction)}">
 										{result.direction}
 									</span>
-									<span class="text-xs text-[var(--text-tertiary)]">Category: {result.category}</span>
+									<span class="expanded-category">Category: {result.category}</span>
 								</div>
 								{#if result.sparklineData.length > 1}
 									{@const sparkW = 200}
@@ -371,7 +368,7 @@
 									{@const sparkColor = lastVal >= firstVal
 										? 'var(--bullish)'
 										: 'var(--bearish)'}
-									<svg width={sparkW} height={sparkH} viewBox="0 0 {sparkW} {sparkH}" class="inline-block" role="img" aria-label="Price sparkline">
+									<svg width={sparkW} height={sparkH} viewBox="0 0 {sparkW} {sparkH}" class="sparkline-svg" role="img" aria-label="Price sparkline">
 										<path d={sparkPath} fill="none" stroke={sparkColor} stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
 									</svg>
 								{/if}
@@ -384,12 +381,352 @@
 	</div>
 
 	<!-- Footer bar -->
-	<div class="flex items-center justify-between border-t border-[var(--border-subtle)] bg-[var(--bg-elevated)] px-3" style="height: 28px; min-height: 28px;">
-		<span class="text-2xs text-[var(--text-tertiary)]">
+	<div class="table-footer">
+		<span class="footer-text">
 			{results.length} result{results.length !== 1 ? 's' : ''}
 		</span>
-		<span class="text-2xs text-[var(--text-disabled)]">
+		<span class="footer-hint">
 			j/k navigate &middot; Enter expand
 		</span>
 	</div>
 </div>
+
+<style>
+	/* Container */
+	.table-container {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--border-subtle);
+		background-color: var(--bg-surface);
+	}
+
+	/* Header */
+	.table-header {
+		display: flex;
+		align-items: center;
+		border-bottom: 1px solid var(--border-default);
+		background-color: var(--bg-elevated);
+		padding-inline: 4px;
+		height: 36px;
+		min-height: 36px;
+	}
+
+	.header-cell {
+		flex-shrink: 0;
+		padding-inline: 8px;
+		padding-block: 6px;
+		font-size: var(--text-2xs);
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
+		color: var(--text-tertiary);
+		transition: color 150ms, background-color 150ms, border-color 150ms;
+		user-select: none;
+		background: none;
+		border: none;
+		cursor: pointer;
+	}
+
+	.header-cell:hover {
+		color: var(--text-primary);
+	}
+
+	/* Body */
+	.table-body {
+		flex: 1;
+		overflow-y: auto;
+	}
+
+	/* Row */
+	.table-row {
+		position: absolute;
+		left: 0;
+		right: 0;
+		display: flex;
+		align-items: center;
+		padding-inline: 4px;
+		transition: color 75ms, background-color 75ms, border-color 75ms;
+		cursor: pointer;
+	}
+
+	.row-selected {
+		background-color: var(--accent-bg);
+		border-left: 2px solid var(--accent);
+	}
+
+	.row-even {
+		background-color: transparent;
+	}
+
+	.row-odd {
+		background-color: oklch(0.12 0.02 260);
+	}
+
+	.row-even:hover,
+	.row-odd:hover {
+		background-color: var(--hover-overlay);
+		border-left: 2px solid var(--border-strong);
+	}
+
+	/* Cell base */
+	.cell {
+		flex-shrink: 0;
+		padding-inline: 8px;
+	}
+
+	/* Column widths */
+	.col-symbol {
+		width: 100px;
+	}
+
+	.col-price {
+		width: 90px;
+	}
+
+	.col-change {
+		width: 85px;
+	}
+
+	.col-signal {
+		width: 120px;
+	}
+
+	.col-strength {
+		width: 80px;
+	}
+
+	.col-volume {
+		width: 85px;
+	}
+
+	.col-relvol {
+		width: 70px;
+	}
+
+	.col-sector {
+		width: 100px;
+	}
+
+	.col-time {
+		width: 70px;
+	}
+
+	/* Alignment */
+	.align-right {
+		text-align: right;
+	}
+
+	.align-center {
+		text-align: center;
+	}
+
+	.align-left {
+		text-align: left;
+	}
+
+	/* Cell content styles */
+	.symbol-text {
+		font-family: var(--font-mono);
+		font-size: var(--text-sm);
+		font-weight: 600;
+		text-transform: uppercase;
+		color: var(--text-primary);
+		letter-spacing: 0.02em;
+	}
+
+	.price-text {
+		font-size: var(--text-sm);
+		color: var(--text-primary);
+	}
+
+	.change-text {
+		font-size: var(--text-sm);
+		font-weight: 500;
+	}
+
+	.signal-badge {
+		display: inline-flex;
+		align-items: center;
+		border-radius: var(--radius-full);
+		padding-inline: 8px;
+		padding-block: 2px;
+		font-size: 10px;
+		font-weight: 500;
+		line-height: 1;
+	}
+
+	.strength-dots {
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		letter-spacing: -0.01em;
+	}
+
+	.volume-text {
+		font-size: var(--text-sm);
+		color: var(--text-secondary);
+	}
+
+	.relvol-text {
+		font-size: var(--text-sm);
+		font-weight: 500;
+	}
+
+	.sector-cell {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.sector-text {
+		font-size: var(--text-xs);
+		color: var(--text-tertiary);
+	}
+
+	.time-text {
+		font-size: var(--text-xs);
+		color: var(--text-tertiary);
+	}
+
+	/* Dynamic color classes */
+	.color-bullish {
+		color: var(--bullish);
+	}
+
+	.color-bearish {
+		color: var(--bearish);
+	}
+
+	.color-tertiary {
+		color: var(--text-tertiary);
+	}
+
+	.color-secondary {
+		color: var(--text-secondary);
+	}
+
+	.color-warning-bright {
+		color: var(--warning-bright);
+	}
+
+	.color-warning {
+		color: var(--warning);
+	}
+
+	.color-strength-1 {
+		color: var(--strength-1);
+	}
+
+	.color-strength-2 {
+		color: var(--strength-2);
+	}
+
+	.color-strength-3 {
+		color: var(--strength-3);
+	}
+
+	.color-strength-4 {
+		color: var(--strength-4);
+	}
+
+	.color-strength-5 {
+		color: var(--strength-5);
+	}
+
+	/* Expanded row */
+	.expanded-row {
+		position: absolute;
+		left: 0;
+		right: 0;
+		border-top: 1px solid var(--border-default);
+		border-bottom: 1px solid var(--border-default);
+		background-color: var(--bg-elevated);
+		padding: 12px 16px;
+	}
+
+	.expanded-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 16px;
+		font-size: var(--text-sm);
+	}
+
+	.expanded-col > * + * {
+		margin-top: 8px;
+	}
+
+	.expanded-header {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.expanded-symbol {
+		font-family: var(--font-mono);
+		font-size: var(--text-base);
+		font-weight: 700;
+		color: var(--text-primary);
+	}
+
+	.expanded-name {
+		color: var(--text-tertiary);
+	}
+
+	.detail-grid {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 12px;
+	}
+
+	.detail-label {
+		font-size: var(--text-2xs);
+		text-transform: uppercase;
+		color: var(--text-tertiary);
+	}
+
+	.detail-value-primary {
+		color: var(--text-primary);
+	}
+
+	.detail-value-secondary {
+		color: var(--text-secondary);
+	}
+
+	.expanded-signal-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.expanded-category {
+		font-size: var(--text-xs);
+		color: var(--text-tertiary);
+	}
+
+	.sparkline-svg {
+		display: inline-block;
+	}
+
+	/* Footer */
+	.table-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		border-top: 1px solid var(--border-subtle);
+		background-color: var(--bg-elevated);
+		padding-inline: 12px;
+		height: 28px;
+		min-height: 28px;
+	}
+
+	.footer-text {
+		font-size: var(--text-2xs);
+		color: var(--text-tertiary);
+	}
+
+	.footer-hint {
+		font-size: var(--text-2xs);
+		color: var(--text-disabled);
+	}
+</style>

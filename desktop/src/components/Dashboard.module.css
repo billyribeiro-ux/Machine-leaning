@@ -1,0 +1,82 @@
+.dashboardWrapper {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 16px;
+}
+
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filterButton {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: color 150ms, background-color 150ms, border-color 150ms;
+}
+
+.filterButtonActive {
+  background-color: var(--scanify-primary);
+  color: #ffffff;
+}
+
+.filterButtonInactive {
+  background-color: var(--scanify-dark-700);
+  color: #9ca3af;
+}
+
+.filterButtonInactive:hover {
+  background-color: var(--scanify-dark-600);
+}
+
+.refreshButton {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contentGrid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 16px;
+  min-height: 0;
+}
+
+.leftColumn {
+  grid-column: span 8;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.rightColumn {
+  grid-column: span 4;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.alertSection {
+  flex: 1;
+  min-height: 0;
+}
+
+.statsSection {
+  height: 256px;
+}

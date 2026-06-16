@@ -86,12 +86,12 @@
 	}
 </script>
 
-<div class="relative inline-block">
+<div class="corr-container">
 	<svg
 		width={svgWidth}
 		{height}
 		viewBox="0 0 {svgWidth} {height}"
-		class="select-none"
+		class="chart-svg"
 		role="img"
 		aria-label="Correlation Matrix"
 	>
@@ -102,9 +102,7 @@
 				y={getCellY(rowIdx) + cellSize / 2}
 				text-anchor="end"
 				dominant-baseline="middle"
-				class="text-[9px] font-mono {hoveredCell?.row === rowIdx
-					? 'fill-[oklch(0.90_0_0)]'
-					: 'fill-[oklch(0.55_0_0)]'}"
+				class="axis-label {hoveredCell?.row === rowIdx ? 'axis-label-highlight' : ''}"
 			>
 				{sym}
 			</text>
@@ -116,9 +114,7 @@
 				x={getCellX(colIdx) + cellSize / 2}
 				y={PADDING + gridSize + 16}
 				text-anchor="middle"
-				class="text-[9px] font-mono {hoveredCell?.col === colIdx
-					? 'fill-[oklch(0.90_0_0)]'
-					: 'fill-[oklch(0.55_0_0)]'}"
+				class="axis-label {hoveredCell?.col === colIdx ? 'axis-label-highlight' : ''}"
 			>
 				{sym}
 			</text>
@@ -144,7 +140,7 @@
 					opacity={hoveredCell !== null && !isHighlighted && !isHovered ? 0.4 : 1}
 					stroke={isHovered ? 'oklch(0.70 0 0)' : 'none'}
 					stroke-width={isHovered ? 1.5 : 0}
-					class="cursor-crosshair transition-opacity duration-100"
+					class="cell"
 					onmouseenter={(e) => handleCellHover(e, rowIdx, colIdx)}
 					onmousemove={(e) => handleCellHover(e, rowIdx, colIdx)}
 					onmouseleave={handleCellLeave}
@@ -157,10 +153,7 @@
 						y={getCellY(rowIdx) + cellSize / 2}
 						text-anchor="middle"
 						dominant-baseline="middle"
-						class="text-[8px] font-mono pointer-events-none
-							{Math.abs(value) > 0.5
-							? 'fill-[oklch(0.90_0_0)]'
-							: 'fill-[oklch(0.50_0_0)]'}"
+						class="cell-text {Math.abs(value) > 0.5 ? 'cell-text-bright' : ''}"
 					>
 						{getCorrelationText(value)}
 					</text>
@@ -191,7 +184,7 @@
 			x={LABEL_SIZE + PADDING + gridSize + 32}
 			y={PADDING + 4}
 			dominant-baseline="hanging"
-			class="text-[8px] fill-[oklch(0.50_0_0)] font-mono"
+			class="legend-label"
 		>
 			+1.0
 		</text>
@@ -199,7 +192,7 @@
 			x={LABEL_SIZE + PADDING + gridSize + 32}
 			y={PADDING + gridSize / 2}
 			dominant-baseline="middle"
-			class="text-[8px] fill-[oklch(0.50_0_0)] font-mono"
+			class="legend-label"
 		>
 			0.0
 		</text>
@@ -207,7 +200,7 @@
 			x={LABEL_SIZE + PADDING + gridSize + 32}
 			y={PADDING + gridSize - 2}
 			dominant-baseline="auto"
-			class="text-[8px] fill-[oklch(0.50_0_0)] font-mono"
+			class="legend-label"
 		>
 			-1.0
 		</text>
@@ -217,27 +210,25 @@
 	{#if hoveredCell !== null}
 		{@const value = getCorrelation(hoveredCell.row, hoveredCell.col)}
 		<div
-			class="pointer-events-none absolute z-50 rounded-lg border border-[oklch(0.25_0_0)]
-				bg-[oklch(0.14_0_0/0.94)] px-3 py-2 shadow-xl backdrop-blur-sm"
+			class="tooltip"
 			style="left: {mouseX + 14}px; top: {mouseY - 50}px;"
 		>
-			<div class="text-[10px] font-mono">
-				<div class="text-[oklch(0.50_0_0)] mb-1">
-					<span class="text-[oklch(0.85_0_0)] font-semibold">{symbols[hoveredCell.row]}</span>
-					<span class="mx-1">vs</span>
-					<span class="text-[oklch(0.85_0_0)] font-semibold">{symbols[hoveredCell.col]}</span>
+			<div class="tooltip-header">
+				<div class="tooltip-sym">
+					<span class="tooltip-sym-name">{symbols[hoveredCell.row]}</span>
+					<span class="tooltip-sym-vs">vs</span>
+					<span class="tooltip-sym-name">{symbols[hoveredCell.col]}</span>
 				</div>
 				<div
-					class="text-sm font-bold
-						{value > 0.3
-						? 'text-[oklch(0.75_0.15_145)]'
+					class="tooltip-value {value > 0.3
+						? 'tooltip-positive'
 						: value < -0.3
-							? 'text-[oklch(0.70_0.16_25)]'
-							: 'text-[oklch(0.70_0_0)]'}"
+							? 'tooltip-negative'
+							: 'tooltip-neutral'}"
 				>
 					{value >= 0 ? '+' : ''}{value.toFixed(4)}
 				</div>
-				<div class="text-[9px] text-[oklch(0.45_0_0)] mt-0.5">
+				<div class="tooltip-desc">
 					{#if Math.abs(value) >= 0.8}
 						Very strong {value > 0 ? 'positive' : 'negative'}
 					{:else if Math.abs(value) >= 0.6}
@@ -254,3 +245,101 @@
 		</div>
 	{/if}
 </div>
+
+<style>
+	.corr-container {
+		position: relative;
+		display: inline-block;
+	}
+
+	.chart-svg {
+		user-select: none;
+	}
+
+	.axis-label {
+		font-size: 9px;
+		font-family: var(--font-mono);
+		fill: oklch(0.55 0 0);
+	}
+
+	.axis-label-highlight {
+		fill: oklch(0.90 0 0);
+	}
+
+	.cell {
+		cursor: crosshair;
+		transition: opacity 100ms;
+	}
+
+	.cell-text {
+		font-size: 8px;
+		font-family: var(--font-mono);
+		pointer-events: none;
+		fill: oklch(0.50 0 0);
+	}
+
+	.cell-text-bright {
+		fill: oklch(0.90 0 0);
+	}
+
+	.legend-label {
+		font-size: 8px;
+		fill: oklch(0.50 0 0);
+		font-family: var(--font-mono);
+	}
+
+	.tooltip {
+		pointer-events: none;
+		position: absolute;
+		z-index: 50;
+		border-radius: var(--radius-lg, 8px);
+		border: 1px solid oklch(0.25 0 0);
+		background: oklch(0.14 0 0 / 0.94);
+		padding-inline: 12px;
+		padding-block: 8px;
+		box-shadow: 0 20px 25px -5px oklch(0 0 0 / 0.25);
+		backdrop-filter: blur(4px);
+	}
+
+	.tooltip-header {
+		font-size: 10px;
+		font-family: var(--font-mono);
+	}
+
+	.tooltip-sym {
+		color: oklch(0.50 0 0);
+		margin-bottom: 4px;
+	}
+
+	.tooltip-sym-name {
+		color: oklch(0.85 0 0);
+		font-weight: 600;
+	}
+
+	.tooltip-sym-vs {
+		margin-inline: 4px;
+	}
+
+	.tooltip-value {
+		font-size: 0.875rem;
+		font-weight: 700;
+	}
+
+	.tooltip-positive {
+		color: oklch(0.75 0.15 145);
+	}
+
+	.tooltip-negative {
+		color: oklch(0.70 0.16 25);
+	}
+
+	.tooltip-neutral {
+		color: oklch(0.70 0 0);
+	}
+
+	.tooltip-desc {
+		font-size: 9px;
+		color: oklch(0.45 0 0);
+		margin-top: 2px;
+	}
+</style>

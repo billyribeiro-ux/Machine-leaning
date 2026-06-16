@@ -10,6 +10,8 @@ import SignalTable from './SignalTable';
 import AlertFeed from './AlertFeed';
 import ScannerStats from './ScannerStats';
 import { RefreshCw } from 'lucide-react';
+import clsx from 'clsx';
+import styles from './Dashboard.module.css';
 
 export default function Dashboard() {
   const { fetchSignals, fetchAlerts, isLoading, selectedScanner, setSelectedScanner } = useStore();
@@ -39,19 +41,20 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="h-full flex flex-col p-4 gap-4">
+    <div className={styles.dashboardWrapper}>
       {/* Top Bar - Scanner Filters */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className={styles.topBar}>
+        <div className={styles.filterGroup}>
           {scannerTypes.map((scanner) => (
             <button
               key={scanner.id || 'all'}
               onClick={() => setSelectedScanner(scanner.id)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={clsx(
+                styles.filterButton,
                 selectedScanner === scanner.id
-                  ? 'bg-scanify-primary text-white'
-                  : 'bg-scanify-dark-700 text-gray-400 hover:bg-scanify-dark-600'
-              }`}
+                  ? styles.filterButtonActive
+                  : styles.filterButtonInactive
+              )}
             >
               {scanner.name}
             </button>
@@ -61,26 +64,26 @@ export default function Dashboard() {
         <button
           onClick={() => fetchSignals()}
           disabled={isLoading}
-          className="btn-secondary flex items-center gap-2"
+          className={clsx('btn-secondary', styles.refreshButton)}
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={clsx('w-4 h-4', isLoading && 'animate-spin')} />
           Refresh
         </button>
       </div>
 
       {/* Main Content Grid */}
-      <div className="flex-1 grid grid-cols-12 gap-4 min-h-0">
+      <div className={styles.contentGrid}>
         {/* Left Column - Signal Table */}
-        <div className="col-span-8 flex flex-col min-h-0">
+        <div className={styles.leftColumn}>
           <SignalTable />
         </div>
 
         {/* Right Column - Alerts & Stats */}
-        <div className="col-span-4 flex flex-col gap-4 min-h-0">
-          <div className="flex-1 min-h-0">
+        <div className={styles.rightColumn}>
+          <div className={styles.alertSection}>
             <AlertFeed />
           </div>
-          <div className="h-64">
+          <div className={styles.statsSection}>
             <ScannerStats />
           </div>
         </div>

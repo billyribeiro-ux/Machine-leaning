@@ -9,6 +9,7 @@ import { useStore } from './lib/store';
 import Dashboard from './components/Dashboard';
 import Login from './components/Login';
 import Header from './components/Header';
+import styles from './App.module.css';
 
 function App() {
   const { isAuthenticated, fetchStatus, connectWebSocket } = useStore();
@@ -32,9 +33,9 @@ function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-scanify-dark-900">
+    <div className={styles.appLayout}>
       <Header />
-      <main className="flex-1 overflow-hidden">
+      <main className={styles.mainContent}>
         <Dashboard />
       </main>
     </div>

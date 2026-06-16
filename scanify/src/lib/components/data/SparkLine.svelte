@@ -70,7 +70,7 @@
 	{width}
 	{height}
 	viewBox="0 0 {width} {height}"
-	class="inline-block align-middle {className}"
+	class="sparkline {className}"
 	role="img"
 	aria-label="Sparkline chart"
 >
@@ -100,3 +100,10 @@
 		{/if}
 	{/if}
 </svg>
+
+<style>
+	.sparkline {
+		display: inline-block;
+		vertical-align: middle;
+	}
+</style>

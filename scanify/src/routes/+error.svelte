@@ -1,10 +1,55 @@
 <script lang="ts">
   import { page } from '$app/state';
 </script>
-<div class="flex min-h-screen items-center justify-center" style="background: oklch(0.08 0.005 260); color: oklch(0.95 0.005 260);">
-  <div class="text-center space-y-4">
-    <h1 class="text-6xl font-bold font-mono" style="color: oklch(0.65 0.22 25);">{page.status}</h1>
-    <p class="text-lg" style="color: oklch(0.72 0.008 260);">{page.error?.message ?? 'Something went wrong'}</p>
-    <a href="/" class="inline-block px-6 py-2 rounded-md text-sm font-medium" style="background: oklch(0.14 0.010 260); border: 1px solid oklch(0.28 0.010 260);">Go Home</a>
+
+<div class="error-page">
+  <div class="error-content">
+    <h1 class="error-code">{page.status}</h1>
+    <p class="error-message">{page.error?.message ?? 'Something went wrong'}</p>
+    <a href="/" class="home-link">Go Home</a>
   </div>
 </div>
+
+<style>
+  .error-page {
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-void);
+    color: var(--text-primary);
+  }
+
+  .error-content {
+    text-align: center;
+  }
+
+  .error-content > :global(* + *) {
+    margin-top: 16px;
+  }
+
+  .error-code {
+    font-size: var(--text-5xl);
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--bearish);
+  }
+
+  .error-message {
+    font-size: var(--text-lg);
+    color: var(--text-secondary);
+  }
+
+  .home-link {
+    display: inline-block;
+    padding-inline: 24px;
+    padding-block: 8px;
+    border-radius: var(--radius-md);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+</style>

@@ -59,36 +59,36 @@
   <title>Alerts - Scanify</title>
 </svelte:head>
 
-<div class="flex flex-col h-full overflow-auto">
+<div class="page-root">
   <!-- Header -->
-  <div class="flex items-center justify-between px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
-    <h1 class="text-lg font-bold" style="color: var(--text-primary);">Alerts</h1>
-    <div class="flex items-center gap-3">
+  <div class="page-header">
+    <h1 class="page-title">Alerts</h1>
+    <div class="header-actions">
       <ExportToolbar source="alerts" />
-      <div class="w-px h-5" style="background: var(--border-subtle);"></div>
-      <span class="text-xs font-mono" style="color: var(--text-tertiary);">
+      <div class="header-divider"></div>
+      <span class="header-status">
         {alertConfigs.filter(a => a.enabled).length} active
       </span>
     </div>
   </div>
 
-  <div class="p-5 space-y-6">
+  <div class="page-content">
     <!-- Active Alerts Section -->
-    <div class="space-y-3">
-      <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Active Alerts</h2>
-      <div class="space-y-2">
+    <div class="section">
+      <h2 class="section-title">Active Alerts</h2>
+      <div class="alert-config-list">
         {#each alertConfigs as config (config.id)}
-          <div class="panel p-4 flex items-center gap-4">
+          <div class="panel alert-config-row">
             <!-- Status indicator -->
             <div
-              class="w-2 h-2 rounded-full shrink-0"
+              class="status-dot"
               style="background: {config.enabled ? 'var(--bullish)' : 'var(--text-disabled)'};"
             ></div>
 
             <!-- Info -->
-            <div class="flex-1 min-w-0">
-              <div class="text-sm font-medium" style="color: var(--text-primary);">{config.name}</div>
-              <div class="text-xs mt-0.5" style="color: var(--text-tertiary);">{config.description}</div>
+            <div class="alert-config-info">
+              <div class="alert-config-name">{config.name}</div>
+              <div class="alert-config-desc">{config.description}</div>
             </div>
 
             <!-- Toggle -->
@@ -97,11 +97,11 @@
               role="switch"
               aria-checked={config.enabled}
               onclick={() => toggleAlert(config.id)}
-              class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200"
+              class="toggle-track"
               style="background: {config.enabled ? 'oklch(0.55 0.15 145)' : 'oklch(0.24 0 0)'};"
             >
               <span
-                class="inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200"
+                class="toggle-thumb"
                 style="transform: translateX({config.enabled ? '20px' : '2px'});"
               ></span>
             </button>
@@ -111,37 +111,214 @@
     </div>
 
     <!-- Alert History Section -->
-    <div class="space-y-3">
-      <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Alert History</h2>
-      <div class="space-y-2">
+    <div class="section">
+      <h2 class="section-title">Alert History</h2>
+      <div class="alert-history-list">
         {#each alertHistory as alert (alert.id)}
           <div
-            class="panel px-4 py-3 flex items-start gap-3"
+            class="panel alert-history-row"
             style="border-left: 3px solid {typeColor(alert.type)};"
           >
             <!-- Direction dot -->
-            <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" style="background: {typeColor(alert.type)};"></div>
+            <div class="direction-dot" style="background: {typeColor(alert.type)};"></div>
 
             <!-- Content -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-bold font-mono" style="color: var(--text-primary);">{alert.symbol}</span>
+            <div class="alert-history-content">
+              <div class="alert-history-header">
+                <span class="alert-symbol">{alert.symbol}</span>
                 <span
-                  class="text-[10px] font-semibold uppercase rounded-full px-2 py-0.5"
+                  class="alert-type-badge"
                   style="background: {typeBg(alert.type)}; color: {typeColor(alert.type)};
                          border: 1px solid {typeBorder(alert.type)};"
                 >
                   {alert.type}
                 </span>
               </div>
-              <p class="text-xs mt-1" style="color: var(--text-secondary);">{alert.message}</p>
+              <p class="alert-message">{alert.message}</p>
             </div>
 
             <!-- Timestamp -->
-            <span class="text-[11px] font-mono shrink-0" style="color: var(--text-tertiary);">{alert.time}</span>
+            <span class="alert-timestamp">{alert.time}</span>
           </div>
         {/each}
       </div>
     </div>
   </div>
 </div>
+
+<style>
+  .page-root {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: auto;
+  }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .page-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 20px;
+    background: var(--border-subtle);
+  }
+
+  .header-status {
+    font-size: var(--text-xs);
+    font-family: var(--font-mono);
+    color: var(--text-tertiary);
+  }
+
+  .page-content {
+    padding: 20px;
+  }
+
+  .page-content > * + * {
+    margin-top: 24px;
+  }
+
+  .section > * + * {
+    margin-top: 12px;
+  }
+
+  .section-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .alert-config-list > * + * {
+    margin-top: 8px;
+  }
+
+  .alert-config-row {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+  }
+
+  .alert-config-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .alert-config-name {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+
+  .alert-config-desc {
+    font-size: var(--text-xs);
+    margin-top: 2px;
+    color: var(--text-tertiary);
+  }
+
+  .toggle-track {
+    position: relative;
+    display: inline-flex;
+    height: 24px;
+    width: 44px;
+    flex-shrink: 0;
+    align-items: center;
+    border-radius: var(--radius-full);
+    transition: color 150ms, background-color 150ms;
+    transition-duration: 200ms;
+    border: none;
+    cursor: pointer;
+  }
+
+  .toggle-thumb {
+    display: inline-block;
+    height: 20px;
+    width: 20px;
+    border-radius: var(--radius-full);
+    background: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: transform 200ms;
+  }
+
+  .alert-history-list > * + * {
+    margin-top: 8px;
+  }
+
+  .alert-history-row {
+    padding: 12px 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .direction-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+    margin-top: 6px;
+  }
+
+  .alert-history-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .alert-history-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .alert-symbol {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--text-primary);
+  }
+
+  .alert-type-badge {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-radius: var(--radius-full);
+    padding: 2px 8px;
+  }
+
+  .alert-message {
+    font-size: var(--text-xs);
+    margin-top: 4px;
+    color: var(--text-secondary);
+  }
+
+  .alert-timestamp {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    flex-shrink: 0;
+    color: var(--text-tertiary);
+  }
+</style>

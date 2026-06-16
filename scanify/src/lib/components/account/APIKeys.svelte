@@ -69,24 +69,18 @@
   }
 </script>
 
-<div class="flex flex-col gap-6 {className}">
+<div class="api-keys-wrapper {className}">
   <!-- Section header -->
-  <div class="flex items-center justify-between">
-    <div class="flex flex-col gap-1">
-      <h2 class="text-lg font-semibold text-[oklch(0.90_0_0)]">API Keys</h2>
-      <p class="text-sm text-[oklch(0.55_0_0)]">Manage your programmatic access keys</p>
+  <div class="section-header">
+    <div class="section-header-text">
+      <h2 class="section-title">API Keys</h2>
+      <p class="section-subtitle">Manage your programmatic access keys</p>
     </div>
     <button
-      class="
-        flex items-center gap-2 px-4 py-2 rounded-lg
-        bg-[oklch(0.55_0.15_145)] hover:bg-[oklch(0.60_0.16_145)]
-        text-sm font-medium text-white
-        shadow-sm shadow-[oklch(0.55_0.15_145/0.25)]
-        transition-all duration-150 cursor-pointer border-none
-      "
+      class="generate-btn"
       onclick={() => { showGenerateForm = !showGenerateForm; }}
     >
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="12" y1="5" x2="12" y2="19" />
         <line x1="5" y1="12" x2="19" y2="12" />
       </svg>
@@ -96,9 +90,9 @@
 
   <!-- Generate form (collapsible) -->
   {#if showGenerateForm}
-    <div class="flex items-end gap-3 rounded-xl border border-[oklch(0.22_0_0)] bg-[oklch(0.13_0_0)] p-4">
-      <div class="flex flex-col gap-1.5 flex-1">
-        <label for="new-key-name" class="text-xs font-medium text-[oklch(0.65_0_0)]">
+    <div class="generate-form">
+      <div class="form-field">
+        <label for="new-key-name" class="form-label">
           Key Name
         </label>
         <input
@@ -106,36 +100,20 @@
           type="text"
           bind:value={newKeyName}
           placeholder="e.g., Production Server, Local Dev"
-          class="
-            w-full rounded-lg border border-[oklch(0.24_0_0)]
-            bg-[oklch(0.11_0_0)] px-3 py-2
-            text-sm text-[oklch(0.88_0_0)]
-            placeholder-[oklch(0.40_0_0)]
-            outline-none transition-all duration-150
-            focus:border-[oklch(0.45_0.12_250)]
-            focus:ring-2 focus:ring-[oklch(0.45_0.12_250/0.3)]
-          "
+          class="form-input"
         />
       </div>
-      <div class="flex gap-2">
+      <div class="form-actions">
         <button
-          class="
-            px-3 py-2 rounded-lg text-xs font-medium
-            bg-transparent text-[oklch(0.60_0_0)] hover:text-[oklch(0.80_0_0)]
-            transition-colors duration-150 cursor-pointer border-none
-          "
+          class="cancel-btn"
           onclick={() => { showGenerateForm = false; newKeyName = ''; }}
         >
           Cancel
         </button>
         <button
-          class="
-            px-4 py-2 rounded-lg text-xs font-medium border-none cursor-pointer
-            transition-all duration-150
-            {newKeyName.trim()
-              ? 'bg-[oklch(0.55_0.15_145)] hover:bg-[oklch(0.60_0.16_145)] text-white'
-              : 'bg-[oklch(0.20_0_0)] text-[oklch(0.40_0_0)] cursor-not-allowed'}
-          "
+          class="submit-btn"
+          class:submit-btn-disabled={!newKeyName.trim()}
+          class:submit-btn-enabled={!!newKeyName.trim()}
           disabled={!newKeyName.trim()}
           onclick={handleGenerate}
         >
@@ -148,103 +126,89 @@
   <!-- Keys table or empty state -->
   {#if keys.length === 0}
     <!-- Empty state -->
-    <div class="flex flex-col items-center justify-center gap-4 py-16 rounded-xl border border-dashed border-[oklch(0.22_0_0)] bg-[oklch(0.11_0_0)]">
-      <div class="flex items-center justify-center w-12 h-12 rounded-full bg-[oklch(0.16_0_0)]">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-[oklch(0.40_0_0)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <div class="empty-state">
+      <div class="empty-icon-wrapper">
+        <svg xmlns="http://www.w3.org/2000/svg" class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
         </svg>
       </div>
-      <div class="flex flex-col items-center gap-1">
-        <p class="text-sm font-medium text-[oklch(0.70_0_0)]">No API keys yet</p>
-        <p class="text-xs text-[oklch(0.45_0_0)]">Generate one to get started.</p>
+      <div class="empty-text">
+        <p class="empty-title">No API keys yet</p>
+        <p class="empty-subtitle">Generate one to get started.</p>
       </div>
     </div>
   {:else}
     <!-- Keys table -->
-    <div class="overflow-x-auto rounded-xl border border-[oklch(0.20_0_0)]">
-      <table class="w-full text-xs">
+    <div class="table-wrapper">
+      <table class="keys-table">
         <thead>
-          <tr class="border-b border-[oklch(0.20_0_0)] bg-[oklch(0.11_0_0)]">
-            <th class="text-left px-4 py-3 font-medium text-[oklch(0.60_0_0)]">Name</th>
-            <th class="text-left px-4 py-3 font-medium text-[oklch(0.60_0_0)]">Key</th>
-            <th class="text-left px-4 py-3 font-medium text-[oklch(0.60_0_0)]">Created</th>
-            <th class="text-left px-4 py-3 font-medium text-[oklch(0.60_0_0)]">Last Used</th>
-            <th class="text-center px-4 py-3 font-medium text-[oklch(0.60_0_0)]">Status</th>
-            <th class="text-right px-4 py-3 font-medium text-[oklch(0.60_0_0)]">Actions</th>
+          <tr class="table-header-row">
+            <th class="th-left">Name</th>
+            <th class="th-left">Key</th>
+            <th class="th-left">Created</th>
+            <th class="th-left">Last Used</th>
+            <th class="th-center">Status</th>
+            <th class="th-right">Actions</th>
           </tr>
         </thead>
         <tbody>
           {#each keys as key, i (key.id)}
-            <tr class="border-b border-[oklch(0.16_0_0)] {i % 2 === 0 ? 'bg-[oklch(0.12_0_0)]' : 'bg-[oklch(0.13_0_0)]'} hover:bg-[oklch(0.15_0_0)] transition-colors duration-100">
+            <tr class="table-row" class:row-even={i % 2 === 0} class:row-odd={i % 2 !== 0}>
               <!-- Name -->
-              <td class="px-4 py-3">
-                <span class="font-medium text-[oklch(0.80_0_0)]">{key.name}</span>
+              <td class="table-cell">
+                <span class="key-name">{key.name}</span>
               </td>
 
               <!-- Masked key -->
-              <td class="px-4 py-3">
-                <code class="font-mono text-[oklch(0.60_0_0)] bg-[oklch(0.10_0_0)] px-2 py-0.5 rounded text-[11px]">
+              <td class="table-cell">
+                <code class="masked-key">
                   {key.maskedKey}
                 </code>
               </td>
 
               <!-- Created -->
-              <td class="px-4 py-3 text-[oklch(0.60_0_0)]">
+              <td class="table-cell cell-muted">
                 {formatDate(key.createdAt)}
               </td>
 
               <!-- Last used -->
-              <td class="px-4 py-3 text-[oklch(0.60_0_0)]">
+              <td class="table-cell cell-muted">
                 {formatDate(key.lastUsed)}
               </td>
 
               <!-- Status toggle -->
-              <td class="px-4 py-3 text-center">
+              <td class="table-cell cell-center">
                 <button
                   type="button"
                   role="switch"
                   aria-checked={key.isActive}
-                  class="
-                    relative inline-flex h-5 w-9 shrink-0 items-center rounded-full
-                    transition-colors duration-200 cursor-pointer border-none
-                    {key.isActive ? 'bg-[oklch(0.55_0.15_145)]' : 'bg-[oklch(0.24_0_0)]'}
-                  "
+                  class="toggle-switch"
+                  class:toggle-active={key.isActive}
+                  class:toggle-inactive={!key.isActive}
                   onclick={() => toggleKeyActive(key)}
                   title={key.isActive ? 'Active - click to deactivate' : 'Inactive - click to activate'}
                 >
                   <span
-                    class="
-                      inline-block h-3.5 w-3.5 rounded-full bg-white shadow-sm
-                      transition-transform duration-200
-                      {key.isActive ? 'translate-x-[18px]' : 'translate-x-0.5'}
-                    "
+                    class="toggle-thumb"
+                    class:thumb-on={key.isActive}
+                    class:thumb-off={!key.isActive}
                   ></span>
                 </button>
               </td>
 
               <!-- Delete action -->
-              <td class="px-4 py-3 text-right">
+              <td class="table-cell cell-right">
                 {#if confirmDeleteId === key.id}
-                  <div class="flex items-center justify-end gap-2">
-                    <span class="text-[11px] text-[oklch(0.60_0.14_25)]">Delete?</span>
+                  <div class="confirm-delete-row">
+                    <span class="confirm-label">Delete?</span>
                     <button
-                      class="
-                        px-2 py-1 rounded text-[11px] font-medium
-                        bg-[oklch(0.50_0.18_25)] hover:bg-[oklch(0.55_0.19_25)]
-                        text-white transition-colors duration-150
-                        cursor-pointer border-none
-                      "
+                      class="confirm-btn"
                       onclick={() => handleDelete(key.id)}
                     >
                       Confirm
                     </button>
                     <button
-                      class="
-                        px-2 py-1 rounded text-[11px] font-medium
-                        text-[oklch(0.60_0_0)] hover:text-[oklch(0.80_0_0)]
-                        transition-colors duration-150
-                        cursor-pointer border-none bg-transparent
-                      "
+                      class="confirm-cancel-btn"
                       onclick={cancelDelete}
                     >
                       Cancel
@@ -252,13 +216,7 @@
                   </div>
                 {:else}
                   <button
-                    class="
-                      px-2 py-1 rounded text-[11px] font-medium
-                      text-[oklch(0.55_0.10_25)] hover:text-[oklch(0.65_0.16_25)]
-                      hover:bg-[oklch(0.18_0.02_25)]
-                      transition-colors duration-150
-                      cursor-pointer border-none bg-transparent
-                    "
+                    class="delete-btn"
                     onclick={() => handleDelete(key.id)}
                     title="Delete API key"
                   >
@@ -273,9 +231,409 @@
     </div>
 
     <!-- Key count summary -->
-    <p class="text-[11px] text-[oklch(0.42_0_0)]">
+    <p class="key-count">
       {keys.length} API key{keys.length !== 1 ? 's' : ''} &middot;
       {keys.filter(k => k.isActive).length} active
     </p>
   {/if}
 </div>
+
+<style>
+  /* ── Wrapper ── */
+  .api-keys-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ── Section header ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .section-header-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .section-title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    color: oklch(0.90 0 0);
+  }
+
+  .section-subtitle {
+    font-size: var(--text-sm);
+    color: oklch(0.55 0 0);
+  }
+
+  /* ── Generate button ── */
+  .generate-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-inline: 16px;
+    padding-block: 8px;
+    border-radius: var(--radius-lg);
+    background-color: oklch(0.55 0.15 145);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: white;
+    box-shadow: 0 1px 2px oklch(0.55 0.15 145 / 0.25);
+    transition: all 150ms;
+    cursor: pointer;
+    border: none;
+  }
+
+  .generate-btn:hover {
+    background-color: oklch(0.60 0.16 145);
+  }
+
+  /* ── Icon sizes ── */
+  .icon-sm {
+    width: 16px;
+    height: 16px;
+  }
+
+  /* ── Generate form ── */
+  .generate-form {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    border-radius: var(--radius-xl);
+    border: 1px solid oklch(0.22 0 0);
+    background-color: oklch(0.13 0 0);
+    padding: 16px;
+  }
+
+  .form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+
+  .form-label {
+    font-size: var(--text-xs);
+    font-weight: 500;
+    color: oklch(0.65 0 0);
+  }
+
+  .form-input {
+    width: 100%;
+    border-radius: var(--radius-lg);
+    border: 1px solid oklch(0.24 0 0);
+    background-color: oklch(0.11 0 0);
+    padding-inline: 12px;
+    padding-block: 8px;
+    font-size: var(--text-sm);
+    color: oklch(0.88 0 0);
+    outline: none;
+    transition: all 150ms;
+  }
+
+  .form-input::placeholder {
+    color: oklch(0.40 0 0);
+  }
+
+  .form-input:focus {
+    border-color: oklch(0.45 0.12 250);
+    box-shadow: 0 0 0 2px oklch(0.45 0.12 250 / 0.3);
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .cancel-btn {
+    padding-inline: 12px;
+    padding-block: 8px;
+    border-radius: var(--radius-lg);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    background-color: transparent;
+    color: oklch(0.60 0 0);
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+    cursor: pointer;
+    border: none;
+  }
+
+  .cancel-btn:hover {
+    color: oklch(0.80 0 0);
+  }
+
+  .submit-btn {
+    padding-inline: 16px;
+    padding-block: 8px;
+    border-radius: var(--radius-lg);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 150ms;
+  }
+
+  .submit-btn-enabled {
+    background-color: oklch(0.55 0.15 145);
+    color: white;
+  }
+
+  .submit-btn-enabled:hover {
+    background-color: oklch(0.60 0.16 145);
+  }
+
+  .submit-btn-disabled {
+    background-color: oklch(0.20 0 0);
+    color: oklch(0.40 0 0);
+    cursor: not-allowed;
+  }
+
+  /* ── Empty state ── */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding-block: 64px;
+    border-radius: var(--radius-xl);
+    border: 1px dashed oklch(0.22 0 0);
+    background-color: oklch(0.11 0 0);
+  }
+
+  .empty-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-full);
+    background-color: oklch(0.16 0 0);
+  }
+
+  .empty-icon {
+    width: 24px;
+    height: 24px;
+    color: oklch(0.40 0 0);
+  }
+
+  .empty-text {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .empty-title {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: oklch(0.70 0 0);
+  }
+
+  .empty-subtitle {
+    font-size: var(--text-xs);
+    color: oklch(0.45 0 0);
+  }
+
+  /* ── Table ── */
+  .table-wrapper {
+    overflow-x: auto;
+    border-radius: var(--radius-xl);
+    border: 1px solid oklch(0.20 0 0);
+  }
+
+  .keys-table {
+    width: 100%;
+    font-size: var(--text-xs);
+  }
+
+  .table-header-row {
+    border-bottom: 1px solid oklch(0.20 0 0);
+    background-color: oklch(0.11 0 0);
+  }
+
+  .th-left,
+  .th-center,
+  .th-right {
+    padding-inline: 16px;
+    padding-block: 12px;
+    font-weight: 500;
+    color: oklch(0.60 0 0);
+  }
+
+  .th-left {
+    text-align: left;
+  }
+
+  .th-center {
+    text-align: center;
+  }
+
+  .th-right {
+    text-align: right;
+  }
+
+  .table-row {
+    border-bottom: 1px solid oklch(0.16 0 0);
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+  }
+
+  .table-row:hover {
+    background-color: oklch(0.15 0 0);
+  }
+
+  .row-even {
+    background-color: oklch(0.12 0 0);
+  }
+
+  .row-odd {
+    background-color: oklch(0.13 0 0);
+  }
+
+  .table-cell {
+    padding-inline: 16px;
+    padding-block: 12px;
+  }
+
+  .cell-muted {
+    color: oklch(0.60 0 0);
+  }
+
+  .cell-center {
+    text-align: center;
+  }
+
+  .cell-right {
+    text-align: right;
+  }
+
+  .key-name {
+    font-weight: 500;
+    color: oklch(0.80 0 0);
+  }
+
+  .masked-key {
+    font-family: var(--font-mono);
+    color: oklch(0.60 0 0);
+    background-color: oklch(0.10 0 0);
+    padding-inline: 8px;
+    padding-block: 2px;
+    border-radius: var(--radius-DEFAULT);
+    font-size: 11px;
+  }
+
+  /* ── Toggle switch ── */
+  .toggle-switch {
+    position: relative;
+    display: inline-flex;
+    height: 20px;
+    width: 36px;
+    flex-shrink: 0;
+    align-items: center;
+    border-radius: var(--radius-full);
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+    cursor: pointer;
+    border: none;
+  }
+
+  .toggle-active {
+    background-color: oklch(0.55 0.15 145);
+  }
+
+  .toggle-inactive {
+    background-color: oklch(0.24 0 0);
+  }
+
+  .toggle-thumb {
+    display: inline-block;
+    height: 14px;
+    width: 14px;
+    border-radius: var(--radius-full);
+    background-color: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+    transition: transform 200ms;
+  }
+
+  .thumb-on {
+    transform: translateX(18px);
+  }
+
+  .thumb-off {
+    transform: translateX(2px);
+  }
+
+  /* ── Delete actions ── */
+  .confirm-delete-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .confirm-label {
+    font-size: 11px;
+    color: oklch(0.60 0.14 25);
+  }
+
+  .confirm-btn {
+    padding-inline: 8px;
+    padding-block: 4px;
+    border-radius: var(--radius-DEFAULT);
+    font-size: 11px;
+    font-weight: 500;
+    background-color: oklch(0.50 0.18 25);
+    color: white;
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+    cursor: pointer;
+    border: none;
+  }
+
+  .confirm-btn:hover {
+    background-color: oklch(0.55 0.19 25);
+  }
+
+  .confirm-cancel-btn {
+    padding-inline: 8px;
+    padding-block: 4px;
+    border-radius: var(--radius-DEFAULT);
+    font-size: 11px;
+    font-weight: 500;
+    color: oklch(0.60 0 0);
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+  }
+
+  .confirm-cancel-btn:hover {
+    color: oklch(0.80 0 0);
+  }
+
+  .delete-btn {
+    padding-inline: 8px;
+    padding-block: 4px;
+    border-radius: var(--radius-DEFAULT);
+    font-size: 11px;
+    font-weight: 500;
+    color: oklch(0.55 0.10 25);
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+    cursor: pointer;
+    border: none;
+    background-color: transparent;
+  }
+
+  .delete-btn:hover {
+    color: oklch(0.65 0.16 25);
+    background-color: oklch(0.18 0.02 25);
+  }
+
+  /* ── Key count summary ── */
+  .key-count {
+    font-size: 11px;
+    color: oklch(0.42 0 0);
+  }
+</style>

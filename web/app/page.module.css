@@ -1,0 +1,432 @@
+.landing {
+  min-height: 100vh;
+}
+
+/* Navigation */
+.nav {
+  border-bottom: 1px solid var(--scanify-dark-700);
+  background-color: rgba(15, 15, 18, 0.8);
+  backdrop-filter: blur(4px);
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 50;
+}
+
+.navInner {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+@media (min-width: 640px) {
+  .navInner {
+    padding: 0 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .navInner {
+    padding: 0 32px;
+  }
+}
+
+.navContent {
+  display: flex;
+  justify-content: space-between;
+  height: 64px;
+  align-items: center;
+}
+
+.logoGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logoIcon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(to bottom right, var(--scanify-primary), var(--scanify-secondary));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoIconImg {
+  width: 20px;
+  height: 20px;
+  color: #fff;
+}
+
+.logoText {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.navActions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.signInLink {
+  color: #9ca3af;
+  text-decoration: none;
+  transition: color 150ms;
+}
+
+.signInLink:hover {
+  color: #fff;
+}
+
+/* Hero Section */
+.hero {
+  padding-top: 128px;
+  padding-bottom: 80px;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.heroInner {
+  max-width: 80rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.heroBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background-color: var(--scanify-dark-700);
+  border-radius: 9999px;
+  padding: 6px 16px;
+  margin-bottom: 24px;
+}
+
+.heroBadgeIcon {
+  width: 16px;
+  height: 16px;
+  color: var(--scanify-accent);
+}
+
+.heroBadgeText {
+  font-size: 0.875rem;
+  color: #d1d5db;
+}
+
+.heroTitle {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 768px) {
+  .heroTitle {
+    font-size: 3.75rem;
+  }
+}
+
+.heroGradientText {
+  color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  background-image: linear-gradient(to right, var(--scanify-primary), var(--scanify-accent));
+}
+
+.heroDescription {
+  font-size: 1.25rem;
+  color: #9ca3af;
+  max-width: 42rem;
+  margin: 0 auto 32px;
+}
+
+.heroCta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+
+.heroCtaPrimary {
+  font-size: 1.125rem;
+  padding: 12px 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.heroCtaPrimaryIcon {
+  width: 20px;
+  height: 20px;
+}
+
+.heroCtaSecondary {
+  font-size: 1.125rem;
+  padding: 12px 32px;
+}
+
+/* Features Section */
+.features {
+  padding: 80px 16px;
+  background-color: rgba(22, 22, 29, 0.5);
+}
+
+.featuresInner {
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.featuresTitle {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.featuresGrid {
+  display: grid;
+  gap: 32px;
+}
+
+@media (min-width: 768px) {
+  .featuresGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.featureIcon {
+  width: 40px;
+  height: 40px;
+  color: var(--scanify-primary);
+  margin-bottom: 16px;
+}
+
+.featureTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.featureDescription {
+  color: #9ca3af;
+}
+
+/* Pricing Section */
+.pricing {
+  padding: 80px 16px;
+}
+
+.pricingInner {
+  max-width: 80rem;
+  margin: 0 auto;
+}
+
+.pricingTitle {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.pricingSubtitle {
+  color: #9ca3af;
+  text-align: center;
+  margin-bottom: 48px;
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.pricingGrid {
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .pricingGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.pricingCard {
+  position: relative;
+}
+
+.pricingCardPopular {
+  border-color: var(--scanify-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+}
+
+.popularBadgeWrapper {
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.popularBadge {
+  background-color: var(--scanify-primary);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 9999px;
+}
+
+.tierName {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.tierPriceWrapper {
+  margin-top: 16px;
+  margin-bottom: 8px;
+}
+
+.tierPrice {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.tierPeriod {
+  color: #6b7280;
+}
+
+.tierDescription {
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin-bottom: 24px;
+}
+
+.tierFeatures {
+  list-style: none;
+  margin-bottom: 24px;
+}
+
+.tierFeatures > li + li {
+  margin-top: 12px;
+}
+
+.tierFeature {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.875rem;
+}
+
+.tierFeatureCheck {
+  width: 16px;
+  height: 16px;
+  color: var(--scanify-success);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.tierFeatureText {
+  color: #d1d5db;
+}
+
+.tierCtaPopular {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  padding: 8px 0;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: color 150ms, background-color 150ms, border-color 150ms;
+  background-color: var(--scanify-primary);
+  color: #fff;
+}
+
+.tierCtaPopular:hover {
+  background-color: #4f46e5;
+}
+
+.tierCtaDefault {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  padding: 8px 0;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: color 150ms, background-color 150ms, border-color 150ms;
+  background-color: var(--scanify-dark-700);
+  color: #e5e7eb;
+}
+
+.tierCtaDefault:hover {
+  background-color: var(--scanify-dark-600);
+}
+
+/* CTA Section */
+.cta {
+  padding: 80px 16px;
+  background: linear-gradient(to right, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+}
+
+.ctaInner {
+  max-width: 48rem;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.ctaTitle {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 16px;
+}
+
+.ctaDescription {
+  color: #9ca3af;
+  margin-bottom: 32px;
+}
+
+.ctaButton {
+  font-size: 1.125rem;
+  padding: 12px 32px;
+}
+
+/* Footer */
+.footer {
+  padding: 32px 16px;
+  border-top: 1px solid var(--scanify-dark-700);
+}
+
+.footerInner {
+  max-width: 80rem;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.footerLogo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.footerLogoIcon {
+  width: 20px;
+  height: 20px;
+  color: var(--scanify-primary);
+}
+
+.footerLogoText {
+  color: #9ca3af;
+}
+
+.footerCopyright {
+  font-size: 0.875rem;
+  color: #6b7280;
+}

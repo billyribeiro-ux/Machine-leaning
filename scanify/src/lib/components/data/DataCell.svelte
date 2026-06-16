@@ -22,7 +22,7 @@
 	}: Props = $props();
 </script>
 
-<div class="inline-flex items-center {className}">
+<div class="data-cell {className}">
 	{#if type === 'price'}
 		<PriceCell
 			value={Number(value) || 0}
@@ -71,8 +71,23 @@
 		/>
 	{:else}
 		<!-- text fallback -->
-		<span class="truncate text-sm text-[oklch(0.78_0_0)]">
+		<span class="text-fallback">
 			{String(value ?? '--')}
 		</span>
 	{/if}
 </div>
+
+<style>
+	.data-cell {
+		display: inline-flex;
+		align-items: center;
+	}
+
+	.text-fallback {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: var(--text-sm);
+		color: oklch(0.78 0 0);
+	}
+</style>

@@ -59,9 +59,24 @@
 </script>
 
 <div
-	class="flex items-center justify-center rounded-sm px-2 py-1 font-mono text-xs tabular-nums transition-colors duration-200 {className}"
-	style="background-color: {bgColor}; color: {textColor}; font-variant-numeric: tabular-nums;"
+	class="heatmap-cell {className}"
+	style="background-color: {bgColor}; color: {textColor};"
 	title={String(value)}
 >
 	{formattedValue}
 </div>
+
+<style>
+	.heatmap-cell {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--radius-sm);
+		padding-inline: 8px;
+		padding-block: 4px;
+		font-family: var(--font-mono);
+		font-size: var(--text-xs);
+		font-variant-numeric: tabular-nums;
+		transition: color 150ms, background-color 150ms;
+	}
+</style>

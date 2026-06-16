@@ -151,6 +151,10 @@ class PremiumSellConfig:
     min_credit: float = 0.50
     target_credit_pct: float = 0.30  # 30% of spread width
     min_prob_otm: float = 0.80
+    # Max distance (points) a chain quote may sit from the target strike
+    # before it is rejected. Defaults to 3x the standard 5-pt interval so
+    # wide/illiquid chains still resolve a usable strike.
+    max_strike_distance: float = 15.0
 
     # Exit management
     close_at_profit_pct: float = 0.50  # 50% of max profit
@@ -277,6 +281,16 @@ class RiskConfig:
 
 
 @dataclass
+class CredentialsConfig:
+    """API key management configuration."""
+    credentials_file: str = "~/.scanify/credentials.json"
+    master_key_env_var: str = "SCANIFY_MASTER_KEY"
+    admin_token_env_var: str = "SCANIFY_ADMIN_TOKEN"
+    api_host: str = "0.0.0.0"
+    api_port: int = 8000
+
+
+@dataclass
 class ScanifyConfig:
     """Master SCANIFY configuration."""
     # Sub-configs
@@ -288,6 +302,7 @@ class ScanifyConfig:
     exit: ExitConfig = field(default_factory=ExitConfig)
     calibration: CalibrationConfig = field(default_factory=CalibrationConfig)
     risk: RiskConfig = field(default_factory=RiskConfig)
+    credentials: CredentialsConfig = field(default_factory=CredentialsConfig)
 
     # Expected move weights
     em_weight_vix1d: float = 0.40

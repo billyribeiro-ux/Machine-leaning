@@ -41,32 +41,29 @@
   });
 </script>
 
-<div class="panel flex flex-col gap-4 p-4 {className}">
+<div class="panel correlation-view {className}">
   <!-- Header -->
-  <div class="flex flex-col gap-1">
-    <h3 class="text-sm font-semibold text-[var(--text-primary)]">Correlation Matrix</h3>
-    <p class="text-2xs text-[var(--text-tertiary)]">
+  <div class="view-header">
+    <h3 class="view-title">Correlation Matrix</h3>
+    <p class="view-description">
       Cross-asset correlation analysis. Values range from -1 (inverse) to +1 (perfectly correlated).
     </p>
   </div>
 
   <!-- Controls -->
-  <div class="flex items-center gap-3 flex-wrap">
+  <div class="controls-row">
     <!-- Symbol search -->
-    <div class="relative flex-1 min-w-[160px] max-w-[240px]">
+    <div class="search-wrapper">
       <input
         type="text"
         placeholder="Filter symbols..."
         bind:value={searchQuery}
-        class="w-full h-8 pl-3 pr-8 text-xs bg-[var(--bg-void)] border border-[var(--border-subtle)]
-               rounded-md text-[var(--text-primary)] placeholder:text-[var(--text-disabled)]
-               focus:outline-none focus:border-[var(--accent-dim)]
-               transition-colors duration-150"
+        class="search-input"
       />
       {#if searchQuery}
         <button
           type="button"
-          class="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]"
+          class="search-clear"
           onclick={() => (searchQuery = '')}
         >
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
@@ -77,14 +74,11 @@
     </div>
 
     <!-- Timeframe toggle -->
-    <div class="flex items-center bg-[var(--bg-void)] rounded-md border border-[var(--border-subtle)] p-0.5">
+    <div class="timeframe-group">
       {#each TIMEFRAMES as tf}
         <button
           type="button"
-          class="px-2.5 py-1 text-2xs font-medium rounded-sm transition-colors duration-150
-            {selectedTimeframe === tf
-              ? 'bg-[var(--accent-bg)] text-[var(--accent-bright)]'
-              : 'text-[var(--text-tertiary)] hover:text-[var(--text-secondary)]'}"
+          class="tf-button {selectedTimeframe === tf ? 'tf-active' : ''}"
           onclick={() => (selectedTimeframe = tf)}
         >
           {tf}
@@ -92,13 +86,13 @@
       {/each}
     </div>
 
-    <span class="text-2xs text-[var(--text-tertiary)] ml-auto">
+    <span class="symbol-count">
       {filteredSymbols.length} of {symbols.length} symbols
     </span>
   </div>
 
   <!-- Matrix -->
-  <div class="overflow-auto">
+  <div class="matrix-container">
     {#if filteredSymbols.length > 0}
       <CorrelationMatrix
         symbols={filteredSymbols}
@@ -106,9 +100,139 @@
         height={Math.min(500, Math.max(250, filteredSymbols.length * 40 + 80))}
       />
     {:else}
-      <div class="flex items-center justify-center h-48 text-sm text-[var(--text-tertiary)]">
+      <div class="empty-state">
         No matching symbols found
       </div>
     {/if}
   </div>
 </div>
+
+<style>
+  .correlation-view {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .view-header {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .view-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .view-description {
+    font-size: var(--text-2xs);
+    color: var(--text-tertiary);
+  }
+
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .search-wrapper {
+    position: relative;
+    flex: 1;
+    min-width: 160px;
+    max-width: 240px;
+  }
+
+  .search-input {
+    width: 100%;
+    height: 32px;
+    padding-left: 12px;
+    padding-right: 32px;
+    font-size: var(--text-xs);
+    background-color: var(--bg-void);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-DEFAULT, 6px);
+    color: var(--text-primary);
+    transition: border-color 150ms;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-disabled);
+  }
+
+  .search-input:focus {
+    outline: none;
+    border-color: var(--accent-dim);
+  }
+
+  .search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .search-clear:hover {
+    color: var(--text-secondary);
+  }
+
+  .timeframe-group {
+    display: flex;
+    align-items: center;
+    background-color: var(--bg-void);
+    border-radius: var(--radius-DEFAULT, 6px);
+    border: 1px solid var(--border-subtle);
+    padding: 2px;
+  }
+
+  .tf-button {
+    padding-inline: 10px;
+    padding-block: 4px;
+    font-size: var(--text-2xs);
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    transition: color 150ms, background-color 150ms;
+    color: var(--text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .tf-button:hover {
+    color: var(--text-secondary);
+  }
+
+  .tf-active {
+    background-color: var(--accent-bg);
+    color: var(--accent-bright);
+  }
+
+  .symbol-count {
+    font-size: var(--text-2xs);
+    color: var(--text-tertiary);
+    margin-left: auto;
+  }
+
+  .matrix-container {
+    overflow: auto;
+  }
+
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 192px;
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+  }
+</style>

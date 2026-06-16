@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import clsx from 'clsx';
+import styles from './page.module.css';
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -97,67 +98,67 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-scanify-primary/30 border-t-scanify-primary rounded-full animate-spin" />
+      <div className={styles.loadingScreen}>
+        <div className={styles.loadingSpinner} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className={styles.dashboardPage}>
       {/* Header */}
-      <header className="h-14 bg-scanify-dark-800 border-b border-scanify-dark-600 flex items-center justify-between px-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-to-br from-scanify-primary to-scanify-secondary rounded-lg flex items-center justify-center">
-            <Activity className="w-5 h-5 text-white" />
+      <header className={styles.header}>
+        <div className={styles.headerLogo}>
+          <div className={styles.headerLogoIcon}>
+            <Activity className={styles.headerLogoIconImg} />
           </div>
-          <span className="text-lg font-bold text-white">Scanify</span>
+          <span className={styles.headerLogoText}>Scanify</span>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className={styles.headerRight}>
           {isConnected ? (
-            <div className="flex items-center gap-1 text-green-400 text-sm">
-              <Wifi className="w-4 h-4" />
+            <div className={styles.statusOnline}>
+              <Wifi className={styles.statusOnlineIcon} />
               <span>Live</span>
             </div>
           ) : (
-            <div className="flex items-center gap-1 text-gray-500 text-sm">
-              <WifiOff className="w-4 h-4" />
+            <div className={styles.statusOffline}>
+              <WifiOff className={styles.statusOfflineIcon} />
               <span>Offline</span>
             </div>
           )}
 
           {!isRealtime && (
-            <span className="text-xs text-yellow-500 bg-yellow-900/30 px-2 py-1 rounded">
+            <span className={styles.delayedBadge}>
               Delayed
             </span>
           )}
 
-          <div className="flex items-center gap-2 text-sm">
-            <span className="text-gray-400">{user?.email}</span>
-            <span className="text-scanify-primary capitalize">{user?.tier}</span>
+          <div className={styles.userInfo}>
+            <span className={styles.userEmail}>{user?.email}</span>
+            <span className={styles.userTier}>{user?.tier}</span>
           </div>
 
-          <button onClick={handleLogout} className="p-2 hover:bg-scanify-dark-700 rounded-lg">
-            <LogOut className="w-4 h-4 text-gray-400" />
+          <button onClick={handleLogout} className={styles.logoutButton}>
+            <LogOut className={styles.logoutIcon} />
           </button>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 overflow-hidden flex flex-col gap-4">
+      <main className={styles.main}>
         {/* Scanner Filter */}
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2">
+        <div className={styles.filterBar}>
+          <div className={styles.scannerTabs}>
             {scannerTypes.map((scanner) => (
               <button
                 key={scanner.id || 'all'}
                 onClick={() => setSelectedScanner(scanner.id)}
                 className={clsx(
-                  'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+                  styles.scannerTab,
                   selectedScanner === scanner.id
-                    ? 'bg-scanify-primary text-white'
-                    : 'bg-scanify-dark-700 text-gray-400 hover:bg-scanify-dark-600'
+                    ? styles.scannerTabActive
+                    : styles.scannerTabInactive
                 )}
               >
                 {scanner.name}
@@ -165,71 +166,71 @@ export default function DashboardPage() {
             ))}
           </div>
 
-          <button onClick={fetchData} className="btn-secondary flex items-center gap-2">
-            <RefreshCw className="w-4 h-4" />
+          <button onClick={fetchData} className={`btn-secondary ${styles.refreshButton}`}>
+            <RefreshCw className={styles.refreshIcon} />
             Refresh
           </button>
         </div>
 
         {/* Content Grid */}
-        <div className="flex-1 grid grid-cols-12 gap-4 min-h-0">
+        <div className={styles.contentGrid}>
           {/* Signals Table */}
-          <div className="col-span-8 card overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-400 uppercase">Live Signals</h2>
-              <span className="text-scanify-primary text-sm">{signals.length} signals</span>
+          <div className={`card ${styles.signalsPanel}`}>
+            <div className={styles.panelHeader}>
+              <h2 className={styles.panelTitle}>Live Signals</h2>
+              <span className={styles.signalCount}>{signals.length} signals</span>
             </div>
 
-            <div className="flex-1 overflow-auto">
-              <table className="w-full">
-                <thead className="sticky top-0 bg-scanify-dark-800">
-                  <tr className="text-left text-xs text-gray-500 uppercase">
-                    <th className="pb-2 pr-4">Time</th>
-                    <th className="pb-2 pr-4">Symbol</th>
-                    <th className="pb-2 pr-4">Scanner</th>
-                    <th className="pb-2 pr-4">Direction</th>
-                    <th className="pb-2 pr-4">Confidence</th>
-                    <th className="pb-2 pr-4">Entry</th>
-                    <th className="pb-2">R:R</th>
+            <div className={styles.tableWrapper}>
+              <table className={styles.signalsTable}>
+                <thead className={styles.tableHead}>
+                  <tr>
+                    <th className={styles.tableHeadCell}>Time</th>
+                    <th className={styles.tableHeadCell}>Symbol</th>
+                    <th className={styles.tableHeadCell}>Scanner</th>
+                    <th className={styles.tableHeadCell}>Direction</th>
+                    <th className={styles.tableHeadCell}>Confidence</th>
+                    <th className={styles.tableHeadCell}>Entry</th>
+                    <th className={styles.tableHeadCell}>R:R</th>
                   </tr>
                 </thead>
                 <tbody>
                   {signals.map((signal) => (
-                    <tr key={signal.id} className="border-b border-scanify-dark-700 hover:bg-scanify-dark-700/50">
-                      <td className="py-3 pr-4 text-sm text-gray-400">
-                        <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
+                    <tr key={signal.id} className={styles.signalRow}>
+                      <td className={styles.timeCell}>
+                        <div className={styles.timeCellInner}>
+                          <Clock className={styles.timeIcon} />
                           {format(new Date(signal.timestamp), 'HH:mm:ss')}
                         </div>
                       </td>
-                      <td className="py-3 pr-4 font-semibold text-white">{signal.symbol}</td>
-                      <td className="py-3 pr-4">
-                        <span className="badge bg-scanify-dark-600 text-gray-300">
+                      <td className={styles.symbolCell}>{signal.symbol}</td>
+                      <td className={styles.scannerCell}>
+                        <span className={`badge ${styles.scannerBadge}`}>
                           {signal.scanner_type.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="py-3 pr-4">
+                      <td className={styles.directionCell}>
                         <div className={clsx(
-                          'flex items-center gap-1 font-medium',
-                          signal.direction === 'LONG' ? 'text-green-400' : signal.direction === 'SHORT' ? 'text-red-400' : 'text-gray-400'
+                          styles.directionInner,
+                          signal.direction === 'LONG' ? styles.directionLong : signal.direction === 'SHORT' ? styles.directionShort : styles.directionNeutral
                         )}>
-                          {signal.direction === 'LONG' ? <ArrowUp className="w-4 h-4" /> : signal.direction === 'SHORT' ? <ArrowDown className="w-4 h-4" /> : <Minus className="w-4 h-4" />}
+                          {signal.direction === 'LONG' ? <ArrowUp className={styles.directionIcon} /> : signal.direction === 'SHORT' ? <ArrowDown className={styles.directionIcon} /> : <Minus className={styles.directionIcon} />}
                           {signal.direction}
                         </div>
                       </td>
-                      <td className="py-3 pr-4">
-                        <div className="flex items-center gap-2">
-                          <div className="w-12 h-1.5 bg-scanify-dark-600 rounded-full overflow-hidden">
+                      <td className={styles.confidenceCell}>
+                        <div className={styles.confidenceInner}>
+                          <div className={styles.confidenceBarBg}>
                             <div
-                              className={clsx('h-full', signal.confidence >= 85 ? 'bg-green-500' : signal.confidence >= 70 ? 'bg-yellow-500' : 'bg-gray-500')}
+                              className={signal.confidence >= 85 ? styles.confidenceBarHigh : signal.confidence >= 70 ? styles.confidenceBarMed : styles.confidenceBarLow}
                               style={{ width: `${signal.confidence}%` }}
                             />
                           </div>
-                          <span className="text-sm">{signal.confidence.toFixed(0)}%</span>
+                          <span className={styles.confidenceText}>{signal.confidence.toFixed(0)}%</span>
                         </div>
                       </td>
-                      <td className="py-3 pr-4 text-sm">${signal.entry_price?.toFixed(2) || '-'}</td>
-                      <td className="py-3 text-sm">
+                      <td className={styles.entryCell}>${signal.entry_price?.toFixed(2) || '-'}</td>
+                      <td className={styles.rrCell}>
                         {signal.risk_reward ? `${signal.risk_reward.toFixed(1)}:1` : '-'}
                       </td>
                     </tr>
@@ -238,8 +239,8 @@ export default function DashboardPage() {
               </table>
 
               {signals.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                  <Activity className="w-8 h-8 mb-2 opacity-50" />
+                <div className={styles.emptyState}>
+                  <Activity className={styles.emptyIcon} />
                   <p>No signals yet</p>
                 </div>
               )}
@@ -247,38 +248,38 @@ export default function DashboardPage() {
           </div>
 
           {/* Alerts */}
-          <div className="col-span-4 card overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-400 uppercase">Alerts</h2>
-              <span className="badge bg-cyan-900/50 text-cyan-400">{alerts.length}</span>
+          <div className={`card ${styles.alertsPanel}`}>
+            <div className={styles.panelHeader}>
+              <h2 className={styles.panelTitle}>Alerts</h2>
+              <span className={`badge ${styles.alertsBadge}`}>{alerts.length}</span>
             </div>
 
-            <div className="flex-1 overflow-auto space-y-2">
+            <div className={styles.alertsList}>
               {alerts.map((alert) => (
                 <div
                   key={alert.id}
                   className={clsx(
-                    'p-3 rounded-lg border-l-4',
-                    alert.priority === 'critical' ? 'border-l-red-500 bg-red-900/10' :
-                    alert.priority === 'high' ? 'border-l-orange-500 bg-orange-900/10' :
-                    'border-l-blue-500 bg-blue-900/10'
+                    styles.alertItem,
+                    alert.priority === 'critical' ? styles.alertCritical :
+                    alert.priority === 'high' ? styles.alertHigh :
+                    styles.alertNormal
                   )}
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <Bell className="w-4 h-4 text-gray-400" />
-                    {alert.symbol && <span className="font-semibold text-white">{alert.symbol}</span>}
+                  <div className={styles.alertHeader}>
+                    <Bell className={styles.alertBellIcon} />
+                    {alert.symbol && <span className={styles.alertSymbol}>{alert.symbol}</span>}
                   </div>
-                  <p className="text-sm text-gray-300">{alert.message}</p>
-                  <span className="text-xs text-gray-500">
+                  <p className={styles.alertMessage}>{alert.message}</p>
+                  <span className={styles.alertTime}>
                     {format(new Date(alert.created_at), 'HH:mm:ss')}
                   </span>
                 </div>
               ))}
 
               {alerts.length === 0 && (
-                <div className="flex flex-col items-center justify-center h-full text-gray-500">
-                  <Bell className="w-8 h-8 mb-2 opacity-50" />
-                  <p className="text-sm">No alerts</p>
+                <div className={styles.alertsEmpty}>
+                  <Bell className={styles.alertsEmptyIcon} />
+                  <p className={styles.alertsEmptyText}>No alerts</p>
                 </div>
               )}
             </div>

@@ -95,7 +95,7 @@
 {#if open}
 	<dialog
 		bind:this={dialogEl}
-		class="fixed inset-0 z-50 m-0 h-full w-full max-h-full max-w-full bg-transparent p-0 backdrop:bg-transparent open:flex open:items-center open:justify-center"
+		class="dialog-root"
 		onclick={handleBackdropClick}
 		onkeydown={handleKeydown}
 		oncancel={handleCancel}
@@ -103,31 +103,31 @@
 		aria-labelledby={title ? 'dialog-title' : undefined}
 	>
 		<!-- Backdrop -->
-		<div class="fixed inset-0 bg-black/60 backdrop-blur-sm" aria-hidden="true"></div>
+		<div class="dialog-backdrop" aria-hidden="true"></div>
 
 		<!-- Panel -->
 		<div
-			class="relative z-10 w-full max-w-lg mx-4 rounded-xl border border-[oklch(0.24_0.005_270)] bg-[oklch(0.14_0.005_270)] shadow-2xl shadow-black/50 {className}"
+			class="dialog-panel {className}"
 			onclick={(e) => e.stopPropagation()}
 		>
 			<!-- Header -->
 			{#if title}
-				<div class="flex items-center justify-between border-b border-[oklch(0.22_0_0)] px-5 py-4">
+				<div class="dialog-header">
 					<h2
 						id="dialog-title"
-						class="text-base font-semibold text-[oklch(0.90_0_0)]"
+						class="dialog-title"
 					>
 						{title}
 					</h2>
 					<button
 						type="button"
 						onclick={close}
-						class="rounded-lg p-1 text-[oklch(0.45_0_0)] transition-colors hover:text-[oklch(0.75_0_0)] hover:bg-[oklch(0.20_0_0)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.40_0_0)]"
+						class="dialog-close-btn"
 						aria-label="Close dialog"
 					>
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
-							class="h-5 w-5"
+							class="close-icon"
 							fill="none"
 							viewBox="0 0 24 24"
 							stroke="currentColor"
@@ -141,12 +141,12 @@
 				<button
 					type="button"
 					onclick={close}
-					class="absolute top-3 right-3 z-10 rounded-lg p-1 text-[oklch(0.45_0_0)] transition-colors hover:text-[oklch(0.75_0_0)] hover:bg-[oklch(0.20_0_0)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[oklch(0.40_0_0)]"
+					class="dialog-close-btn dialog-close-absolute"
 					aria-label="Close dialog"
 				>
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
-						class="h-5 w-5"
+						class="close-icon"
 						fill="none"
 						viewBox="0 0 24 24"
 						stroke="currentColor"
@@ -158,16 +158,124 @@
 			{/if}
 
 			<!-- Content -->
-			<div class="px-5 py-4 text-sm text-[oklch(0.75_0_0)]">
+			<div class="dialog-content">
 				{@render content?.()}
 			</div>
 
 			<!-- Footer -->
 			{#if footer}
-				<div class="flex items-center justify-end gap-3 border-t border-[oklch(0.22_0_0)] px-5 py-3.5">
+				<div class="dialog-footer">
 					{@render footer?.()}
 				</div>
 			{/if}
 		</div>
 	</dialog>
 {/if}
+
+<style>
+	.dialog-root {
+		position: fixed;
+		inset: 0;
+		z-index: var(--z-modal, 400);
+		margin: 0;
+		height: 100%;
+		width: 100%;
+		max-height: 100%;
+		max-width: 100%;
+		background: transparent;
+		padding: 0;
+		border: none;
+	}
+
+	.dialog-root[open] {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* Override native dialog backdrop */
+	.dialog-root::backdrop {
+		background: transparent;
+	}
+
+	.dialog-backdrop {
+		position: fixed;
+		inset: 0;
+		background-color: rgba(0, 0, 0, 0.60);
+		backdrop-filter: blur(4px);
+	}
+
+	.dialog-panel {
+		position: relative;
+		z-index: 10;
+		width: 100%;
+		max-width: 512px;
+		margin-inline: 16px;
+		border-radius: var(--radius-xl);
+		border: 1px solid oklch(0.24 0.005 270);
+		background-color: oklch(0.14 0.005 270);
+		box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+	}
+
+	.dialog-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		border-bottom: 1px solid oklch(0.22 0 0);
+		padding-inline: 20px;
+		padding-block: 16px;
+	}
+
+	.dialog-title {
+		font-size: var(--text-base);
+		font-weight: 600;
+		color: oklch(0.90 0 0);
+	}
+
+	.dialog-close-btn {
+		border-radius: var(--radius-lg);
+		padding: 4px;
+		color: oklch(0.45 0 0);
+		transition: color 150ms, background-color 150ms;
+		outline: none;
+	}
+
+	.dialog-close-btn:hover {
+		color: oklch(0.75 0 0);
+		background-color: oklch(0.20 0 0);
+	}
+
+	.dialog-close-btn:focus-visible {
+		outline: 2px solid oklch(0.40 0 0);
+		outline-offset: 2px;
+	}
+
+	.dialog-close-absolute {
+		position: absolute;
+		top: 12px;
+		right: 12px;
+		z-index: 10;
+	}
+
+	.close-icon {
+		height: 20px;
+		width: 20px;
+	}
+
+	.dialog-content {
+		padding-inline: 20px;
+		padding-block: 16px;
+		font-size: var(--text-sm);
+		color: oklch(0.75 0 0);
+	}
+
+	.dialog-footer {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 12px;
+		border-top: 1px solid oklch(0.22 0 0);
+		padding-inline: 20px;
+		padding-block: 14px;
+	}
+</style>

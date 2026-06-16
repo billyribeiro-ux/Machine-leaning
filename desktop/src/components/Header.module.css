@@ -1,0 +1,189 @@
+.headerBar {
+  height: 56px;
+  background-color: var(--scanify-dark-800);
+  border-bottom: 1px solid var(--scanify-dark-600);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.logoGroup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logoBox {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(to bottom right, var(--scanify-primary), var(--scanify-secondary));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logoIcon {
+  width: 20px;
+  height: 20px;
+  color: #ffffff;
+}
+
+.logoTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.statusGroup {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.statusItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.marketDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+}
+
+.marketDotOpen {
+  background-color: #22c55e;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.marketDotClosed {
+  background-color: #6b7280;
+}
+
+.statusLabel {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #9ca3af;
+}
+
+.marketOpen {
+  color: #4ade80;
+}
+
+.marketClosed {
+  color: #6b7280;
+}
+
+.scannerIcon {
+  width: 16px;
+  height: 16px;
+  color: var(--scanify-primary);
+}
+
+.signalCount {
+  color: #ffffff;
+  font-weight: 500;
+}
+
+.connectedIcon {
+  width: 16px;
+  height: 16px;
+  color: #22c55e;
+}
+
+.connectedLabel {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #4ade80;
+}
+
+.disconnectedIcon {
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+}
+
+.disconnectedLabel {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  color: #6b7280;
+}
+
+.separator {
+  width: 1px;
+  height: 24px;
+  background-color: var(--scanify-dark-600);
+}
+
+.userMenu {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.userAvatar {
+  width: 32px;
+  height: 32px;
+  background-color: var(--scanify-dark-700);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.userAvatarIcon {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+}
+
+.userDetails {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.userName {
+  color: #ffffff;
+}
+
+.userTier {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: var(--scanify-primary);
+  text-transform: capitalize;
+}
+
+.logoutButton {
+  padding: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: color 150ms, background-color 150ms, border-color 150ms;
+}
+
+.logoutButton:hover {
+  background-color: var(--scanify-dark-700);
+}
+
+.logoutIcon {
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+}

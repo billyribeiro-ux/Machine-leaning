@@ -21,53 +21,53 @@
   <title>Appearance - Scanify</title>
 </svelte:head>
 
-<div class="flex flex-col h-full overflow-auto">
+<div class="appearance-page">
   <!-- Header -->
-  <div class="flex items-center gap-3 px-5 py-3 shrink-0" style="border-bottom: 1px solid var(--border-subtle);">
-    <a href="/settings" class="text-xs" style="color: var(--text-tertiary);">Settings</a>
-    <span class="text-xs" style="color: var(--text-disabled);">/</span>
-    <h1 class="text-lg font-bold" style="color: var(--text-primary);">Appearance</h1>
+  <div class="appearance-header" style="border-bottom: 1px solid var(--border-subtle);">
+    <a href="/settings" class="breadcrumb-link" style="color: var(--text-tertiary);">Settings</a>
+    <span class="breadcrumb-separator" style="color: var(--text-disabled);">/</span>
+    <h1 class="appearance-title" style="color: var(--text-primary);">Appearance</h1>
   </div>
 
-  <div class="p-5 space-y-8 max-w-3xl">
+  <div class="appearance-body">
 
     <!-- Theme Selector -->
-    <div class="space-y-3">
+    <div class="section">
       <div>
-        <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Theme</h2>
-        <p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Choose the visual theme for the application</p>
+        <h2 class="section-heading" style="color: var(--text-primary);">Theme</h2>
+        <p class="section-description" style="color: var(--text-tertiary);">Choose the visual theme for the application</p>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="theme-grid">
         {#each themes as theme (theme.id)}
           <button
             type="button"
             onclick={() => activeTheme = theme.id}
-            class="flex flex-col rounded-xl p-4 text-left transition-all duration-150"
+            class="theme-card"
             style="background: var(--bg-surface);
                    border: 2px solid {activeTheme === theme.id ? 'var(--accent)' : 'var(--border-subtle)'};
                    {activeTheme === theme.id ? 'box-shadow: var(--glow-accent);' : ''}"
           >
             <!-- Theme preview swatch -->
             <div
-              class="w-full h-12 rounded-md mb-3 flex items-center justify-center"
+              class="theme-swatch"
               style="background: {theme.bg}; border: 1px solid var(--border-subtle);"
             >
-              <span class="text-xs font-bold font-mono" style="color: {theme.text};">Aa</span>
+              <span class="swatch-text" style="color: {theme.text};">Aa</span>
             </div>
 
-            <span class="text-xs font-semibold" style="color: {activeTheme === theme.id ? 'var(--accent-bright)' : 'var(--text-primary)'};">
+            <span class="theme-label" style="color: {activeTheme === theme.id ? 'var(--accent-bright)' : 'var(--text-primary)'};">
               {theme.label}
             </span>
-            <span class="text-[10px] mt-0.5" style="color: var(--text-tertiary);">{theme.description}</span>
+            <span class="theme-description" style="color: var(--text-tertiary);">{theme.description}</span>
 
             <!-- Active check -->
             {#if activeTheme === theme.id}
-              <div class="flex items-center gap-1 mt-2">
-                <svg class="w-3 h-3" style="color: var(--accent);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+              <div class="theme-active-badge">
+                <svg class="check-icon" style="color: var(--accent);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-                <span class="text-[10px] font-medium" style="color: var(--accent);">Active</span>
+                <span class="active-label" style="color: var(--accent);">Active</span>
               </div>
             {/if}
           </button>
@@ -76,27 +76,27 @@
     </div>
 
     <!-- Animations Toggle -->
-    <div class="space-y-3">
+    <div class="section">
       <div>
-        <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Animations</h2>
-        <p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Enable or disable UI animations and transitions</p>
+        <h2 class="section-heading" style="color: var(--text-primary);">Animations</h2>
+        <p class="section-description" style="color: var(--text-tertiary);">Enable or disable UI animations and transitions</p>
       </div>
 
-      <div class="panel p-4 flex items-center justify-between">
-        <div class="flex flex-col">
-          <span class="text-xs font-medium" style="color: var(--text-primary);">Enable Animations</span>
-          <span class="text-[11px]" style="color: var(--text-tertiary);">Smooth transitions, price flashes, and signal pings</span>
+      <div class="panel animations-row">
+        <div class="animations-text">
+          <span class="animations-label" style="color: var(--text-primary);">Enable Animations</span>
+          <span class="animations-description" style="color: var(--text-tertiary);">Smooth transitions, price flashes, and signal pings</span>
         </div>
         <button
           type="button"
           role="switch"
           aria-checked={animationsEnabled}
           onclick={() => animationsEnabled = !animationsEnabled}
-          class="relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200"
+          class="toggle-track"
           style="background: {animationsEnabled ? 'oklch(0.55 0.15 145)' : 'oklch(0.24 0 0)'};"
         >
           <span
-            class="inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200"
+            class="toggle-thumb"
             style="transform: translateX({animationsEnabled ? '20px' : '2px'});"
           ></span>
         </button>
@@ -104,37 +104,37 @@
     </div>
 
     <!-- Density -->
-    <div class="space-y-3">
+    <div class="section">
       <div>
-        <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Density</h2>
-        <p class="text-xs mt-0.5" style="color: var(--text-tertiary);">Control the spacing and sizing of interface elements</p>
+        <h2 class="section-heading" style="color: var(--text-primary);">Density</h2>
+        <p class="section-description" style="color: var(--text-tertiary);">Control the spacing and sizing of interface elements</p>
       </div>
 
-      <div class="space-y-2">
+      <div class="density-options">
         {#each densityOptions as option (option.id)}
           <button
             type="button"
             onclick={() => density = option.id}
-            class="w-full panel p-4 flex items-center gap-4 text-left transition-all duration-150"
+            class="panel density-card"
             style="border: 2px solid {density === option.id ? 'var(--accent)' : 'var(--border-subtle)'};
                    {density === option.id ? 'box-shadow: var(--glow-accent);' : ''}"
           >
             <!-- Radio circle -->
             <div
-              class="w-4 h-4 rounded-full shrink-0 flex items-center justify-center"
+              class="radio-outer"
               style="border: 2px solid {density === option.id ? 'var(--accent)' : 'var(--text-disabled)'};"
             >
               {#if density === option.id}
-                <div class="w-2 h-2 rounded-full" style="background: var(--accent);"></div>
+                <div class="radio-inner" style="background: var(--accent);"></div>
               {/if}
             </div>
 
             <!-- Label -->
-            <div class="flex-1 min-w-0">
-              <div class="text-xs font-semibold" style="color: {density === option.id ? 'var(--accent-bright)' : 'var(--text-primary)'};">
+            <div class="density-content">
+              <div class="density-label" style="color: {density === option.id ? 'var(--accent-bright)' : 'var(--text-primary)'};">
                 {option.label}
               </div>
-              <div class="text-[10px] mt-0.5" style="color: var(--text-tertiary);">{option.description}</div>
+              <div class="density-description" style="color: var(--text-tertiary);">{option.description}</div>
             </div>
           </button>
         {/each}
@@ -143,3 +143,212 @@
 
   </div>
 </div>
+
+<style>
+  .appearance-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: auto;
+  }
+
+  .appearance-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    flex-shrink: 0;
+  }
+
+  .breadcrumb-link {
+    font-size: var(--text-xs);
+  }
+
+  .breadcrumb-separator {
+    font-size: var(--text-xs);
+  }
+
+  .appearance-title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+  }
+
+  .appearance-body {
+    padding: 20px;
+    max-width: 48rem;
+  }
+
+  .appearance-body > * + * {
+    margin-top: 32px;
+  }
+
+  /* Sections */
+  .section > * + * {
+    margin-top: 12px;
+  }
+
+  .section-heading {
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  .section-description {
+    font-size: var(--text-xs);
+    margin-top: 2px;
+  }
+
+  /* Theme grid */
+  .theme-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  @media (min-width: 768px) {
+    .theme-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .theme-card {
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-xl);
+    padding: 16px;
+    text-align: left;
+    transition: all 150ms;
+  }
+
+  .theme-swatch {
+    width: 100%;
+    height: 48px;
+    border-radius: var(--radius-md);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .swatch-text {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .theme-label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+  }
+
+  .theme-description {
+    font-size: 10px;
+    margin-top: 2px;
+  }
+
+  .theme-active-badge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .check-icon {
+    width: 12px;
+    height: 12px;
+  }
+
+  .active-label {
+    font-size: 10px;
+    font-weight: 500;
+  }
+
+  /* Animations toggle */
+  .animations-row {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .animations-text {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .animations-label {
+    font-size: var(--text-xs);
+    font-weight: 500;
+  }
+
+  .animations-description {
+    font-size: 11px;
+  }
+
+  .toggle-track {
+    position: relative;
+    display: inline-flex;
+    height: 24px;
+    width: 44px;
+    flex-shrink: 0;
+    align-items: center;
+    border-radius: var(--radius-full);
+    transition: color 150ms, background-color 150ms;
+    transition-duration: 200ms;
+  }
+
+  .toggle-thumb {
+    display: inline-block;
+    height: 20px;
+    width: 20px;
+    border-radius: var(--radius-full);
+    background: white;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: transform 200ms;
+  }
+
+  /* Density options */
+  .density-options > * + * {
+    margin-top: 8px;
+  }
+
+  .density-card {
+    width: 100%;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    text-align: left;
+    transition: all 150ms;
+  }
+
+  .radio-outer {
+    width: 16px;
+    height: 16px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .radio-inner {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+  }
+
+  .density-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .density-label {
+    font-size: var(--text-xs);
+    font-weight: 600;
+  }
+
+  .density-description {
+    font-size: 10px;
+    margin-top: 2px;
+  }
+</style>

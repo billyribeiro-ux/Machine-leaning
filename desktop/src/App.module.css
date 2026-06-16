@@ -1,0 +1,11 @@
+.appLayout {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--scanify-dark-900);
+}
+
+.mainContent {
+  flex: 1;
+  overflow: hidden;
+}

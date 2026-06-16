@@ -61,43 +61,36 @@
 </script>
 
 <div
-  class="flex items-center gap-2 {className}"
+  class="sound-controls {className}"
   role="group"
   aria-label="Sound controls"
 >
   <!-- Speaker icon / mute toggle -->
   <button
-    class="
-      flex items-center justify-center
-      w-7 h-7 rounded-md
-      border-none bg-transparent
-      text-[oklch(0.55_0_0)] hover:text-[oklch(0.80_0_0)]
-      hover:bg-[oklch(0.20_0_0)]
-      transition-colors duration-150 cursor-pointer
-    "
+    class="mute-btn"
     onclick={toggleMute}
     aria-label={enabled ? 'Mute sound' : 'Unmute sound'}
     title={enabled ? `Volume: ${volumePercent}%` : 'Muted'}
   >
     {#if iconState === 'muted'}
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
         <line x1="23" y1="9" x2="17" y2="15" />
         <line x1="17" y1="9" x2="23" y2="15" />
       </svg>
     {:else if iconState === 'low'}
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
         <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
       </svg>
     {:else if iconState === 'medium'}
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
         <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
         <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
       </svg>
     {:else}
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
         <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
         <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
@@ -106,7 +99,7 @@
   </button>
 
   <!-- Volume slider -->
-  <div class="relative flex items-center w-20">
+  <div class="slider-wrap">
     <input
       type="range"
       min="0"
@@ -114,10 +107,7 @@
       step="0.01"
       value={enabled ? volume : 0}
       oninput={handleVolumeInput}
-      class="
-        volume-slider w-full h-1 appearance-none rounded-full outline-none cursor-pointer
-        bg-[oklch(0.22_0_0)]
-      "
+      class="volume-slider"
       style="background: linear-gradient(to right, oklch(0.50 0.12 250) 0%, oklch(0.50 0.12 250) {effectiveVolume * 100}%, oklch(0.22 0 0) {effectiveVolume * 100}%, oklch(0.22 0 0) 100%);"
       aria-label="Volume"
       aria-valuemin={0}
@@ -127,12 +117,59 @@
   </div>
 
   <!-- Volume level indicator -->
-  <span class="text-[10px] font-mono tabular-nums w-7 text-right text-[oklch(0.50_0_0)]">
+  <span class="volume-label">
     {enabled ? volumePercent : 0}%
   </span>
 </div>
 
 <style>
+  .sound-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mute-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: transparent;
+    color: oklch(0.55 0 0);
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+    cursor: pointer;
+  }
+
+  .mute-btn:hover {
+    color: oklch(0.80 0 0);
+    background-color: oklch(0.20 0 0);
+  }
+
+  .icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .slider-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    width: 80px;
+  }
+
+  .volume-slider {
+    width: 100%;
+    height: 4px;
+    appearance: none;
+    border-radius: var(--radius-full);
+    outline: none;
+    cursor: pointer;
+    background-color: oklch(0.22 0 0);
+  }
+
   .volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
@@ -161,5 +198,14 @@
 
   .volume-slider::-moz-range-thumb:hover {
     background: oklch(0.90 0 0);
+  }
+
+  .volume-label {
+    font-size: 10px;
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    width: 28px;
+    text-align: right;
+    color: oklch(0.50 0 0);
   }
 </style>

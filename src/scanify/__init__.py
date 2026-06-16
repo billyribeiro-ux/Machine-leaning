@@ -47,6 +47,7 @@ try:
         CalibrationConfig,
         RiskConfig,
         SPXContractSpec,
+        CredentialsConfig,
     )
 except ImportError as exc:
     _logger.warning("Failed to import scanify.config: %s", exc)
@@ -303,6 +304,55 @@ except ImportError as exc:
     )
 
 # ---------------------------------------------------------------------------
+# credentials — API key management with encryption
+# ---------------------------------------------------------------------------
+try:
+    from .credentials import (
+        AuthType,
+        VendorStatus,
+        VendorSpec,
+        CredentialEntry,
+        CredentialStore,
+        VENDOR_REGISTRY,
+    )
+except ImportError as exc:
+    _logger.warning("Failed to import scanify.credentials: %s", exc)
+    warnings.warn(
+        f"scanify.credentials could not be imported: {exc}",
+        ImportWarning,
+        stacklevel=2,
+    )
+
+# ---------------------------------------------------------------------------
+# fmp_adapter — Financial Modeling Prep equity data adapter
+# ---------------------------------------------------------------------------
+try:
+    from .fmp_adapter import (
+        FMPAdapter,
+        run_fmp_test,
+    )
+except ImportError as exc:
+    _logger.warning("Failed to import scanify.fmp_adapter: %s", exc)
+    warnings.warn(
+        f"scanify.fmp_adapter could not be imported: {exc}",
+        ImportWarning,
+        stacklevel=2,
+    )
+
+# ---------------------------------------------------------------------------
+# api — FastAPI REST endpoints
+# ---------------------------------------------------------------------------
+try:
+    from .api import create_app
+except ImportError as exc:
+    _logger.warning("Failed to import scanify.api: %s", exc)
+    warnings.warn(
+        f"scanify.api could not be imported: {exc}",
+        ImportWarning,
+        stacklevel=2,
+    )
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 __all__ = [
@@ -324,6 +374,16 @@ __all__ = [
     "CalibrationConfig",
     "RiskConfig",
     "SPXContractSpec",
+    "CredentialsConfig",
+    # credentials
+    "AuthType",
+    "VendorStatus",
+    "VendorSpec",
+    "CredentialEntry",
+    "CredentialStore",
+    "VENDOR_REGISTRY",
+    # api
+    "create_app",
     # data_feeds
     "OptionType",
     "ImpactLevel",
@@ -401,4 +461,7 @@ __all__ = [
     "InstitutionalSummary",
     "EDGARAdapter",
     "run_edgar_test",
+    # fmp_adapter
+    "FMPAdapter",
+    "run_fmp_test",
 ]

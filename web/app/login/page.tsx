@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Activity, Mail, Lock, User, AlertCircle, ArrowLeft } from 'lucide-react';
 import { api } from '@/lib/api';
+import styles from './page.module.css';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -47,21 +48,21 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className={styles.loginPage}>
+      <div className={styles.loginContainer}>
         {/* Back Link */}
-        <Link href="/" className="inline-flex items-center gap-2 text-gray-400 hover:text-white mb-8">
-          <ArrowLeft className="w-4 h-4" />
+        <Link href="/" className={styles.backLink}>
+          <ArrowLeft className={styles.backIcon} />
           Back to home
         </Link>
 
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-scanify-primary to-scanify-secondary rounded-2xl mb-4">
-            <Activity className="w-8 h-8 text-white" />
+        <div className={styles.logoSection}>
+          <div className={styles.logoBox}>
+            <Activity className={styles.logoBoxIcon} />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Scanify</h1>
-          <p className="text-gray-400">
+          <h1 className={styles.logoTitle}>Scanify</h1>
+          <p className={styles.logoSubtitle}>
             {isRegistering ? 'Create your account' : 'Welcome back'}
           </p>
         </div>
@@ -69,23 +70,23 @@ export default function LoginPage() {
         {/* Form */}
         <div className="card">
           {error && (
-            <div className="mb-4 p-3 bg-red-900/30 border border-red-800 rounded-lg flex items-center gap-2 text-red-400">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <span className="text-sm">{error}</span>
+            <div className={styles.errorBox}>
+              <AlertCircle className={styles.errorIcon} />
+              <span className={styles.errorText}>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className={styles.form}>
             {isRegistering && (
               <div>
-                <label className="block text-sm text-gray-400 mb-1">Username (optional)</label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <label className={styles.fieldLabel}>Username (optional)</label>
+                <div className={styles.inputWrapper}>
+                  <User className={styles.inputIcon} />
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="input pl-10"
+                    className={`input ${styles.inputWithIcon}`}
                     placeholder="johndoe"
                   />
                 </div>
@@ -93,14 +94,14 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Email</label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <label className={styles.fieldLabel}>Email</label>
+              <div className={styles.inputWrapper}>
+                <Mail className={styles.inputIcon} />
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="input pl-10"
+                  className={`input ${styles.inputWithIcon}`}
                   placeholder="you@example.com"
                   required
                 />
@@ -108,15 +109,15 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label className="block text-sm text-gray-400 mb-1">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+              <label className={styles.fieldLabel}>Password</label>
+              <div className={styles.inputWrapper}>
+                <Lock className={styles.inputIcon} />
                 <input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="input pl-10"
-                  placeholder="••••••••"
+                  className={`input ${styles.inputWithIcon}`}
+                  placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;"
                   required
                   minLength={6}
                 />
@@ -126,20 +127,20 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="btn-primary w-full flex items-center justify-center gap-2"
+              className={`btn-primary ${styles.submitButton}`}
             >
               {isLoading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <div className={styles.spinner} />
               ) : (
                 isRegistering ? 'Create Account' : 'Sign In'
               )}
             </button>
           </form>
 
-          <div className="mt-6 text-center">
+          <div className={styles.toggleSection}>
             <button
               onClick={() => setIsRegistering(!isRegistering)}
-              className="text-sm text-scanify-primary hover:text-indigo-400"
+              className={styles.toggleButton}
             >
               {isRegistering ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
             </button>
@@ -147,13 +148,13 @@ export default function LoginPage() {
         </div>
 
         {/* Demo credentials */}
-        <div className="mt-4 text-center">
+        <div className={styles.demoSection}>
           <button
             onClick={() => {
               setEmail('demo@scanify.app');
               setPassword('demo123');
             }}
-            className="text-sm text-gray-500 hover:text-gray-400"
+            className={styles.demoButton}
           >
             Use demo credentials
           </button>

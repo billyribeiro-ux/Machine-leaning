@@ -1,0 +1,180 @@
+.loginPage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.loginContainer {
+  width: 100%;
+  max-width: 28rem;
+}
+
+/* Back Link */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #9ca3af;
+  text-decoration: none;
+  margin-bottom: 32px;
+  transition: color 150ms;
+}
+
+.backLink:hover {
+  color: #fff;
+}
+
+.backIcon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Logo */
+.logoSection {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.logoBox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(to bottom right, var(--scanify-primary), var(--scanify-secondary));
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
+
+.logoBoxIcon {
+  width: 32px;
+  height: 32px;
+  color: #fff;
+}
+
+.logoTitle {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+}
+
+.logoSubtitle {
+  color: #9ca3af;
+}
+
+/* Error */
+.errorBox {
+  margin-bottom: 16px;
+  padding: 12px;
+  background-color: rgba(127, 29, 29, 0.3);
+  border: 1px solid #991b1b;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f87171;
+}
+
+.errorIcon {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.errorText {
+  font-size: 0.875rem;
+}
+
+/* Form */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: 0.875rem;
+  color: #9ca3af;
+  margin-bottom: 4px;
+}
+
+.inputWrapper {
+  position: relative;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #6b7280;
+}
+
+.inputWithIcon {
+  padding-left: 40px;
+}
+
+.submitButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 9999px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Toggle */
+.toggleSection {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.toggleButton {
+  font-size: 0.875rem;
+  color: var(--scanify-primary);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.toggleButton:hover {
+  color: #818cf8;
+}
+
+/* Demo */
+.demoSection {
+  margin-top: 16px;
+  text-align: center;
+}
+
+.demoButton {
+  font-size: 0.875rem;
+  color: #6b7280;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.demoButton:hover {
+  color: #9ca3af;
+}

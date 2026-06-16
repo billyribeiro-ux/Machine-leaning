@@ -6,6 +6,7 @@
 
 import Link from 'next/link';
 import { Activity, Zap, Shield, BarChart3, Check, ArrowRight } from 'lucide-react';
+import styles from './page.module.css';
 
 const features = [
   {
@@ -88,19 +89,19 @@ const pricingTiers = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen">
+    <div className={styles.landing}>
       {/* Navigation */}
-      <nav className="border-b border-scanify-dark-700 bg-scanify-dark-900/80 backdrop-blur-sm fixed top-0 w-full z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-scanify-primary to-scanify-secondary rounded-lg flex items-center justify-center">
-                <Activity className="w-5 h-5 text-white" />
+      <nav className={styles.nav}>
+        <div className={styles.navInner}>
+          <div className={styles.navContent}>
+            <div className={styles.logoGroup}>
+              <div className={styles.logoIcon}>
+                <Activity className={styles.logoIconImg} />
               </div>
-              <span className="text-xl font-bold text-white">Scanify</span>
+              <span className={styles.logoText}>Scanify</span>
             </div>
-            <div className="flex items-center gap-4">
-              <Link href="/login" className="text-gray-400 hover:text-white transition-colors">
+            <div className={styles.navActions}>
+              <Link href="/login" className={styles.signInLink}>
                 Sign In
               </Link>
               <Link href="/login?register=true" className="btn-primary">
@@ -112,24 +113,24 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4">
-        <div className="max-w-7xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-scanify-dark-700 rounded-full px-4 py-1.5 mb-6">
-            <Zap className="w-4 h-4 text-scanify-accent" />
-            <span className="text-sm text-gray-300">ML-Powered Trading Signals</span>
+      <section className={styles.hero}>
+        <div className={styles.heroInner}>
+          <div className={styles.heroBadge}>
+            <Zap className={styles.heroBadgeIcon} />
+            <span className={styles.heroBadgeText}>ML-Powered Trading Signals</span>
           </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
+          <h1 className={styles.heroTitle}>
             Trade Smarter with
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-scanify-primary to-scanify-accent"> Scanify</span>
+            <span className={styles.heroGradientText}> Scanify</span>
           </h1>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-8">
+          <p className={styles.heroDescription}>
             Professional-grade market scanners powered by machine learning. Get real-time signals for momentum, breakouts, options flow, and more.
           </p>
-          <div className="flex items-center justify-center gap-4">
-            <Link href="/login?register=true" className="btn-primary text-lg px-8 py-3 flex items-center gap-2">
-              Start Free Trial <ArrowRight className="w-5 h-5" />
+          <div className={styles.heroCta}>
+            <Link href="/login?register=true" className={`btn-primary ${styles.heroCtaPrimary}`}>
+              Start Free Trial <ArrowRight className={styles.heroCtaPrimaryIcon} />
             </Link>
-            <Link href="#pricing" className="btn-secondary text-lg px-8 py-3">
+            <Link href="#pricing" className={`btn-secondary ${styles.heroCtaSecondary}`}>
               View Pricing
             </Link>
           </div>
@@ -137,17 +138,17 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-scanify-dark-800/50">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-white text-center mb-12">
+      <section className={styles.features}>
+        <div className={styles.featuresInner}>
+          <h2 className={styles.featuresTitle}>
             Everything You Need to Trade Better
           </h2>
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className={styles.featuresGrid}>
             {features.map((feature) => (
               <div key={feature.title} className="card">
-                <feature.icon className="w-10 h-10 text-scanify-primary mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-gray-400">{feature.description}</p>
+                <feature.icon className={styles.featureIcon} />
+                <h3 className={styles.featureTitle}>{feature.title}</h3>
+                <p className={styles.featureDescription}>{feature.description}</p>
               </div>
             ))}
           </div>
@@ -155,50 +156,44 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-20 px-4">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-3xl font-bold text-white text-center mb-4">
+      <section id="pricing" className={styles.pricing}>
+        <div className={styles.pricingInner}>
+          <h2 className={styles.pricingTitle}>
             Simple, Transparent Pricing
           </h2>
-          <p className="text-gray-400 text-center mb-12 max-w-xl mx-auto">
+          <p className={styles.pricingSubtitle}>
             Start free and upgrade as you grow. No hidden fees, cancel anytime.
           </p>
-          <div className="grid md:grid-cols-4 gap-6">
+          <div className={styles.pricingGrid}>
             {pricingTiers.map((tier) => (
               <div
                 key={tier.name}
-                className={`card relative ${
-                  tier.popular ? 'border-scanify-primary ring-2 ring-scanify-primary/20' : ''
-                }`}
+                className={`card ${styles.pricingCard} ${tier.popular ? styles.pricingCardPopular : ''}`}
               >
                 {tier.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="bg-scanify-primary text-white text-xs font-bold px-3 py-1 rounded-full">
+                  <div className={styles.popularBadgeWrapper}>
+                    <span className={styles.popularBadge}>
                       MOST POPULAR
                     </span>
                   </div>
                 )}
-                <h3 className="text-xl font-semibold text-white">{tier.name}</h3>
-                <div className="mt-4 mb-2">
-                  <span className="text-4xl font-bold text-white">${tier.price}</span>
-                  <span className="text-gray-500">/month</span>
+                <h3 className={styles.tierName}>{tier.name}</h3>
+                <div className={styles.tierPriceWrapper}>
+                  <span className={styles.tierPrice}>${tier.price}</span>
+                  <span className={styles.tierPeriod}>/month</span>
                 </div>
-                <p className="text-sm text-gray-400 mb-6">{tier.description}</p>
-                <ul className="space-y-3 mb-6">
+                <p className={styles.tierDescription}>{tier.description}</p>
+                <ul className={styles.tierFeatures}>
                   {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-sm">
-                      <Check className="w-4 h-4 text-scanify-success flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-300">{feature}</span>
+                    <li key={feature} className={styles.tierFeature}>
+                      <Check className={styles.tierFeatureCheck} />
+                      <span className={styles.tierFeatureText}>{feature}</span>
                     </li>
                   ))}
                 </ul>
                 <Link
                   href={`/login?plan=${tier.name.toLowerCase()}`}
-                  className={`block text-center py-2 rounded-lg font-medium transition-colors ${
-                    tier.popular
-                      ? 'bg-scanify-primary hover:bg-indigo-600 text-white'
-                      : 'bg-scanify-dark-700 hover:bg-scanify-dark-600 text-gray-200'
-                  }`}
+                  className={tier.popular ? styles.tierCtaPopular : styles.tierCtaDefault}
                 >
                   {tier.cta}
                 </Link>
@@ -209,29 +204,29 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-gradient-to-r from-scanify-primary/20 to-scanify-secondary/20">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-white mb-4">
+      <section className={styles.cta}>
+        <div className={styles.ctaInner}>
+          <h2 className={styles.ctaTitle}>
             Ready to Transform Your Trading?
           </h2>
-          <p className="text-gray-400 mb-8">
+          <p className={styles.ctaDescription}>
             Join thousands of traders using Scanify to find better opportunities.
           </p>
-          <Link href="/login?register=true" className="btn-primary text-lg px-8 py-3">
+          <Link href="/login?register=true" className={`btn-primary ${styles.ctaButton}`}>
             Start Your Free Trial
           </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 border-t border-scanify-dark-700">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-scanify-primary" />
-            <span className="text-gray-400">Scanify</span>
+      <footer className={styles.footer}>
+        <div className={styles.footerInner}>
+          <div className={styles.footerLogo}>
+            <Activity className={styles.footerLogoIcon} />
+            <span className={styles.footerLogoText}>Scanify</span>
           </div>
-          <p className="text-sm text-gray-500">
-            © 2024 Scanify. All rights reserved.
+          <p className={styles.footerCopyright}>
+            &copy; 2024 Scanify. All rights reserved.
           </p>
         </div>
       </footer>

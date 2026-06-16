@@ -33,31 +33,10 @@
 		}
 		visible = false;
 	}
-
-	const positionClasses: Record<string, string> = {
-		top: 'bottom-full left-1/2 -translate-x-1/2 mb-2',
-		bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
-		left: 'right-full top-1/2 -translate-y-1/2 mr-2',
-		right: 'left-full top-1/2 -translate-y-1/2 ml-2'
-	};
-
-	const arrowClasses: Record<string, string> = {
-		top: 'top-full left-1/2 -translate-x-1/2 border-t-[oklch(0.22_0.005_270)] border-x-transparent border-b-transparent',
-		bottom: 'bottom-full left-1/2 -translate-x-1/2 border-b-[oklch(0.22_0.005_270)] border-x-transparent border-t-transparent',
-		left: 'left-full top-1/2 -translate-y-1/2 border-l-[oklch(0.22_0.005_270)] border-y-transparent border-r-transparent',
-		right: 'right-full top-1/2 -translate-y-1/2 border-r-[oklch(0.22_0.005_270)] border-y-transparent border-l-transparent'
-	};
-
-	const arrowBorderSize: Record<string, string> = {
-		top: 'border-[5px]',
-		bottom: 'border-[5px]',
-		left: 'border-[5px]',
-		right: 'border-[5px]'
-	};
 </script>
 
 <div
-	class="relative inline-flex {className}"
+	class="tooltip-trigger {className}"
 	onmouseenter={showTooltip}
 	onmouseleave={hideTooltip}
 	onfocusin={showTooltip}
@@ -68,17 +47,108 @@
 	{#if visible && content}
 		<div
 			role="tooltip"
-			class="absolute z-50 {positionClasses[position]} pointer-events-none"
+			class="tooltip-positioner position-{position}"
 		>
-			<div
-				class="relative rounded-md bg-[oklch(0.22_0.005_270)] px-2.5 py-1.5 text-xs font-medium text-[oklch(0.88_0_0)] shadow-lg shadow-black/30 whitespace-nowrap animate-in fade-in duration-150"
-			>
+			<div class="tooltip-content">
 				{content}
 				<!-- Arrow -->
-				<span
-					class="absolute w-0 h-0 {arrowBorderSize[position]} {arrowClasses[position]}"
-				></span>
+				<span class="tooltip-arrow position-{position}"></span>
 			</div>
 		</div>
 	{/if}
 </div>
+
+<style>
+	.tooltip-trigger {
+		position: relative;
+		display: inline-flex;
+	}
+
+	.tooltip-positioner {
+		position: absolute;
+		z-index: var(--z-tooltip, 700);
+		pointer-events: none;
+	}
+
+	.tooltip-positioner.position-top {
+		bottom: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		margin-bottom: 8px;
+	}
+
+	.tooltip-positioner.position-bottom {
+		top: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		margin-top: 8px;
+	}
+
+	.tooltip-positioner.position-left {
+		right: 100%;
+		top: 50%;
+		transform: translateY(-50%);
+		margin-right: 8px;
+	}
+
+	.tooltip-positioner.position-right {
+		left: 100%;
+		top: 50%;
+		transform: translateY(-50%);
+		margin-left: 8px;
+	}
+
+	.tooltip-content {
+		position: relative;
+		border-radius: var(--radius-md);
+		background-color: oklch(0.22 0.005 270);
+		padding-inline: 10px;
+		padding-block: 6px;
+		font-size: var(--text-xs);
+		font-weight: 500;
+		color: oklch(0.88 0 0);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+		white-space: nowrap;
+		animation: tooltip-fade-in 150ms ease-out;
+	}
+
+	.tooltip-arrow {
+		position: absolute;
+		width: 0;
+		height: 0;
+		border: 5px solid transparent;
+	}
+
+	.tooltip-arrow.position-top {
+		top: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		border-top-color: oklch(0.22 0.005 270);
+	}
+
+	.tooltip-arrow.position-bottom {
+		bottom: 100%;
+		left: 50%;
+		transform: translateX(-50%);
+		border-bottom-color: oklch(0.22 0.005 270);
+	}
+
+	.tooltip-arrow.position-left {
+		left: 100%;
+		top: 50%;
+		transform: translateY(-50%);
+		border-left-color: oklch(0.22 0.005 270);
+	}
+
+	.tooltip-arrow.position-right {
+		right: 100%;
+		top: 50%;
+		transform: translateY(-50%);
+		border-right-color: oklch(0.22 0.005 270);
+	}
+
+	@keyframes tooltip-fade-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+</style>

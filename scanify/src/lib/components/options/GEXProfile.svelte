@@ -91,20 +91,20 @@
   let hoveredIdx = $state<number | null>(null);
 </script>
 
-<div class="panel flex flex-col gap-3 p-4 {className}">
-  <div class="flex items-center justify-between">
-    <span class="text-sm font-semibold text-[var(--text-primary)]">GEX Profile</span>
+<div class="panel gex-panel {className}">
+  <div class="panel-header">
+    <span class="panel-title">GEX Profile</span>
     {#if currentPrice != null}
-      <span class="mono-nums text-xs text-[var(--text-secondary)]">Spot: {formatPrice(currentPrice)}</span>
+      <span class="mono-nums spot-label">Spot: {formatPrice(currentPrice)}</span>
     {/if}
   </div>
 
-  <div class="overflow-auto">
+  <div class="chart-scroll">
     <svg
       width={SVG_WIDTH}
       height={svgHeight}
       viewBox="0 0 {SVG_WIDTH} {svgHeight}"
-      class="select-none w-full"
+      class="chart-svg"
       style="min-width: {SVG_WIDTH}px;"
       role="img"
       aria-label="GEX Profile Chart"
@@ -114,7 +114,7 @@
         x={LABEL_WIDTH - 4}
         y={14}
         text-anchor="end"
-        class="text-[9px] font-mono"
+        class="header-label"
         fill="oklch(0.50 0 0)"
       >
         Strike
@@ -123,7 +123,7 @@
         x={BAR_CENTER_X}
         y={14}
         text-anchor="middle"
-        class="text-[9px] font-mono"
+        class="header-label"
         fill="oklch(0.50 0 0)"
       >
         0
@@ -132,7 +132,7 @@
         x={BAR_CENTER_X - BAR_AREA_WIDTH / 2}
         y={14}
         text-anchor="start"
-        class="text-[9px] font-mono"
+        class="header-label"
         fill="oklch(0.45 0.12 25)"
       >
         -{formatGex(maxAbsGex)}
@@ -141,7 +141,7 @@
         x={BAR_CENTER_X + BAR_AREA_WIDTH / 2}
         y={14}
         text-anchor="end"
-        class="text-[9px] font-mono"
+        class="header-label"
         fill="oklch(0.45 0.10 155)"
       >
         +{formatGex(maxAbsGex)}
@@ -192,7 +192,7 @@
           y={y + ROW_HEIGHT / 2}
           text-anchor="end"
           dominant-baseline="middle"
-          class="text-[9px] font-mono"
+          class="strike-label"
           fill={isCurrentPrice ? 'oklch(0.85 0.12 250)' : 'oklch(0.55 0 0)'}
         >
           {entry.strike}
@@ -206,7 +206,7 @@
           height={ROW_HEIGHT - 6}
           fill={barColor(entry.gex)}
           rx="2"
-          class="cursor-crosshair transition-opacity duration-100"
+          class="bar"
           opacity={hoveredIdx !== null && !isHovered ? 0.5 : 1}
           onmouseenter={() => (hoveredIdx = idx)}
           onmouseleave={() => (hoveredIdx = null)}
@@ -219,7 +219,7 @@
             y={y + ROW_HEIGHT / 2}
             text-anchor={entry.gex >= 0 ? 'start' : 'end'}
             dominant-baseline="middle"
-            class="text-[9px] font-mono font-bold"
+            class="bar-value"
             fill={entry.gex >= 0 ? 'oklch(0.75 0.14 155)' : 'oklch(0.70 0.16 25)'}
           >
             {formatGex(entry.gex)}
@@ -250,8 +250,73 @@
   </div>
 
   {#if data.length === 0}
-    <div class="flex items-center justify-center h-32 text-sm text-[var(--text-tertiary)]">
+    <div class="empty-state">
       No GEX data available
     </div>
   {/if}
 </div>
+
+<style>
+  .gex-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .spot-label {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+  }
+
+  .chart-scroll {
+    overflow: auto;
+  }
+
+  .chart-svg {
+    user-select: none;
+    width: 100%;
+  }
+
+  .header-label {
+    font-size: 9px;
+    font-family: var(--font-mono);
+  }
+
+  .strike-label {
+    font-size: 9px;
+    font-family: var(--font-mono);
+  }
+
+  .bar {
+    cursor: crosshair;
+    transition: opacity 100ms;
+  }
+
+  .bar-value {
+    font-size: 9px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  .empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 128px;
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+  }
+</style>

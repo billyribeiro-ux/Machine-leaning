@@ -68,20 +68,20 @@
   }
 
   function sortIndicator(key: SortKey): string {
-    if (sortBy !== key) return ' \u25B3';
-    return sortDir === 'asc' ? ' \u25B2' : ' \u25BC';
+    if (sortBy !== key) return ' △';
+    return sortDir === 'asc' ? ' ▲' : ' ▼';
   }
 
   function ratioColor(ratio: number): string {
-    if (ratio >= 5) return 'text-[var(--warning-bright)]';
-    if (ratio >= 3) return 'text-[var(--warning)]';
-    if (ratio >= 2) return 'text-[var(--text-primary)]';
-    return 'text-[var(--text-secondary)]';
+    if (ratio >= 5) return 'ratio-warning-bright';
+    if (ratio >= 3) return 'ratio-warning';
+    if (ratio >= 2) return 'ratio-primary';
+    return 'ratio-secondary';
   }
 
   function rowHighlight(ratio: number): string {
-    if (ratio >= 5) return 'bg-[oklch(0.14_0.03_85/0.35)]';
-    if (ratio >= 3) return 'bg-[oklch(0.13_0.02_85/0.2)]';
+    if (ratio >= 5) return 'row-highlight-high';
+    if (ratio >= 3) return 'row-highlight-mid';
     return '';
   }
 
@@ -97,70 +97,70 @@
   }
 </script>
 
-<div class="panel flex flex-col overflow-hidden {className}">
+<div class="panel ua-container {className}">
   <!-- Header -->
-  <div class="flex items-center justify-between px-4 py-2.5 border-b border-[var(--border-subtle)]">
-    <div class="flex items-center gap-2">
-      <div class="w-2 h-2 rounded-full bg-[var(--warning)] signal-ping"></div>
-      <span class="text-sm font-semibold text-[var(--text-primary)]">Unusual Activity</span>
-      <span class="text-2xs text-[var(--text-tertiary)]">({activities.length})</span>
+  <div class="ua-header">
+    <div class="ua-header-left">
+      <div class="ua-indicator signal-ping"></div>
+      <span class="ua-title">Unusual Activity</span>
+      <span class="ua-count">({activities.length})</span>
     </div>
   </div>
 
   <!-- Table -->
-  <div class="flex-1 overflow-auto">
-    <table class="w-full min-w-[740px]">
-      <thead class="sticky top-0 z-10 bg-[var(--bg-elevated)]">
-        <tr class="border-b border-[var(--border-subtle)]">
-          <th class="px-3 py-2 text-left">
+  <div class="ua-table-wrap">
+    <table class="ua-table">
+      <thead class="ua-thead">
+        <tr class="ua-thead-row">
+          <th class="ua-th ua-th-left">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="ua-sort-btn"
               onclick={() => handleSort('symbol')}
             >
               Symbol{sortIndicator('symbol')}
             </button>
           </th>
-          <th class="px-3 py-2 text-center">
-            <span class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">Type</span>
+          <th class="ua-th ua-th-center">
+            <span class="ua-col-label">Type</span>
           </th>
-          <th class="px-3 py-2 text-right">
+          <th class="ua-th ua-th-right">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="ua-sort-btn"
               onclick={() => handleSort('strike')}
             >
               Strike{sortIndicator('strike')}
             </button>
           </th>
-          <th class="px-3 py-2 text-center">
-            <span class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">Expiry</span>
+          <th class="ua-th ua-th-center">
+            <span class="ua-col-label">Expiry</span>
           </th>
-          <th class="px-3 py-2 text-right">
+          <th class="ua-th ua-th-right">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="ua-sort-btn"
               onclick={() => handleSort('volume')}
             >
               Volume{sortIndicator('volume')}
             </button>
           </th>
-          <th class="px-3 py-2 text-right">
-            <span class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)]">OI</span>
+          <th class="ua-th ua-th-right">
+            <span class="ua-col-label">OI</span>
           </th>
-          <th class="px-3 py-2 text-right">
+          <th class="ua-th ua-th-right">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="ua-sort-btn"
               onclick={() => handleSort('volOiRatio')}
             >
               Vol/OI{sortIndicator('volOiRatio')}
             </button>
           </th>
-          <th class="px-3 py-2 text-right">
+          <th class="ua-th ua-th-right">
             <button
               type="button"
-              class="text-2xs font-medium uppercase tracking-wider text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+              class="ua-sort-btn"
               onclick={() => handleSort('premium')}
             >
               Premium{sortIndicator('premium')}
@@ -172,28 +172,24 @@
         {#each sorted as act, idx (act.symbol + act.strike + act.expiry + act.type + idx)}
           {@const isCall = act.type === 'call'}
           <tr
-            class="border-b border-[var(--border-subtle)] transition-colors duration-75 hover:bg-[var(--hover-overlay)]
-              {rowHighlight(act.volOiRatio)}"
+            class="ua-row {rowHighlight(act.volOiRatio)}"
           >
-            <td class="px-3 py-2 text-xs font-semibold text-[var(--text-primary)]">{act.symbol}</td>
-            <td class="px-3 py-2 text-center">
+            <td class="ua-td ua-td-symbol">{act.symbol}</td>
+            <td class="ua-td ua-td-type-cell">
               <span
-                class="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-sm
-                  {isCall
-                    ? 'bg-[var(--bullish-bg)] text-[var(--bullish-bright)] border border-[oklch(0.45_0.12_155/0.3)]'
-                    : 'bg-[var(--bearish-bg)] text-[var(--bearish-bright)] border border-[oklch(0.42_0.12_25/0.3)]'}"
+                class="ua-type-badge {isCall ? 'ua-type-call' : 'ua-type-put'}"
               >
                 {act.type}
               </span>
             </td>
-            <td class="px-3 py-2 mono-nums text-xs text-right text-[var(--text-secondary)]">{formatPrice(act.strike)}</td>
-            <td class="px-3 py-2 mono-nums text-xs text-center text-[var(--text-secondary)]">{formatExpiry(act.expiry)}</td>
-            <td class="px-3 py-2 mono-nums text-xs text-right text-[var(--text-secondary)]">{act.volume.toLocaleString()}</td>
-            <td class="px-3 py-2 mono-nums text-xs text-right text-[var(--text-tertiary)]">{act.oi.toLocaleString()}</td>
-            <td class="px-3 py-2 mono-nums text-xs text-right font-bold {ratioColor(act.volOiRatio)}">
+            <td class="ua-td mono-nums ua-td-numeric ua-td-right">{formatPrice(act.strike)}</td>
+            <td class="ua-td mono-nums ua-td-numeric ua-td-center">{formatExpiry(act.expiry)}</td>
+            <td class="ua-td mono-nums ua-td-numeric ua-td-right">{act.volume.toLocaleString()}</td>
+            <td class="ua-td mono-nums ua-td-oi ua-td-right">{act.oi.toLocaleString()}</td>
+            <td class="ua-td mono-nums ua-td-ratio ua-td-right {ratioColor(act.volOiRatio)}">
               {act.volOiRatio.toFixed(1)}x
             </td>
-            <td class="px-3 py-2 mono-nums text-xs text-right font-semibold text-[var(--text-primary)]">
+            <td class="ua-td mono-nums ua-td-premium ua-td-right">
               {formatPremium(act.premium)}
             </td>
           </tr>
@@ -202,9 +198,224 @@
     </table>
 
     {#if activities.length === 0}
-      <div class="flex items-center justify-center h-32 text-sm text-[var(--text-tertiary)]">
+      <div class="ua-empty">
         No unusual options activity detected
       </div>
     {/if}
   </div>
 </div>
+
+<style>
+  /* Container */
+  .ua-container {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .ua-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .ua-header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .ua-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background-color: var(--warning);
+  }
+
+  .ua-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .ua-count {
+    font-size: var(--text-2xs);
+    color: var(--text-tertiary);
+  }
+
+  /* Table wrapper */
+  .ua-table-wrap {
+    flex: 1;
+    overflow: auto;
+  }
+
+  .ua-table {
+    width: 100%;
+    min-width: 740px;
+  }
+
+  /* Thead */
+  .ua-thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: var(--bg-elevated);
+  }
+
+  .ua-thead-row {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  /* Table header cells */
+  .ua-th {
+    padding: 8px 12px;
+  }
+
+  .ua-th-left {
+    text-align: left;
+  }
+
+  .ua-th-center {
+    text-align: center;
+  }
+
+  .ua-th-right {
+    text-align: right;
+  }
+
+  /* Column labels (non-sortable) */
+  .ua-col-label {
+    font-size: var(--text-2xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+  }
+
+  /* Sort buttons */
+  .ua-sort-btn {
+    font-size: var(--text-2xs);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+  }
+
+  .ua-sort-btn:hover {
+    color: var(--text-secondary);
+  }
+
+  /* Table body rows */
+  .ua-row {
+    border-bottom: 1px solid var(--border-subtle);
+    transition: color 150ms, background-color 150ms, border-color 150ms;
+    transition-duration: 75ms;
+  }
+
+  .ua-row:hover {
+    background-color: var(--hover-overlay);
+  }
+
+  /* Row highlight variants */
+  .row-highlight-high {
+    background-color: oklch(0.14 0.03 85 / 0.35);
+  }
+
+  .row-highlight-mid {
+    background-color: oklch(0.13 0.02 85 / 0.2);
+  }
+
+  /* Table data cells */
+  .ua-td {
+    padding: 8px 12px;
+    font-size: var(--text-xs);
+  }
+
+  .ua-td-right {
+    text-align: right;
+  }
+
+  .ua-td-center {
+    text-align: center;
+  }
+
+  .ua-td-symbol {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .ua-td-type-cell {
+    text-align: center;
+  }
+
+  .ua-td-numeric {
+    color: var(--text-secondary);
+  }
+
+  .ua-td-oi {
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+  }
+
+  .ua-td-ratio {
+    font-weight: 700;
+  }
+
+  .ua-td-premium {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  /* Type badges */
+  .ua-type-badge {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    border: 1px solid;
+  }
+
+  .ua-type-call {
+    background-color: var(--bullish-bg);
+    color: var(--bullish-bright);
+    border-color: oklch(0.45 0.12 155 / 0.3);
+  }
+
+  .ua-type-put {
+    background-color: var(--bearish-bg);
+    color: var(--bearish-bright);
+    border-color: oklch(0.42 0.12 25 / 0.3);
+  }
+
+  /* Ratio color variants */
+  .ratio-warning-bright {
+    color: var(--warning-bright);
+  }
+
+  .ratio-warning {
+    color: var(--warning);
+  }
+
+  .ratio-primary {
+    color: var(--text-primary);
+  }
+
+  .ratio-secondary {
+    color: var(--text-secondary);
+  }
+
+  /* Empty state */
+  .ua-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 128px;
+    font-size: var(--text-sm);
+    color: var(--text-tertiary);
+  }
+</style>

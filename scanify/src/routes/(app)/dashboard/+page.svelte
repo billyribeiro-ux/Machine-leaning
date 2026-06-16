@@ -49,42 +49,42 @@
   <title>Dashboard - Scanify</title>
 </svelte:head>
 
-<div class="flex flex-col h-full overflow-auto p-5 gap-5">
+<div class="dashboard-page">
   <!-- Page header -->
-  <div class="flex items-center justify-between shrink-0">
-    <h1 class="text-xl font-bold" style="color: var(--text-primary);">Dashboard</h1>
-    <div class="flex items-center gap-3">
+  <div class="page-header">
+    <h1 class="page-title" style="color: var(--text-primary);">Dashboard</h1>
+    <div class="header-actions">
       <ExportToolbar source="dashboard" />
-      <div class="w-px h-5" style="background: var(--border-subtle);"></div>
-      <span class="text-xs font-mono" style="color: var(--text-tertiary);">
+      <div class="header-divider" style="background: var(--border-subtle);"></div>
+      <span class="header-date" style="color: var(--text-tertiary);">
         {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' })}
       </span>
     </div>
   </div>
 
   <!-- Grid layout -->
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+  <div class="dashboard-grid">
 
     <!-- Market Status panel - spans 2 cols -->
-    <div class="lg:col-span-2 panel p-5 space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Market Status</h2>
-        <div class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full" style="background: var(--bullish);"></div>
-          <span class="text-xs font-medium" style="color: var(--bullish);">Regular Hours</span>
+    <div class="market-status-panel panel">
+      <div class="panel-header">
+        <h2 class="panel-title" style="color: var(--text-primary);">Market Status</h2>
+        <div class="market-status-indicator">
+          <div class="status-dot" style="background: var(--bullish);"></div>
+          <span class="status-label" style="color: var(--bullish);">Regular Hours</span>
         </div>
       </div>
 
       <!-- Indices row -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="indices-grid">
         {#each indices as idx (idx.symbol)}
-          <div class="rounded-lg p-3 space-y-1" style="background: var(--bg-base); border: 1px solid var(--border-subtle);">
-            <span class="text-xs font-bold font-mono" style="color: var(--text-primary);">{idx.symbol}</span>
-            <div class="flex items-baseline gap-2">
-              <span class="text-lg font-bold font-mono" style="color: var(--text-primary);">
+          <div class="index-card" style="background: var(--bg-base); border: 1px solid var(--border-subtle);">
+            <span class="index-symbol" style="color: var(--text-primary);">{idx.symbol}</span>
+            <div class="index-values">
+              <span class="index-price" style="color: var(--text-primary);">
                 {idx.price.toFixed(2)}
               </span>
-              <span class="text-xs font-mono font-semibold" style="color: {changeColor(idx.changePercent)};">
+              <span class="index-change" style="color: {changeColor(idx.changePercent)};">
                 {idx.changePercent >= 0 ? '+' : ''}{idx.changePercent.toFixed(2)}%
               </span>
             </div>
@@ -94,47 +94,47 @@
     </div>
 
     <!-- Internals panel -->
-    <div class="panel p-5 space-y-4">
-      <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Market Internals</h2>
+    <div class="internals-panel panel">
+      <h2 class="panel-title" style="color: var(--text-primary);">Market Internals</h2>
       <InternalsBar tick={456} trin={0.87} vix={15.2} advDecRatio={1.40} />
     </div>
 
     <!-- Top Signals panel - spans 2 cols -->
-    <div class="lg:col-span-2 panel p-5 space-y-4">
-      <div class="flex items-center justify-between">
-        <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Top Signals</h2>
-        <a href="/scanner" class="text-xs font-medium transition-colors" style="color: var(--accent);">View all</a>
+    <div class="signals-panel panel">
+      <div class="panel-header">
+        <h2 class="panel-title" style="color: var(--text-primary);">Top Signals</h2>
+        <a href="/scanner" class="view-all-link" style="color: var(--accent);">View all</a>
       </div>
-      <div class="space-y-2">
+      <div class="signals-list">
         {#each topSignals as signal (signal.symbol)}
           <div
-            class="flex items-center gap-3 rounded-lg px-4 py-3 transition-colors"
+            class="signal-row"
             style="background: var(--bg-base); border: 1px solid var(--border-subtle);"
           >
             <!-- Direction dot -->
-            <div class="w-2.5 h-2.5 rounded-full shrink-0" style="background: {dirColor(signal.direction)};"></div>
+            <div class="direction-dot" style="background: {dirColor(signal.direction)};"></div>
 
             <!-- Symbol + name -->
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2">
-                <span class="text-sm font-bold font-mono" style="color: var(--text-primary);">{signal.symbol}</span>
-                <span class="text-[11px]" style="color: var(--text-tertiary);">{signal.name}</span>
+            <div class="signal-info">
+              <div class="signal-meta">
+                <span class="signal-symbol" style="color: var(--text-primary);">{signal.symbol}</span>
+                <span class="signal-name" style="color: var(--text-tertiary);">{signal.name}</span>
               </div>
             </div>
 
             <!-- Strength dots -->
-            <div class="flex items-center gap-0.5">
+            <div class="strength-dots">
               {#each Array(5) as _, si}
                 <div
-                  class="h-1.5 w-2.5 rounded-full"
+                  class="strength-bar"
                   style="background: {si < signal.strength ? dirColor(signal.direction) : 'var(--bg-overlay)'};"
                 ></div>
               {/each}
             </div>
 
             <!-- Price -->
-            <div class="text-right shrink-0">
-              <div class="text-sm font-mono font-bold" style="color: var(--text-primary);">${signal.price.toFixed(2)}</div>
+            <div class="signal-price-wrapper">
+              <div class="signal-price" style="color: var(--text-primary);">${signal.price.toFixed(2)}</div>
             </div>
           </div>
         {/each}
@@ -142,13 +142,13 @@
     </div>
 
     <!-- Sector Performance panel -->
-    <div class="panel p-5 space-y-4">
-      <h2 class="text-sm font-semibold" style="color: var(--text-primary);">Sector Performance</h2>
-      <div class="space-y-2">
+    <div class="sectors-panel panel">
+      <h2 class="panel-title" style="color: var(--text-primary);">Sector Performance</h2>
+      <div class="sectors-list">
         {#each sectors as sector (sector.name)}
-          <div class="flex items-center justify-between rounded-lg px-3 py-2" style="background: var(--bg-base); border: 1px solid var(--border-subtle);">
-            <span class="text-xs font-medium" style="color: var(--text-primary);">{sector.name}</span>
-            <span class="text-xs font-mono font-bold" style="color: {changeColor(sector.change)};">
+          <div class="sector-row" style="background: var(--bg-base); border: 1px solid var(--border-subtle);">
+            <span class="sector-name" style="color: var(--text-primary);">{sector.name}</span>
+            <span class="sector-change" style="color: {changeColor(sector.change)};">
               {sector.change >= 0 ? '+' : ''}{sector.change.toFixed(1)}%
             </span>
           </div>
@@ -157,3 +157,249 @@
     </div>
   </div>
 </div>
+
+<style>
+  /* Page layout */
+  .dashboard-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: auto;
+    padding: 20px;
+    gap: 20px;
+  }
+
+  /* Page header */
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+
+  .page-title {
+    font-size: var(--text-xl);
+    font-weight: 700;
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-divider {
+    width: 1px;
+    height: 20px;
+  }
+
+  .header-date {
+    font-size: var(--text-xs);
+    font-family: var(--font-mono);
+  }
+
+  /* Dashboard grid */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  @media (min-width: 1024px) {
+    .dashboard-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  /* Panel shared styles */
+  .market-status-panel,
+  .internals-panel,
+  .signals-panel,
+  .sectors-panel {
+    padding: 20px;
+  }
+
+  .market-status-panel > * + *,
+  .internals-panel > * + *,
+  .signals-panel > * + *,
+  .sectors-panel > * + * {
+    margin-top: 16px;
+  }
+
+  @media (min-width: 1024px) {
+    .market-status-panel,
+    .signals-panel {
+      grid-column: span 2;
+    }
+  }
+
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .panel-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+  }
+
+  /* Market status indicator */
+  .market-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+  }
+
+  .status-label {
+    font-size: var(--text-xs);
+    font-weight: 500;
+  }
+
+  /* Indices grid */
+  .indices-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  @media (min-width: 768px) {
+    .indices-grid {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  .index-card {
+    border-radius: var(--radius-lg);
+    padding: 12px;
+  }
+
+  .index-card > * + * {
+    margin-top: 4px;
+  }
+
+  .index-symbol {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .index-values {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .index-price {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .index-change {
+    font-size: var(--text-xs);
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+
+  /* Top Signals */
+  .view-all-link {
+    font-size: var(--text-xs);
+    font-weight: 500;
+    transition: color 150ms, background-color 150ms;
+  }
+
+  .signals-list > * + * {
+    margin-top: 8px;
+  }
+
+  .signal-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-radius: var(--radius-lg);
+    padding: 12px 16px;
+    transition: color 150ms, background-color 150ms;
+  }
+
+  .direction-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+  }
+
+  .signal-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .signal-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .signal-symbol {
+    font-size: var(--text-sm);
+    font-weight: 700;
+    font-family: var(--font-mono);
+  }
+
+  .signal-name {
+    font-size: 11px;
+  }
+
+  .strength-dots {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .strength-bar {
+    height: 6px;
+    width: 10px;
+    border-radius: var(--radius-full);
+  }
+
+  .signal-price-wrapper {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .signal-price {
+    font-size: var(--text-sm);
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  /* Sector Performance */
+  .sectors-list > * + * {
+    margin-top: 8px;
+  }
+
+  .sector-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-radius: var(--radius-lg);
+    padding: 8px 12px;
+  }
+
+  .sector-name {
+    font-size: var(--text-xs);
+    font-weight: 500;
+  }
+
+  .sector-change {
+    font-size: var(--text-xs);
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+</style>

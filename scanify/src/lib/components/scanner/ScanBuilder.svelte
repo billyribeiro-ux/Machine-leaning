@@ -87,59 +87,53 @@
 	});
 
 	let conditionCount = $derived(config.conditions.length);
-
-	const selectClasses =
-		'appearance-none rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2.5 py-1.5 text-sm text-[var(--text-primary)] outline-none transition-all duration-150 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-bg)] cursor-pointer';
-
-	const inputClasses =
-		'rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2.5 py-1.5 text-sm text-[var(--text-primary)] placeholder-[var(--text-disabled)] outline-none transition-all duration-150 focus:border-[var(--accent)] focus:ring-2 focus:ring-[var(--accent-bg)]';
 </script>
 
-<div class="rounded-lg border border-[var(--border-default)] bg-[var(--bg-surface)] {className}">
+<div class="scan-builder {className}">
 	<!-- Header -->
-	<div class="flex items-center justify-between border-b border-[var(--border-subtle)] px-5 py-3">
-		<div class="flex items-center gap-2">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-[var(--accent)]">
+	<div class="header">
+		<div class="header-left">
+			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="header-icon">
 				<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
 			</svg>
-			<h3 class="text-sm font-semibold text-[var(--text-primary)]">Custom Scan Builder</h3>
+			<h3 class="header-title">Custom Scan Builder</h3>
 		</div>
 		{#if conditionCount > 0}
-			<span class="text-2xs text-[var(--text-tertiary)]">
+			<span class="condition-count">
 				{conditionCount} condition{conditionCount !== 1 ? 's' : ''}
 			</span>
 		{/if}
 	</div>
 
-	<div class="space-y-4 p-5">
+	<div class="body">
 		<!-- Name + Category row -->
-		<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+		<div class="form-row">
 			<!-- Scan name -->
-			<div class="flex flex-col gap-1.5">
-				<label for="scan-name" class="text-xs font-medium text-[var(--text-tertiary)] select-none">Scan Name</label>
+			<div class="form-group">
+				<label for="scan-name" class="form-label">Scan Name</label>
 				<input
 					id="scan-name"
 					type="text"
 					placeholder="e.g. High Volume Breakouts"
 					bind:value={config.name}
-					class="{inputClasses} w-full"
+					class="form-input"
 				/>
 			</div>
 
 			<!-- Category select -->
-			<div class="flex flex-col gap-1.5">
-				<label for="scan-category" class="text-xs font-medium text-[var(--text-tertiary)] select-none">Category</label>
-				<div class="relative">
+			<div class="form-group">
+				<label for="scan-category" class="form-label">Category</label>
+				<div class="select-wrapper">
 					<select
 						id="scan-category"
 						bind:value={config.category}
-						class="{selectClasses} w-full pr-8"
+						class="form-select category-select"
 					>
 						{#each categoryOptions as opt (opt.value)}
 							<option value={opt.value}>{opt.label}</option>
 						{/each}
 					</select>
-					<div class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 text-[var(--text-disabled)]">
+					<div class="select-chevron">
 						<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 							<path d="m6 9 6 6 6-6" />
 						</svg>
@@ -150,11 +144,11 @@
 
 		<!-- Conditions section -->
 		<div>
-			<div class="mb-2 flex items-center justify-between">
-				<label class="text-xs font-medium text-[var(--text-tertiary)] select-none">Conditions</label>
+			<div class="conditions-header">
+				<label class="form-label">Conditions</label>
 				<button
 					type="button"
-					class="flex items-center gap-1 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] px-2 py-1 text-xs font-medium text-[var(--accent)] transition-all duration-150 hover:border-[var(--accent-dim)] hover:bg-[var(--accent-bg)]"
+					class="add-condition-btn"
 					onclick={addCondition}
 				>
 					<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -166,29 +160,29 @@
 			</div>
 
 			{#if config.conditions.length === 0}
-				<div class="rounded-md border border-dashed border-[var(--border-subtle)] bg-[var(--bg-base)] px-4 py-6 text-center">
-					<p class="text-sm text-[var(--text-disabled)]">No conditions yet. Click "Add condition" to start building your scan.</p>
+				<div class="empty-state">
+					<p class="empty-state-text">No conditions yet. Click "Add condition" to start building your scan.</p>
 				</div>
 			{:else}
-				<div class="space-y-2">
+				<div class="conditions-list">
 					{#each config.conditions as condition, i (condition.id)}
-						<div class="flex items-center gap-2 rounded-md border border-[var(--border-subtle)] bg-[var(--bg-base)] p-2.5">
+						<div class="condition-row">
 							<!-- Condition number -->
-							<span class="flex h-5 w-5 flex-shrink-0 items-center justify-center rounded-full bg-[var(--bg-overlay)] text-[10px] font-semibold text-[var(--text-tertiary)]">
+							<span class="condition-number">
 								{i + 1}
 							</span>
 
 							<!-- Field select -->
-							<div class="relative flex-shrink-0">
+							<div class="select-wrapper condition-field-wrapper">
 								<select
 									bind:value={condition.field}
-									class="{selectClasses} min-w-[130px] pr-7"
+									class="form-select condition-field-select"
 								>
 									{#each fieldOptions as opt (opt.value)}
 										<option value={opt.value}>{opt.label}</option>
 									{/each}
 								</select>
-								<div class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-disabled)]">
+								<div class="select-chevron select-chevron-sm">
 									<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 										<path d="m6 9 6 6 6-6" />
 									</svg>
@@ -196,16 +190,16 @@
 							</div>
 
 							<!-- Operator select -->
-							<div class="relative flex-shrink-0">
+							<div class="select-wrapper condition-operator-wrapper">
 								<select
 									bind:value={condition.operator}
-									class="{selectClasses} min-w-[80px] pr-7 font-mono"
+									class="form-select condition-operator-select"
 								>
 									{#each operatorOptions as opt (opt.value)}
 										<option value={opt.value}>{opt.label}</option>
 									{/each}
 								</select>
-								<div class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[var(--text-disabled)]">
+								<div class="select-chevron select-chevron-sm">
 									<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 										<path d="m6 9 6 6 6-6" />
 									</svg>
@@ -217,13 +211,13 @@
 								type="text"
 								placeholder="Value..."
 								bind:value={condition.value}
-								class="{inputClasses} min-w-0 flex-1 font-mono"
+								class="form-input condition-value-input"
 							/>
 
 							<!-- Remove button -->
 							<button
 								type="button"
-								class="flex-shrink-0 rounded-md p-1.5 text-[var(--text-disabled)] transition-colors hover:bg-[var(--bearish-bg)] hover:text-[var(--bearish)]"
+								class="remove-condition-btn"
 								onclick={() => removeCondition(condition.id)}
 								title="Remove condition"
 							>
@@ -236,8 +230,8 @@
 
 						<!-- AND connector between conditions -->
 						{#if i < config.conditions.length - 1}
-							<div class="flex items-center justify-center">
-								<span class="rounded-full bg-[var(--bg-overlay)] px-3 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-[var(--text-disabled)]">
+							<div class="and-connector">
+								<span class="and-badge">
 									AND
 								</span>
 							</div>
@@ -249,10 +243,10 @@
 	</div>
 
 	<!-- Footer with save -->
-	<div class="flex items-center justify-end gap-3 border-t border-[var(--border-subtle)] px-5 py-3">
+	<div class="footer">
 		<button
 			type="button"
-			class="rounded-lg bg-transparent px-4 py-2 text-sm font-medium text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
+			class="reset-btn"
 			onclick={() => {
 				config = { name: '', category: '', conditions: [] };
 			}}
@@ -261,10 +255,7 @@
 		</button>
 		<button
 			type="button"
-			class="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-150
-				{isValid
-					? 'bg-[var(--accent)] text-white hover:bg-[var(--accent-bright)] shadow-sm cursor-pointer'
-					: 'bg-[var(--bg-overlay)] text-[var(--text-disabled)] cursor-not-allowed'}"
+			class="save-btn {isValid ? 'save-btn--active' : 'save-btn--disabled'}"
 			disabled={!isValid}
 			onclick={handleSave}
 		>
@@ -277,3 +268,332 @@
 		</button>
 	</div>
 </div>
+
+<style>
+	/* Container */
+	.scan-builder {
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--border-default);
+		background-color: var(--bg-surface);
+	}
+
+	/* Header */
+	.header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		border-bottom: 1px solid var(--border-subtle);
+		padding: 12px 20px;
+	}
+
+	.header-left {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+	}
+
+	.header-icon {
+		color: var(--accent);
+	}
+
+	.header-title {
+		font-size: var(--text-sm);
+		font-weight: 600;
+		color: var(--text-primary);
+	}
+
+	.condition-count {
+		font-size: var(--text-2xs);
+		color: var(--text-tertiary);
+	}
+
+	/* Body */
+	.body {
+		padding: 20px;
+	}
+
+	.body > * + * {
+		margin-top: 16px;
+	}
+
+	/* Form row (grid) */
+	.form-row {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 16px;
+	}
+
+	@media (min-width: 640px) {
+		.form-row {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	/* Form group */
+	.form-group {
+		display: flex;
+		flex-direction: column;
+		gap: 6px;
+	}
+
+	/* Form label */
+	.form-label {
+		font-size: var(--text-xs);
+		font-weight: 500;
+		color: var(--text-tertiary);
+		user-select: none;
+	}
+
+	/* Shared form-input */
+	.form-input {
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-subtle);
+		background-color: var(--bg-base);
+		padding: 6px 10px;
+		font-size: var(--text-sm);
+		color: var(--text-primary);
+		outline: none;
+		transition: all 150ms;
+		width: 100%;
+	}
+
+	.form-input::placeholder {
+		color: var(--text-disabled);
+	}
+
+	.form-input:focus {
+		border-color: var(--accent);
+		box-shadow: 0 0 0 2px var(--accent-bg);
+	}
+
+	/* Shared form-select */
+	.form-select {
+		appearance: none;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-subtle);
+		background-color: var(--bg-base);
+		padding: 6px 10px;
+		font-size: var(--text-sm);
+		color: var(--text-primary);
+		outline: none;
+		transition: all 150ms;
+		cursor: pointer;
+		width: 100%;
+	}
+
+	.form-select:focus {
+		border-color: var(--accent);
+		box-shadow: 0 0 0 2px var(--accent-bg);
+	}
+
+	/* Category select specific */
+	.category-select {
+		padding-right: 32px;
+	}
+
+	/* Select wrapper (relative positioning for chevron) */
+	.select-wrapper {
+		position: relative;
+	}
+
+	/* Select chevron icon */
+	.select-chevron {
+		pointer-events: none;
+		position: absolute;
+		right: 10px;
+		top: 50%;
+		transform: translateY(-50%);
+		color: var(--text-disabled);
+	}
+
+	.select-chevron-sm {
+		right: 8px;
+	}
+
+	/* Conditions header */
+	.conditions-header {
+		margin-bottom: 8px;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	/* Add condition button */
+	.add-condition-btn {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-subtle);
+		background-color: var(--bg-base);
+		padding: 4px 8px;
+		font-size: var(--text-xs);
+		font-weight: 500;
+		color: var(--accent);
+		transition: all 150ms;
+	}
+
+	.add-condition-btn:hover {
+		border-color: var(--accent-dim);
+		background-color: var(--accent-bg);
+	}
+
+	/* Empty state */
+	.empty-state {
+		border-radius: var(--radius-md);
+		border: 1px dashed var(--border-subtle);
+		background-color: var(--bg-base);
+		padding: 24px 16px;
+		text-align: center;
+	}
+
+	.empty-state-text {
+		font-size: var(--text-sm);
+		color: var(--text-disabled);
+	}
+
+	/* Conditions list */
+	.conditions-list > * + * {
+		margin-top: 8px;
+	}
+
+	/* Condition row */
+	.condition-row {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		border-radius: var(--radius-md);
+		border: 1px solid var(--border-subtle);
+		background-color: var(--bg-base);
+		padding: 10px;
+	}
+
+	/* Condition number badge */
+	.condition-number {
+		display: flex;
+		height: 20px;
+		width: 20px;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		border-radius: var(--radius-full);
+		background-color: var(--bg-overlay);
+		font-size: 10px;
+		font-weight: 600;
+		color: var(--text-tertiary);
+	}
+
+	/* Condition field select wrapper */
+	.condition-field-wrapper {
+		flex-shrink: 0;
+	}
+
+	.condition-field-select {
+		min-width: 130px;
+		padding-right: 28px;
+	}
+
+	/* Condition operator select wrapper */
+	.condition-operator-wrapper {
+		flex-shrink: 0;
+	}
+
+	.condition-operator-select {
+		min-width: 80px;
+		padding-right: 28px;
+		font-family: var(--font-mono);
+	}
+
+	/* Condition value input */
+	.condition-value-input {
+		min-width: 0;
+		flex: 1;
+		font-family: var(--font-mono);
+	}
+
+	/* Remove condition button */
+	.remove-condition-btn {
+		flex-shrink: 0;
+		border-radius: var(--radius-md);
+		padding: 6px;
+		color: var(--text-disabled);
+		transition: color 150ms, background-color 150ms, border-color 150ms;
+	}
+
+	.remove-condition-btn:hover {
+		background-color: var(--bearish-bg);
+		color: var(--bearish);
+	}
+
+	/* AND connector */
+	.and-connector {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.and-badge {
+		border-radius: var(--radius-full);
+		background-color: var(--bg-overlay);
+		padding: 2px 12px;
+		font-size: 10px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: var(--text-disabled);
+	}
+
+	/* Footer */
+	.footer {
+		display: flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 12px;
+		border-top: 1px solid var(--border-subtle);
+		padding: 12px 20px;
+	}
+
+	/* Reset button */
+	.reset-btn {
+		border-radius: var(--radius-lg);
+		background-color: transparent;
+		padding: 8px 16px;
+		font-size: var(--text-sm);
+		font-weight: 500;
+		color: var(--text-tertiary);
+		transition: color 150ms, background-color 150ms, border-color 150ms;
+	}
+
+	.reset-btn:hover {
+		color: var(--text-primary);
+	}
+
+	/* Save button */
+	.save-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		border-radius: var(--radius-lg);
+		padding: 8px 16px;
+		font-size: var(--text-sm);
+		font-weight: 500;
+		transition: all 150ms;
+	}
+
+	.save-btn--active {
+		background-color: var(--accent);
+		color: white;
+		box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+		cursor: pointer;
+	}
+
+	.save-btn--active:hover {
+		background-color: var(--accent-bright);
+	}
+
+	.save-btn--disabled {
+		background-color: var(--bg-overlay);
+		color: var(--text-disabled);
+		cursor: not-allowed;
+	}
+</style>

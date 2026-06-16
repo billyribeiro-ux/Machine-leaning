@@ -21,7 +21,7 @@ Key formulas:
 import math
 import numpy as np
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, time, timezone
 from typing import Dict, List, Optional, Tuple
 from collections import deque
 
@@ -293,12 +293,51 @@ class GEXEngine:
                 return max(0.01, min(sigma, 5.0))
 
             if vega < 1e-12:
-                break
+                # Vega has collapsed (deep OTM / near-expiry) — Newton steps
+                # are unreliable. Fall back to bracketed bisection rather than
+                # returning a possibly-stale sigma.
+                return self._iv_bisection(
+                    S, K, T, r, q, option_type, market_price, tol
+                )
 
             sigma -= diff / vega
             sigma = max(0.01, min(sigma, 5.0))
 
-        return max(0.01, min(sigma, 5.0))
+        # Newton did not converge within max_iter — refine with bisection.
+        return self._iv_bisection(S, K, T, r, q, option_type, market_price, tol)
+
+    def _iv_bisection(
+        self,
+        S: float, K: float, T: float, r: float, q: float,
+        option_type, market_price: float, tol: float,
+        lo: float = 0.01, hi: float = 5.0, max_iter: int = 100,
+    ) -> float:
+        """Bisection IV solver — robust where Newton-Raphson stalls.
+
+        Monotonic in sigma, so a sign change between ``lo`` and ``hi``
+        brackets the implied vol. Returns the nearest bound if price is
+        outside the achievable range.
+        """
+        price_lo = self._bs_price(S, K, T, lo, r, q, option_type) - market_price
+        price_hi = self._bs_price(S, K, T, hi, r, q, option_type) - market_price
+
+        # Price not bracketed: clamp to the closer bound.
+        if price_lo > 0:
+            return lo
+        if price_hi < 0:
+            return hi
+
+        for _ in range(max_iter):
+            mid = 0.5 * (lo + hi)
+            diff = self._bs_price(S, K, T, mid, r, q, option_type) - market_price
+            if abs(diff) < tol:
+                return mid
+            if diff > 0:
+                hi = mid
+            else:
+                lo = mid
+
+        return 0.5 * (lo + hi)
 
     # ------------------------------------------------------------------
     # Single-strike Greeks (public convenience wrapper)
@@ -927,12 +966,22 @@ class GEXEngine:
         """Convert chain expiry to trading-year fraction ``T``.
 
         ``T = minutes_remaining / (252 * 390)``
+
+        ``OptionsChain.expiry_date`` is a calendar ``date``; SPXW are
+        P.M.-settled, so expiry is anchored to 16:00 US/Eastern (20:00 UTC
+        during EDT) on that date.
         """
         now = datetime.now(timezone.utc)
-        if chain.expiry is None:
+        if chain.expiry_date is None:
             return _MIN_T
 
-        remaining = (chain.expiry - now).total_seconds()
+        # PM settlement at 16:00 ET ≈ 20:00 UTC (EDT). Build a tz-aware
+        # expiry instant from the calendar date.
+        expiry_dt = datetime.combine(
+            chain.expiry_date, time(hour=20, minute=0), tzinfo=timezone.utc
+        )
+
+        remaining = (expiry_dt - now).total_seconds()
         if remaining <= 0:
             return _MIN_T
 

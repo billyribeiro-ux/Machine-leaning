@@ -14,41 +14,68 @@
 		size = 'md',
 		class: className = ''
 	}: Props = $props();
-
-	const sizeClasses: Record<string, { symbol: string; name: string }> = {
-		sm: {
-			symbol: 'text-xs',
-			name: 'text-[10px]'
-		},
-		md: {
-			symbol: 'text-sm',
-			name: 'text-xs'
-		},
-		lg: {
-			symbol: 'text-base',
-			name: 'text-sm'
-		}
-	};
-
-	let sizeStyle = $derived(sizeClasses[size] ?? sizeClasses.md);
 </script>
 
 <div
-	class="inline-flex flex-col justify-center {className}"
+	class="ticker-symbol {className}"
 	title={name ?? symbol}
 >
-	<span
-		class="font-mono font-semibold uppercase leading-tight text-[oklch(0.90_0_0)] {sizeStyle.symbol}"
-		style="letter-spacing: 0.02em;"
-	>
+	<span class="ticker-text size-{size}">
 		{symbol.toUpperCase()}
 	</span>
 	{#if showName && name}
-		<span
-			class="truncate leading-tight text-[oklch(0.50_0_0)] {sizeStyle.name}"
-			style="max-width: 120px;"
-		>
+		<span class="ticker-name size-{size}-name">
 			{name}
 		</span>
 	{/if}
 </div>
+
+<style>
+	.ticker-symbol {
+		display: inline-flex;
+		flex-direction: column;
+		justify-content: center;
+	}
+
+	.ticker-text {
+		font-family: var(--font-mono);
+		font-weight: 600;
+		text-transform: uppercase;
+		line-height: 1.2;
+		letter-spacing: 0.02em;
+		color: oklch(0.90 0 0);
+	}
+
+	.ticker-text.size-sm {
+		font-size: var(--text-xs);
+	}
+
+	.ticker-text.size-md {
+		font-size: var(--text-sm);
+	}
+
+	.ticker-text.size-lg {
+		font-size: var(--text-base, 1rem);
+	}
+
+	.ticker-name {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		line-height: 1.2;
+		max-width: 120px;
+		color: oklch(0.50 0 0);
+	}
+
+	.ticker-name.size-sm-name {
+		font-size: 10px;
+	}
+
+	.ticker-name.size-md-name {
+		font-size: var(--text-xs);
+	}
+
+	.ticker-name.size-lg-name {
+		font-size: var(--text-sm);
+	}
+</style>
