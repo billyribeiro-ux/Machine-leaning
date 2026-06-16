@@ -25,9 +25,9 @@
       icon: 'M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4',
     },
     {
-      title: 'API Keys',
-      description: 'Generate and manage API keys for programmatic access',
-      href: '/settings/api',
+      title: 'Vendor API Keys',
+      description: 'Configure FMP, Polygon, Tradier and other data vendor credentials',
+      href: '/settings/vendors',
       icon: 'M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z',
     },
   ];
