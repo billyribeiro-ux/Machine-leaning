@@ -262,6 +262,71 @@ function createScannerStore() {
     }
   }
 
+  let filtersVisible = $state(false);
+
+  function togglePause(): void {
+    for (const [id, scan] of activeScans) {
+      if (scan.status === 'running') pauseScan(id);
+      else if (scan.status === 'paused') resumeScan(id);
+    }
+  }
+
+  function refresh(): void {
+    // no-op placeholder — the page-level fetch handles actual refresh
+  }
+
+  function toggleFilters(): void {
+    filtersVisible = !filtersVisible;
+  }
+
+  function setMinStrength(strength: number): void {
+    updateFilter({
+      field: 'strength',
+      operator: 'gte',
+      value: strength as ScanFilterValue,
+      enabled: true,
+    });
+  }
+
+  function selectNextRow(): void {
+    const list = sortedResults;
+    if (list.length === 0) return;
+    const idx = selectedResultId ? list.findIndex(r => r.id === selectedResultId) : -1;
+    const next = Math.min(idx + 1, list.length - 1);
+    selectedResultId = list[next].id;
+  }
+
+  function selectPreviousRow(): void {
+    const list = sortedResults;
+    if (list.length === 0) return;
+    const idx = selectedResultId ? list.findIndex(r => r.id === selectedResultId) : 1;
+    const prev = Math.max(idx - 1, 0);
+    selectedResultId = list[prev].id;
+  }
+
+  function copySelectedRow(): void {
+    const r = selectedResult;
+    if (!r) return;
+    const text = `${r.symbol} | ${r.category} | ${r.description ?? ''}`;
+    navigator.clipboard.writeText(text).catch(() => {});
+  }
+
+  function openSelectedDetail(): void {
+    // no-op placeholder — detail panel is page-level
+  }
+
+  function exportData(): void {
+    // no-op placeholder — export is page-level
+  }
+
+  function nextPreset(): void {
+    // no-op placeholder — preset navigation is page-level
+  }
+
+  function prevPreset(): void {
+    // no-op placeholder — preset navigation is page-level
+  }
+
   // ---- public API ----
   return {
     // reactive getters
@@ -326,6 +391,18 @@ function createScannerStore() {
     stopScan,
     setScanError,
     setMaxResults,
+    togglePause,
+    refresh,
+    toggleFilters,
+    setMinStrength,
+    selectNextRow,
+    selectPreviousRow,
+    copySelectedRow,
+    openSelectedDetail,
+    exportData,
+    nextPreset,
+    prevPreset,
+    get filtersVisible() { return filtersVisible; },
   };
 }
 

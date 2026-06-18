@@ -1279,7 +1279,7 @@ class FeatureEngineer:
                 logger.warning(f"Error in {calc.__class__.__name__}: {e}")
 
         if fillna:
-            features = features.fillna(method='ffill').fillna(0)
+            features = features.ffill().fillna(0)
 
         if normalize:
             features = self._normalize(features)
