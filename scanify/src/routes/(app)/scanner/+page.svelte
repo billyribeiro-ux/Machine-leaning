@@ -43,6 +43,7 @@
   let scanResults: ScanResult[] = $state([]);
   let loading = $state(true);
   let connected = $state(false);
+  let needsApiKey = $state(false);
 
   // ---- Derive direction & strength from change percent ----
   function deriveDirection(changePercent: number): 'bullish' | 'bearish' | 'neutral' {
@@ -99,9 +100,23 @@
 
   // ---- Fetch data from API ----
   async function fetchScannerData() {
+    // Health check first
+    try {
+      const health = await fetch('http://localhost:8000/health', { signal: AbortSignal.timeout(3000) });
+      connected = health.ok;
+    } catch {
+      connected = false;
+      loading = false;
+      return;
+    }
+
     try {
       const response = await fetch('http://localhost:8000/api/equity/market/movers?limit=25');
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        needsApiKey = true;
+        loading = false;
+        return;
+      }
       const data = await response.json();
 
       const allItems: ScanResult[] = [];
@@ -119,9 +134,9 @@
       }
 
       scanResults = allItems;
-      connected = true;
+      needsApiKey = false;
     } catch {
-      connected = false;
+      needsApiKey = true;
       scanResults = [];
     } finally {
       loading = false;
@@ -220,8 +235,8 @@
       <ExportToolbar source="scanner" />
       <div class="header-divider" style="background: var(--border-subtle);"></div>
       <div class="live-indicator">
-        <div class="live-dot {connected ? 'signal-ping' : ''}" style="background: {connected ? 'var(--bullish)' : 'var(--text-disabled)'};"></div>
-        <span class="live-label" style="color: {connected ? 'var(--bullish)' : 'var(--text-disabled)'};">{connected ? 'Live' : 'Offline'}</span>
+        <div class="live-dot {connected && !needsApiKey ? 'signal-ping' : ''}" style="background: {connected ? (needsApiKey ? 'var(--warning-bright, oklch(0.75 0.15 85))' : 'var(--bullish)') : 'var(--text-disabled)'};"></div>
+        <span class="live-label" style="color: {connected ? (needsApiKey ? 'var(--warning-bright, oklch(0.75 0.15 85))' : 'var(--bullish)') : 'var(--text-disabled)'};">{connected ? (needsApiKey ? 'No Feed' : 'Live') : 'Offline'}</span>
       </div>
     </div>
   </div>
@@ -342,8 +357,18 @@
             <td colspan="9" class="td-empty" style="color: var(--text-tertiary);">
               <div class="disconnected-state">
                 <span class="disconnected-icon">!</span>
-                <strong>No API Connection</strong>
+                <strong>Backend Offline</strong>
                 <span>Start the backend server to see live scanner data</span>
+              </div>
+            </td>
+          </tr>
+        {:else if needsApiKey}
+          <tr>
+            <td colspan="9" class="td-empty" style="color: var(--text-tertiary);">
+              <div class="disconnected-state">
+                <span class="disconnected-icon" style="color: var(--warning-bright, oklch(0.75 0.15 85));">!</span>
+                <strong>Data Provider Not Configured</strong>
+                <span>Configure an FMP or other market data API key in <a href="/settings" style="color: var(--accent);">Settings</a></span>
               </div>
             </td>
           </tr>

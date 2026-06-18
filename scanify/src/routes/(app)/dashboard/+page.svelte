@@ -18,19 +18,27 @@
   let vix = $state(0);
   let advDecRatio = $state(1.0);
 
+  let needsApiKey = $state(false);
+
   // --- Data fetching ---
   async function fetchDashboardData() {
     loading = true;
 
+    // Health check first — determines connected vs truly offline
     try {
-      const [priceRes, macroRes, sectorRes, moversRes] = await Promise.all([
-        fetch(`${API_BASE}/api/equity/price/snapshot`),
-        fetch(`${API_BASE}/api/equity/macro/snapshot`),
-        fetch(`${API_BASE}/api/equity/market/sectors`),
-        fetch(`${API_BASE}/api/equity/market/movers?limit=5`),
-      ]);
+      const health = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3000) });
+      connected = health.ok;
+    } catch {
+      connected = false;
+      loading = false;
+      return;
+    }
 
-      // Price snapshot -> indices
+    let anyProviderError = false;
+
+    // Fetch each endpoint independently so partial data still renders
+    try {
+      const priceRes = await fetch(`${API_BASE}/api/equity/price/snapshot`);
       if (priceRes.ok) {
         const priceData = await priceRes.json();
         if (Array.isArray(priceData)) {
@@ -45,9 +53,13 @@
         } else if (priceData.data) {
           indices = Array.isArray(priceData.data) ? priceData.data : [];
         }
+      } else {
+        anyProviderError = true;
       }
+    } catch { anyProviderError = true; }
 
-      // Macro snapshot -> VIX, internals
+    try {
+      const macroRes = await fetch(`${API_BASE}/api/equity/macro/snapshot`);
       if (macroRes.ok) {
         const macroData = await macroRes.json();
         const macro = macroData.data ?? macroData;
@@ -55,9 +67,13 @@
         tick = macro.tick ?? macro.TICK ?? 0;
         trin = macro.trin ?? macro.TRIN ?? 1.0;
         advDecRatio = macro.advDecRatio ?? macro.advance_decline ?? macro.ad_ratio ?? 1.0;
+      } else {
+        anyProviderError = true;
       }
+    } catch { anyProviderError = true; }
 
-      // Sectors
+    try {
+      const sectorRes = await fetch(`${API_BASE}/api/equity/market/sectors`);
       if (sectorRes.ok) {
         const sectorData = await sectorRes.json();
         const rawSectors = Array.isArray(sectorData) ? sectorData : sectorData.data ?? sectorData.sectors ?? [];
@@ -65,9 +81,13 @@
           name: s.name ?? s.sector ?? '',
           change: s.change ?? s.changePercent ?? s.change_percent ?? 0,
         }));
+      } else {
+        anyProviderError = true;
       }
+    } catch { anyProviderError = true; }
 
-      // Top movers -> signals
+    try {
+      const moversRes = await fetch(`${API_BASE}/api/equity/market/movers?limit=5`);
       if (moversRes.ok) {
         const moversData = await moversRes.json();
         const rawMovers = Array.isArray(moversData) ? moversData : moversData.data ?? moversData.movers ?? [];
@@ -78,14 +98,13 @@
           strength: m.strength ?? m.score ?? 3,
           price: m.price ?? m.last ?? 0,
         }));
+      } else {
+        anyProviderError = true;
       }
+    } catch { anyProviderError = true; }
 
-      connected = true;
-    } catch {
-      connected = false;
-    } finally {
-      loading = false;
-    }
+    needsApiKey = anyProviderError;
+    loading = false;
   }
 
   onMount(() => {
@@ -111,11 +130,16 @@
 </svelte:head>
 
 <div class="dashboard-page">
-  <!-- Connection banner -->
+  <!-- Connection / API key banners -->
   {#if !loading && !connected}
     <div class="connection-banner">
-      <span class="banner-text">No API connection -- market data unavailable</span>
+      <span class="banner-text">Backend server is not running -- start the API server to see live data</span>
       <button class="retry-btn" onclick={() => fetchDashboardData()}>Retry</button>
+    </div>
+  {:else if !loading && needsApiKey}
+    <div class="connection-banner api-key-banner">
+      <span class="banner-text">Data provider API key required -- configure FMP or other vendor keys in Settings</span>
+      <a href="/settings" class="retry-btn">Configure</a>
     </div>
   {/if}
 
@@ -145,8 +169,8 @@
           <h2 class="panel-title" style="color: var(--text-primary);">Market Status</h2>
           <div class="market-status-indicator">
             <div class="status-dot" style="background: {connected ? 'var(--bullish)' : 'var(--text-tertiary)'};"></div>
-            <span class="status-label" style="color: {connected ? 'var(--bullish)' : 'var(--text-tertiary)'};">
-              {connected ? 'Regular Hours' : 'Disconnected'}
+            <span class="status-label" style="color: {connected ? (needsApiKey ? 'var(--warning-bright)' : 'var(--bullish)') : 'var(--text-tertiary)'};">
+              {connected ? (needsApiKey ? 'No Data Feed' : 'Regular Hours') : 'Disconnected'}
             </span>
           </div>
         </div>
@@ -169,18 +193,14 @@
             {/each}
           </div>
         {:else}
-          <p class="empty-text" style="color: var(--text-tertiary);">Connect API to view index data</p>
+          <p class="empty-text" style="color: var(--text-tertiary);">{needsApiKey ? 'Configure a data provider API key in Settings to view index data' : 'No index data available'}</p>
         {/if}
       </div>
 
       <!-- Internals panel -->
       <div class="internals-panel panel">
         <h2 class="panel-title" style="color: var(--text-primary);">Market Internals</h2>
-        {#if connected}
-          <InternalsBar {tick} {trin} {vix} {advDecRatio} />
-        {:else}
-          <p class="empty-text" style="color: var(--text-tertiary);">Connect API to view internals</p>
-        {/if}
+        <InternalsBar {tick} {trin} {vix} {advDecRatio} />
       </div>
 
       <!-- Top Signals panel - spans 2 cols -->
@@ -225,7 +245,7 @@
             {/each}
           </div>
         {:else}
-          <p class="empty-text" style="color: var(--text-tertiary);">Connect API to view signals</p>
+          <p class="empty-text" style="color: var(--text-tertiary);">{needsApiKey ? 'Configure a data provider API key to see top signals' : 'No signals available'}</p>
         {/if}
       </div>
 
@@ -244,7 +264,7 @@
             {/each}
           </div>
         {:else}
-          <p class="empty-text" style="color: var(--text-tertiary);">Connect API to view sectors</p>
+          <p class="empty-text" style="color: var(--text-tertiary);">{needsApiKey ? 'Configure a data provider API key to see sector performance' : 'No sector data available'}</p>
         {/if}
       </div>
     </div>
@@ -271,6 +291,11 @@
     border-radius: var(--radius-lg);
     background-color: var(--bg-overlay);
     border: 1px solid var(--border-subtle);
+  }
+
+  .api-key-banner {
+    border-color: var(--warning-bright, oklch(0.75 0.15 85));
+    background-color: oklch(0.75 0.15 85 / 0.08);
   }
 
   .banner-text {

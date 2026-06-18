@@ -34,19 +34,27 @@
   // Sectors
   let sectorData = $state<{ name: string; change: number; relativeStrength: number; momentum: number }[]>([]);
 
+  let needsApiKey = $state(false);
+
   // --- Data fetching ---
   async function fetchMarketData() {
     loading = true;
 
+    // Health check first
     try {
-      const [breadthRes, directionRes, sectorRes, macroRes] = await Promise.all([
-        fetch(`${API_BASE}/api/equity/internals/breadth`),
-        fetch(`${API_BASE}/api/equity/internals/direction`),
-        fetch(`${API_BASE}/api/equity/market/sectors`),
-        fetch(`${API_BASE}/api/equity/macro/snapshot`),
-      ]);
+      const health = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3000) });
+      connected = health.ok;
+    } catch {
+      connected = false;
+      loading = false;
+      return;
+    }
 
-      // Breadth
+    let anyProviderError = false;
+
+    // Breadth (works without FMP)
+    try {
+      const breadthRes = await fetch(`${API_BASE}/api/equity/internals/breadth`);
       if (breadthRes.ok) {
         const raw = await breadthRes.json();
         const d = raw.data ?? raw;
@@ -59,8 +67,11 @@
           percentAbove50ma: d.percentAbove50ma ?? d.percent_above_50ma ?? d.pct_above_50ma ?? 0,
         };
       }
+    } catch { /* non-critical */ }
 
-      // Direction / sentiment
+    // Direction / sentiment (works without FMP)
+    try {
+      const directionRes = await fetch(`${API_BASE}/api/equity/internals/direction`);
       if (directionRes.ok) {
         const raw = await directionRes.json();
         const d = raw.data ?? raw;
@@ -69,19 +80,26 @@
         trin = d.trin ?? d.TRIN ?? trin;
         advDecRatio = d.advDecRatio ?? d.advance_decline ?? d.ad_ratio ?? advDecRatio;
       }
+    } catch { /* non-critical */ }
 
-      // Macro snapshot -> VIX
+    // Macro snapshot -> VIX (needs FMP)
+    try {
+      const macroRes = await fetch(`${API_BASE}/api/equity/macro/snapshot`);
       if (macroRes.ok) {
         const raw = await macroRes.json();
         const d = raw.data ?? raw;
         vix = d.vix ?? d.VIX ?? 0;
-        // Fill internals from macro if direction didn't provide them
         if (tick === 0) tick = d.tick ?? d.TICK ?? 0;
         if (trin === 1.0) trin = d.trin ?? d.TRIN ?? 1.0;
         if (advDecRatio === 1.0) advDecRatio = d.advDecRatio ?? d.advance_decline ?? d.ad_ratio ?? 1.0;
+      } else {
+        anyProviderError = true;
       }
+    } catch { anyProviderError = true; }
 
-      // Sectors
+    // Sectors (needs FMP)
+    try {
+      const sectorRes = await fetch(`${API_BASE}/api/equity/market/sectors`);
       if (sectorRes.ok) {
         const raw = await sectorRes.json();
         const rawSectors = Array.isArray(raw) ? raw : raw.data ?? raw.sectors ?? [];
@@ -91,14 +109,13 @@
           relativeStrength: s.relativeStrength ?? s.relative_strength ?? s.rs ?? 50,
           momentum: s.momentum ?? s.mom ?? 0,
         }));
+      } else {
+        anyProviderError = true;
       }
+    } catch { anyProviderError = true; }
 
-      connected = true;
-    } catch {
-      connected = false;
-    } finally {
-      loading = false;
-    }
+    needsApiKey = anyProviderError;
+    loading = false;
   }
 
   onMount(() => {
@@ -111,11 +128,16 @@
 </svelte:head>
 
 <div class="page-root">
-  <!-- Connection banner -->
+  <!-- Connection / API key banners -->
   {#if !loading && !connected}
     <div class="connection-banner">
-      <span class="banner-text">Not Connected -- market data unavailable</span>
+      <span class="banner-text">Backend server is not running -- start the API server to see live data</span>
       <button class="retry-btn" onclick={() => fetchMarketData()}>Retry</button>
+    </div>
+  {:else if !loading && needsApiKey}
+    <div class="connection-banner api-key-banner">
+      <span class="banner-text">Some data providers need API keys -- configure in Settings for full data</span>
+      <a href="/settings" class="retry-btn">Configure</a>
     </div>
   {/if}
 
@@ -143,55 +165,40 @@
         <!-- Breadth Dashboard -->
         <div class="panel section-panel">
           <h2 class="section-label">Market Breadth</h2>
-          {#if connected}
-            <BreadthDashboard internals={breadthData} />
-          {:else}
-            <p class="empty-text">Connect API to view breadth data</p>
-          {/if}
+          <BreadthDashboard internals={breadthData} />
         </div>
 
         <!-- Internals Bar -->
         <div class="panel section-panel">
           <h2 class="section-label">Market Internals</h2>
-          {#if connected}
-            <InternalsBar {tick} {trin} {vix} {advDecRatio} />
-            <!-- Supplementary metric cards -->
-            <div class="metric-grid">
-              <div class="metric-card">
-                <div class="metric-label">Advancers</div>
-                <div class="metric-value metric-value--bullish">
-                  {breadthData.advancers.toLocaleString()}
-                </div>
-              </div>
-              <div class="metric-card">
-                <div class="metric-label">Decliners</div>
-                <div class="metric-value metric-value--bearish">
-                  {breadthData.decliners.toLocaleString()}
-                </div>
+          <InternalsBar {tick} {trin} {vix} {advDecRatio} />
+          <div class="metric-grid">
+            <div class="metric-card">
+              <div class="metric-label">Advancers</div>
+              <div class="metric-value metric-value--bullish">
+                {breadthData.advancers.toLocaleString()}
               </div>
             </div>
-          {:else}
-            <p class="empty-text">Connect API to view internals</p>
-          {/if}
+            <div class="metric-card">
+              <div class="metric-label">Decliners</div>
+              <div class="metric-value metric-value--bearish">
+                {breadthData.decliners.toLocaleString()}
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Sentiment Gauge -->
         <div class="panel sentiment-panel">
-          {#if connected}
-            <SentimentGauge value={sentimentValue} label="Market Sentiment" />
-          {:else}
-            <p class="empty-text">Connect API to view sentiment</p>
-          {/if}
+          <SentimentGauge value={sentimentValue} label="Market Sentiment" />
         </div>
 
         <!-- Sector Rotation -->
         <div class="panel sector-panel">
-          {#if connected && sectorData.length > 0}
+          {#if sectorData.length > 0}
             <SectorRotation sectors={sectorData} />
-          {:else if connected}
-            <p class="empty-text">No sector data available</p>
           {:else}
-            <p class="empty-text">Connect API to view sectors</p>
+            <p class="empty-text">{needsApiKey ? 'Configure a data provider API key to see sector data' : 'No sector data available'}</p>
           {/if}
         </div>
 
@@ -218,6 +225,11 @@
     border-radius: var(--radius-lg);
     background-color: var(--bg-overlay);
     border: 1px solid var(--border-subtle);
+  }
+
+  .api-key-banner {
+    border-color: var(--warning-bright, oklch(0.75 0.15 85));
+    background-color: oklch(0.75 0.15 85 / 0.08);
   }
 
   .banner-text {

@@ -41,32 +41,46 @@
   let hasShortInterest = $derived(shortInterestData.length > 0);
   let hasEtfFlows = $derived(etfFlowData.length > 0);
 
+  let needsApiKey = $state(false);
+
   // --- Data fetching ---
   async function fetchInstitutionalData() {
     loading = true;
 
+    // Health check first
     try {
-      const [holdersRes, sentimentRes] = await Promise.all([
-        fetch(`${API_BASE}/api/equity/institutional/holders`),
-        fetch(`${API_BASE}/api/equity/institutional/sentiment`),
-      ]);
+      const health = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3000) });
+      connected = health.ok;
+    } catch {
+      connected = false;
+      loading = false;
+      return;
+    }
 
+    let anyProviderError = false;
+
+    try {
+      const holdersRes = await fetch(`${API_BASE}/api/equity/institutional/holders`);
       if (holdersRes.ok) {
         const raw = await holdersRes.json();
         holdersData = raw.data ?? raw;
+      } else {
+        anyProviderError = true;
       }
+    } catch { anyProviderError = true; }
 
+    try {
+      const sentimentRes = await fetch(`${API_BASE}/api/equity/institutional/sentiment`);
       if (sentimentRes.ok) {
         const raw = await sentimentRes.json();
         sentimentData = raw.data ?? raw;
+      } else {
+        anyProviderError = true;
       }
+    } catch { anyProviderError = true; }
 
-      connected = true;
-    } catch {
-      connected = false;
-    } finally {
-      loading = false;
-    }
+    needsApiKey = anyProviderError;
+    loading = false;
   }
 
   onMount(() => {
@@ -79,13 +93,16 @@
 </svelte:head>
 
 <div class="page-layout">
-  <!-- Connection banner -->
+  <!-- Connection / API key banners -->
   {#if !loading && !connected}
     <div class="connection-banner">
-      <span class="banner-text">
-        No institutional data -- Dark pool, short interest, and ETF flow data require a premium data provider
-      </span>
+      <span class="banner-text">Backend server is not running -- start the API server to see institutional data</span>
       <button class="retry-btn" onclick={() => fetchInstitutionalData()}>Retry</button>
+    </div>
+  {:else if !loading && needsApiKey}
+    <div class="connection-banner api-key-banner">
+      <span class="banner-text">Dark pool, short interest, and ETF flow data require a premium data provider API key</span>
+      <a href="/settings" class="retry-btn">Configure</a>
     </div>
   {/if}
 
@@ -124,12 +141,8 @@
             <div class="notice-icon">&#9679;</div>
             <h3 class="notice-title">Dark Pool Data</h3>
             <p class="notice-description">
-              {#if connected}
-                Dark pool trade data requires a premium data provider.
-                Connect a supported vendor in Settings to view real-time dark pool prints.
-              {:else}
-                Connect to the API to view dark pool data.
-              {/if}
+              Dark pool trade data requires a premium data provider.
+              Configure a supported vendor in <a href="/settings" style="color: var(--accent);">Settings</a> to view real-time dark pool prints.
             </p>
           </div>
         {/if}
@@ -142,12 +155,8 @@
             <div class="notice-icon">&#9679;</div>
             <h3 class="notice-title">Short Interest Data</h3>
             <p class="notice-description">
-              {#if connected}
-                Short interest data requires a premium data provider.
-                Connect a supported vendor in Settings to view short interest metrics.
-              {:else}
-                Connect to the API to view short interest data.
-              {/if}
+              Short interest data requires a premium data provider.
+              Configure a supported vendor in <a href="/settings" style="color: var(--accent);">Settings</a> to view short interest metrics.
             </p>
           </div>
         {/if}
@@ -160,12 +169,8 @@
             <div class="notice-icon">&#9679;</div>
             <h3 class="notice-title">ETF Flow Data</h3>
             <p class="notice-description">
-              {#if connected}
-                ETF flow data requires a premium data provider.
-                Connect a supported vendor in Settings to view fund flows.
-              {:else}
-                Connect to the API to view ETF flow data.
-              {/if}
+              ETF flow data requires a premium data provider.
+              Configure a supported vendor in <a href="/settings" style="color: var(--accent);">Settings</a> to view fund flows.
             </p>
           </div>
         {/if}
@@ -194,6 +199,11 @@
     border: 1px solid var(--border-subtle);
   }
 
+  .api-key-banner {
+    border-color: var(--warning-bright, oklch(0.75 0.15 85));
+    background-color: oklch(0.75 0.15 85 / 0.08);
+  }
+
   .banner-text {
     font-size: var(--text-xs);
     color: var(--text-secondary);
@@ -211,6 +221,7 @@
     cursor: pointer;
     transition: background-color 150ms;
     flex-shrink: 0;
+    text-decoration: none;
   }
 
   .retry-btn:hover {

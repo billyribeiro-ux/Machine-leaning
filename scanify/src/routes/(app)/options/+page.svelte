@@ -42,33 +42,41 @@
   let unusualData = $state<UnusualRow[]>([]);
   let loading = $state(true);
   let connected = $state(false);
+  let needsApiKey = $state(false);
+
+  const API_BASE = 'http://localhost:8000';
 
   // ── Fetch live data ──
 
   onMount(async () => {
+    // Health check first
+    try {
+      const health = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(3000) });
+      connected = health.ok;
+    } catch {
+      connected = false;
+      loading = false;
+      return;
+    }
+
     try {
       const result = await fetchOptionsData();
 
       if (result === null) {
-        // fetchOptionsData returns null when any request fails (502/503 = no vendor configured)
-        connected = false;
+        needsApiKey = true;
         loading = false;
         return;
       }
 
-      connected = true;
-
-      // Map chain summary data into flow items if available
       if (result.chainSummary && Array.isArray(result.chainSummary)) {
         flowItems = result.chainSummary as FlowItem[];
       }
 
-      // Map unusual activity data if available
       if (result.gexLevels && Array.isArray(result.gexLevels)) {
         unusualData = result.gexLevels as UnusualRow[];
       }
     } catch {
-      connected = false;
+      needsApiKey = true;
     } finally {
       loading = false;
     }
@@ -128,8 +136,18 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
         </div>
-        <p class="status-title" style="color: var(--text-secondary);">No Options Data</p>
-        <p class="status-subtitle" style="color: var(--text-tertiary);">Connect an options data provider (FMP, Tradier, or CBOE) in Settings &rarr; Vendor API Keys to see live options flow</p>
+        <p class="status-title" style="color: var(--text-secondary);">Backend Offline</p>
+        <p class="status-subtitle" style="color: var(--text-tertiary);">Start the backend server to see options data</p>
+      </div>
+    {:else if needsApiKey}
+      <div class="status-message">
+        <div class="status-icon-box" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle);">
+          <svg class="status-icon" style="color: var(--warning-bright, oklch(0.75 0.15 85));" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
+          </svg>
+        </div>
+        <p class="status-title" style="color: var(--text-secondary);">Options Data Provider Required</p>
+        <p class="status-subtitle" style="color: var(--text-tertiary);">Configure an options data provider (FMP, Tradier, or CBOE) in <a href="/settings" style="color: var(--accent);">Settings</a> to see live options flow</p>
       </div>
     {:else if activeTab === 'flow'}
       {#if flowItems.length === 0}
