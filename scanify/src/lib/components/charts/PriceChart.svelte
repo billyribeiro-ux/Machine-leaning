@@ -88,38 +88,38 @@
 			height: height,
 			layout: {
 				background: { type: ColorType.Solid, color: 'transparent' },
-				textColor: 'oklch(0.55 0 0)',
+				textColor: '#7a7a7a',
 				fontSize: 11,
 				fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace'
 			},
 			grid: {
-				vertLines: { color: 'oklch(0.20 0 0)' },
-				horzLines: { color: 'oklch(0.20 0 0)' }
+				vertLines: { color: '#2a2a2a' },
+				horzLines: { color: '#2a2a2a' }
 			},
 			crosshair: {
 				mode: CrosshairMode.Normal,
 				vertLine: {
-					color: 'oklch(0.40 0 0)',
+					color: '#555555',
 					width: 1,
 					style: 2,
-					labelBackgroundColor: 'oklch(0.25 0 0)'
+					labelBackgroundColor: '#333333'
 				},
 				horzLine: {
-					color: 'oklch(0.40 0 0)',
+					color: '#555555',
 					width: 1,
 					style: 2,
-					labelBackgroundColor: 'oklch(0.25 0 0)'
+					labelBackgroundColor: '#333333'
 				}
 			},
 			rightPriceScale: {
-				borderColor: 'oklch(0.22 0 0)',
+				borderColor: '#2e2e2e',
 				scaleMargins: {
 					top: 0.05,
 					bottom: showVolume ? 0.25 : 0.05
 				}
 			},
 			timeScale: {
-				borderColor: 'oklch(0.22 0 0)',
+				borderColor: '#2e2e2e',
 				timeVisible: true,
 				secondsVisible: false
 			},
@@ -131,12 +131,12 @@
 
 		// Candlestick series
 		const candles = chart.addSeries(CandlestickSeries, {
-			upColor: 'oklch(0.62 0.17 145)',
-			downColor: 'oklch(0.55 0.2 25)',
-			borderUpColor: 'oklch(0.62 0.17 145)',
-			borderDownColor: 'oklch(0.55 0.2 25)',
-			wickUpColor: 'oklch(0.62 0.17 145)',
-			wickDownColor: 'oklch(0.55 0.2 25)'
+			upColor: '#26a69a',
+			downColor: '#ef5350',
+			borderUpColor: '#26a69a',
+			borderDownColor: '#ef5350',
+			wickUpColor: '#26a69a',
+			wickDownColor: '#ef5350'
 		});
 		candleSeries = candles;
 
@@ -174,8 +174,8 @@
 					value: d.volume,
 					color:
 						d.close >= d.open
-							? 'oklch(0.62 0.17 145 / 0.4)'
-							: 'oklch(0.55 0.2 25 / 0.4)'
+							? 'rgba(38, 166, 154, 0.4)'
+							: 'rgba(239, 83, 80, 0.4)'
 				}));
 				volSeries.setData(volData);
 			}
@@ -260,8 +260,8 @@
 				value: d.volume,
 				color:
 					d.close >= d.open
-						? 'oklch(0.62 0.17 145 / 0.4)'
-						: 'oklch(0.55 0.2 25 / 0.4)'
+						? 'rgba(38, 166, 154, 0.4)'
+						: 'rgba(239, 83, 80, 0.4)'
 			}));
 			volumeSeries.setData(volData);
 		}

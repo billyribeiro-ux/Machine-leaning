@@ -167,18 +167,8 @@
     }
   });
 
-  // ---- Global keyboard shortcut to open ----
-  $effect(() => {
-    function handleGlobalKeydown(e: KeyboardEvent): void {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        open = !open;
-      }
-    }
-
-    window.addEventListener('keydown', handleGlobalKeydown);
-    return () => window.removeEventListener('keydown', handleGlobalKeydown);
-  });
+  // NOTE: The global Cmd+K shortcut is now registered in the app layout via
+  // the keyboard store. This component only handles its own internal navigation.
 
   // ---- Command bar keyboard navigation ----
   function handleKeydown(e: KeyboardEvent): void {

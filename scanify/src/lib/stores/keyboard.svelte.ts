@@ -1,9 +1,23 @@
 // ---------------------------------------------------------------------------
 // Keyboard shortcuts store – Svelte 5 rune-based reactive state
+// Comprehensive shortcut registry with categories, conflict detection,
+// active shortcut tracking, and modifier key support.
 // ---------------------------------------------------------------------------
 
-/** Modifier keys that can accompany a shortcut. */
-export type ModifierKey = 'ctrl' | 'alt' | 'shift' | 'meta';
+import {
+  type ModifierKey,
+  buildComboKey,
+  modifiersMatch,
+  formatShortcutDisplay,
+  detectConflicts,
+  isInputFocused,
+} from '$lib/utils/keyboard';
+
+export type { ModifierKey };
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 /** A registered keyboard shortcut. */
 export interface KeyboardShortcut {
@@ -27,9 +41,14 @@ export interface KeyboardShortcut {
   preventDefault: boolean;
   /** Whether to stop event propagation. */
   stopPropagation: boolean;
+  /**
+   * When true, this shortcut fires even when an input/textarea is focused
+   * (regardless of whether it has a modifier key).
+   */
+  allowInInput: boolean;
 }
 
-/** Compact registration options (handler is separate). */
+/** Compact registration options. */
 export interface ShortcutRegistration {
   id: string;
   key: string;
@@ -41,92 +60,32 @@ export interface ShortcutRegistration {
   category?: string;
   preventDefault?: boolean;
   stopPropagation?: boolean;
+  allowInInput?: boolean;
+}
+
+/** Category ordering and metadata for the overlay. */
+export interface ShortcutCategory {
+  id: string;
+  label: string;
+  icon: string;
+}
+
+/** A detected conflict between two or more shortcuts. */
+export interface ShortcutConflict {
+  combo: string;
+  ids: string[];
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Predefined categories (display order)
 // ---------------------------------------------------------------------------
 
-/** Build a canonical string key for matching (e.g. "ctrl+shift+k"). */
-function buildComboKey(key: string, modifiers: ModifierKey[]): string {
-  const mods = [...modifiers].sort();
-  return [...mods, key.toLowerCase()].join('+');
-}
-
-/** Check if a keyboard event matches a set of modifiers. */
-function modifiersMatch(event: KeyboardEvent, modifiers: ModifierKey[]): boolean {
-  const has = (mod: ModifierKey): boolean => modifiers.includes(mod);
-  return (
-    event.ctrlKey === has('ctrl') &&
-    event.altKey === has('alt') &&
-    event.shiftKey === has('shift') &&
-    event.metaKey === has('meta')
-  );
-}
-
-/** Format a shortcut for display (e.g. "Ctrl+Shift+K"). */
-function formatShortcut(shortcut: KeyboardShortcut): string {
-  const parts: string[] = [];
-  const isMac =
-    typeof navigator !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
-
-  for (const mod of [...shortcut.modifiers].sort()) {
-    switch (mod) {
-      case 'ctrl':
-        parts.push(isMac ? '\u2318' : 'Ctrl');
-        break;
-      case 'alt':
-        parts.push(isMac ? '\u2325' : 'Alt');
-        break;
-      case 'shift':
-        parts.push(isMac ? '\u21E7' : 'Shift');
-        break;
-      case 'meta':
-        parts.push(isMac ? '\u2318' : 'Win');
-        break;
-    }
-  }
-
-  // Prettify the key name
-  let keyDisplay = shortcut.key;
-  switch (shortcut.key) {
-    case ' ':
-      keyDisplay = 'Space';
-      break;
-    case 'ArrowUp':
-      keyDisplay = '\u2191';
-      break;
-    case 'ArrowDown':
-      keyDisplay = '\u2193';
-      break;
-    case 'ArrowLeft':
-      keyDisplay = '\u2190';
-      break;
-    case 'ArrowRight':
-      keyDisplay = '\u2192';
-      break;
-    case 'Escape':
-      keyDisplay = 'Esc';
-      break;
-    case 'Enter':
-      keyDisplay = '\u21B5';
-      break;
-    case 'Backspace':
-      keyDisplay = '\u232B';
-      break;
-    case 'Delete':
-      keyDisplay = 'Del';
-      break;
-    case 'Tab':
-      keyDisplay = '\u21B9';
-      break;
-    default:
-      keyDisplay = shortcut.key.length === 1 ? shortcut.key.toUpperCase() : shortcut.key;
-  }
-
-  parts.push(keyDisplay);
-  return parts.join(isMac ? '' : '+');
-}
+export const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
+  { id: 'Navigation', label: 'Navigation', icon: '⌗' },
+  { id: 'Scanner', label: 'Scanner', icon: '⊙' },
+  { id: 'Data', label: 'Data', icon: '⊞' },
+  { id: 'System', label: 'System', icon: '⚙' },
+];
 
 // ---------------------------------------------------------------------------
 // Store factory
@@ -138,6 +97,7 @@ function createKeyboardStore() {
   let activeScope = $state<string>('global');
   let isListening = $state(false);
   let lastTriggered = $state<string | null>(null);
+  let lastTriggeredAt = $state<number>(0);
   let paletteOpen = $state(false);
 
   // ---- derived ----
@@ -150,11 +110,11 @@ function createKeyboardStore() {
     shortcutList.filter(
       (s) =>
         s.enabled &&
-        (s.scopes.length === 0 || s.scopes.includes(activeScope))
-    )
+        (s.scopes.length === 0 || s.scopes.includes(activeScope)),
+    ),
   );
 
-  /** Shortcuts grouped by category. */
+  /** Shortcuts grouped by category in display order. */
   let shortcutsByCategory = $derived.by(() => {
     const groups = new Map<string, KeyboardShortcut[]>();
     for (const shortcut of activeShortcuts) {
@@ -169,6 +129,16 @@ function createKeyboardStore() {
 
   /** Total number of registered shortcuts. */
   let shortcutCount = $derived(shortcuts.size);
+
+  /** Detected shortcut conflicts. */
+  let conflicts = $derived.by((): ShortcutConflict[] => {
+    return detectConflicts(
+      shortcutList.map((s) => ({ id: s.id, key: s.key, modifiers: s.modifiers })),
+    );
+  });
+
+  /** Whether any shortcut conflicts exist. */
+  let hasConflicts = $derived(conflicts.length > 0);
 
   // Private: lookup by combo key for O(1) matching
   let comboIndex = $derived.by(() => {
@@ -187,27 +157,14 @@ function createKeyboardStore() {
   // ---- event handler ----
 
   function handleKeyDown(event: KeyboardEvent): void {
-    // Skip if typing in an input element
-    const target = event.target as HTMLElement;
-    if (
-      target.tagName === 'INPUT' ||
-      target.tagName === 'TEXTAREA' ||
-      target.tagName === 'SELECT' ||
-      target.isContentEditable
-    ) {
-      // Still allow Escape in input fields
-      if (event.key !== 'Escape') return;
-    }
+    const inputFocused = isInputFocused();
 
-    const combo = buildComboKey(
-      event.key,
-      [
-        ...(event.ctrlKey ? ['ctrl' as const] : []),
-        ...(event.altKey ? ['alt' as const] : []),
-        ...(event.shiftKey ? ['shift' as const] : []),
-        ...(event.metaKey ? ['meta' as const] : []),
-      ]
-    );
+    const combo = buildComboKey(event.key, [
+      ...(event.ctrlKey ? (['ctrl'] as const) : []),
+      ...(event.altKey ? (['alt'] as const) : []),
+      ...(event.shiftKey ? (['shift'] as const) : []),
+      ...(event.metaKey ? (['meta'] as const) : []),
+    ]);
 
     const candidates = comboIndex.get(combo);
     if (!candidates) return;
@@ -224,10 +181,23 @@ function createKeyboardStore() {
       // Verify modifier exact match
       if (!modifiersMatch(event, shortcut.modifiers)) continue;
 
+      // When input is focused, only allow shortcuts that:
+      //  - have allowInInput set, OR
+      //  - have a modifier key (Ctrl/Meta/Alt), OR
+      //  - are Escape
+      if (inputFocused && !shortcut.allowInInput) {
+        const hasModifier =
+          shortcut.modifiers.includes('ctrl') ||
+          shortcut.modifiers.includes('meta') ||
+          shortcut.modifiers.includes('alt');
+        if (!hasModifier && event.key !== 'Escape') continue;
+      }
+
       if (shortcut.preventDefault) event.preventDefault();
       if (shortcut.stopPropagation) event.stopPropagation();
 
       lastTriggered = shortcut.id;
+      lastTriggeredAt = Date.now();
       shortcut.handler(event);
       return; // first match wins
     }
@@ -248,6 +218,7 @@ function createKeyboardStore() {
       category: registration.category ?? 'General',
       preventDefault: registration.preventDefault ?? true,
       stopPropagation: registration.stopPropagation ?? false,
+      allowInInput: registration.allowInInput ?? false,
     };
 
     shortcuts.set(shortcut.id, shortcut);
@@ -258,8 +229,32 @@ function createKeyboardStore() {
 
   /** Register multiple shortcuts at once. Returns a single cleanup function. */
   function registerShortcuts(registrations: ShortcutRegistration[]): () => void {
-    const cleanups = registrations.map((r) => registerShortcut(r));
-    return () => cleanups.forEach((fn) => fn());
+    // Batch all insertions before triggering reactivity
+    for (const reg of registrations) {
+      const shortcut: KeyboardShortcut = {
+        id: reg.id,
+        key: reg.key,
+        modifiers: reg.modifiers ?? [],
+        description: reg.description,
+        scopes: reg.scopes ?? [],
+        handler: reg.handler,
+        enabled: reg.enabled ?? true,
+        category: reg.category ?? 'General',
+        preventDefault: reg.preventDefault ?? true,
+        stopPropagation: reg.stopPropagation ?? false,
+        allowInInput: reg.allowInInput ?? false,
+      };
+      shortcuts.set(shortcut.id, shortcut);
+    }
+    // Single reactivity trigger
+    shortcuts = new Map(shortcuts);
+
+    return () => {
+      for (const reg of registrations) {
+        shortcuts.delete(reg.id);
+      }
+      shortcuts = new Map(shortcuts);
+    };
   }
 
   /** Unregister a shortcut by id. */
@@ -276,7 +271,7 @@ function createKeyboardStore() {
   /** Get all shortcuts registered for a specific scope. */
   function getShortcutsForScope(scope: string): KeyboardShortcut[] {
     return shortcutList.filter(
-      (s) => s.enabled && (s.scopes.length === 0 || s.scopes.includes(scope))
+      (s) => s.enabled && (s.scopes.length === 0 || s.scopes.includes(scope)),
     );
   }
 
@@ -292,7 +287,7 @@ function createKeyboardStore() {
   /** Get a formatted display string for a shortcut by id. */
   function getDisplayString(id: string): string {
     const shortcut = shortcuts.get(id);
-    return shortcut ? formatShortcut(shortcut) : '';
+    return shortcut ? formatShortcutDisplay(shortcut.key, shortcut.modifiers) : '';
   }
 
   /** Open the shortcut palette / cheat sheet. */
@@ -360,8 +355,20 @@ function createKeyboardStore() {
     get lastTriggered() {
       return lastTriggered;
     },
+    get lastTriggeredAt() {
+      return lastTriggeredAt;
+    },
     get paletteOpen() {
       return paletteOpen;
+    },
+    set paletteOpen(value: boolean) {
+      paletteOpen = value;
+    },
+    get conflicts() {
+      return conflicts;
+    },
+    get hasConflicts() {
+      return hasConflicts;
     },
 
     // actions
@@ -380,7 +387,7 @@ function createKeyboardStore() {
     clearAll,
 
     // utility
-    formatShortcut,
+    formatShortcutDisplay,
   };
 }
 

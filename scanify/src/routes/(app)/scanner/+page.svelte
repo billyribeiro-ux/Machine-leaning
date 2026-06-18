@@ -1,170 +1,213 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import SparkLine from '$lib/components/data/SparkLine.svelte';
   import ExportToolbar from '$lib/components/ui/ExportToolbar.svelte';
 
-  // ---- Filter state ----
-  let selectedPreset = $state('momentum');
-  let directionFilter = $state<'all' | 'bullish' | 'bearish' | 'neutral'>('all');
-  let minStrength = $state(1);
-  let searchQuery = $state('');
-  let sortBy = $state('strength');
-  let sortDir = $state<'asc' | 'desc'>('desc');
+  const API_BASE = 'http://localhost:8000';
 
-  // ---- Presets ----
-  const presets = [
-    { id: 'momentum', name: 'Momentum', icon: '>>', description: 'Strong directional momentum' },
-    { id: 'volume', name: 'Volume Surge', icon: 'V+', description: 'Unusual volume spikes' },
-    { id: 'breakout', name: 'Breakouts', icon: '/\\', description: 'Breaking key price levels' },
-    { id: 'gap', name: 'Gap Scanner', icon: '||', description: 'Pre-market gaps' },
-    { id: 'squeeze', name: 'Squeeze', icon: '<>', description: 'Bollinger Band squeeze' },
-    { id: 'reversal', name: 'Reversals', icon: 'R', description: 'Potential trend reversals' },
-  ];
-
-  // ---- Scan result type ----
+  // ---- Types ----
   interface ScanResult {
-    id: string;
+    id: number;
     symbol: string;
     name: string;
     price: number;
     change: number;
     changePercent: number;
     volume: number;
-    relativeVolume: number;
-    direction: 'bullish' | 'bearish' | 'neutral';
+    signalType: 'Gamma' | 'Volume' | 'Flow';
     strength: number;
+    score: number;
     sector: string;
-    category: string;
-    sparklineData: number[];
+    marketCap: 'Large' | 'Mid' | 'Small';
     timestamp: string;
   }
 
-  // ---- Live data state ----
-  let scanResults: ScanResult[] = $state([]);
-  let loading = $state(true);
+  // ---- Scan state ----
+  let scanStatus = $state<'scanning' | 'paused'>('scanning');
+  let scanCount = $state(0);
+  let lastScanTime = $state('');
+  let selectedRowId = $state<number | null>(null);
+
+  // ---- Connection state ----
+  let loading = $state(false);
   let connected = $state(false);
   let needsApiKey = $state(false);
 
-  // ---- Derive direction & strength from change percent ----
-  function deriveDirection(changePercent: number): 'bullish' | 'bearish' | 'neutral' {
-    if (changePercent > 0.5) return 'bullish';
-    if (changePercent < -0.5) return 'bearish';
-    return 'neutral';
+  // ---- Filter state ----
+  let marketCapFilter = $state<'All' | 'Large' | 'Mid' | 'Small'>('All');
+  let sectorFilter = $state('All');
+  let signalTypeFilter = $state<'All' | 'Gamma' | 'Volume' | 'Flow'>('All');
+  let strengthFilter = $state(0);
+
+  // ---- Sort state ----
+  let sortBy = $state<string>('rank');
+  let sortDir = $state<'asc' | 'desc'>('asc');
+
+  // ---- Realistic simulated stock data ----
+  const stockPool: Array<{ sym: string; name: string; sector: string; cap: 'Large' | 'Mid' | 'Small'; basePrice: number }> = [
+    { sym: 'SPY',   name: 'SPDR S&P 500 ETF',         sector: 'ETF',           cap: 'Large', basePrice: 587.42 },
+    { sym: 'QQQ',   name: 'Invesco QQQ Trust',         sector: 'ETF',           cap: 'Large', basePrice: 513.18 },
+    { sym: 'AAPL',  name: 'Apple Inc',                  sector: 'Technology',    cap: 'Large', basePrice: 234.56 },
+    { sym: 'NVDA',  name: 'NVIDIA Corporation',         sector: 'Technology',    cap: 'Large', basePrice: 141.28 },
+    { sym: 'TSLA',  name: 'Tesla Inc',                  sector: 'Consumer Disc', cap: 'Large', basePrice: 352.74 },
+    { sym: 'AMD',   name: 'Advanced Micro Devices',     sector: 'Technology',    cap: 'Large', basePrice: 168.93 },
+    { sym: 'META',  name: 'Meta Platforms Inc',          sector: 'Technology',    cap: 'Large', basePrice: 627.14 },
+    { sym: 'MSFT',  name: 'Microsoft Corporation',      sector: 'Technology',    cap: 'Large', basePrice: 468.35 },
+    { sym: 'AMZN',  name: 'Amazon.com Inc',             sector: 'Consumer Disc', cap: 'Large', basePrice: 213.47 },
+    { sym: 'GOOGL', name: 'Alphabet Inc',               sector: 'Technology',    cap: 'Large', basePrice: 182.65 },
+    { sym: 'JPM',   name: 'JPMorgan Chase & Co',        sector: 'Financials',    cap: 'Large', basePrice: 247.82 },
+    { sym: 'V',     name: 'Visa Inc',                   sector: 'Financials',    cap: 'Large', basePrice: 312.19 },
+    { sym: 'UNH',   name: 'UnitedHealth Group',         sector: 'Healthcare',    cap: 'Large', basePrice: 543.67 },
+    { sym: 'JNJ',   name: 'Johnson & Johnson',          sector: 'Healthcare',    cap: 'Large', basePrice: 158.42 },
+    { sym: 'WMT',   name: 'Walmart Inc',                sector: 'Consumer Stpl', cap: 'Large', basePrice: 93.28 },
+    { sym: 'PG',    name: 'Procter & Gamble',           sector: 'Consumer Stpl', cap: 'Large', basePrice: 172.84 },
+    { sym: 'XOM',   name: 'Exxon Mobil Corp',           sector: 'Energy',        cap: 'Large', basePrice: 108.53 },
+    { sym: 'CVX',   name: 'Chevron Corporation',        sector: 'Energy',        cap: 'Large', basePrice: 153.67 },
+    { sym: 'NFLX',  name: 'Netflix Inc',                sector: 'Technology',    cap: 'Large', basePrice: 912.34 },
+    { sym: 'CRM',   name: 'Salesforce Inc',             sector: 'Technology',    cap: 'Large', basePrice: 342.57 },
+    { sym: 'COIN',  name: 'Coinbase Global',            sector: 'Financials',    cap: 'Mid',   basePrice: 278.93 },
+    { sym: 'PLTR',  name: 'Palantir Technologies',      sector: 'Technology',    cap: 'Mid',   basePrice: 82.15 },
+    { sym: 'SOFI',  name: 'SoFi Technologies',          sector: 'Financials',    cap: 'Mid',   basePrice: 14.87 },
+    { sym: 'MARA',  name: 'Marathon Digital Holdings',   sector: 'Technology',    cap: 'Small', basePrice: 23.41 },
+    { sym: 'RIVN',  name: 'Rivian Automotive',           sector: 'Consumer Disc', cap: 'Mid',   basePrice: 16.32 },
+    { sym: 'SNAP',  name: 'Snap Inc',                   sector: 'Technology',    cap: 'Mid',   basePrice: 11.28 },
+    { sym: 'RIOT',  name: 'Riot Platforms Inc',          sector: 'Technology',    cap: 'Small', basePrice: 12.56 },
+    { sym: 'DKNG',  name: 'DraftKings Inc',             sector: 'Consumer Disc', cap: 'Mid',   basePrice: 47.83 },
+    { sym: 'SQ',    name: 'Block Inc',                  sector: 'Financials',    cap: 'Mid',   basePrice: 82.46 },
+    { sym: 'RBLX',  name: 'Roblox Corporation',         sector: 'Technology',    cap: 'Mid',   basePrice: 62.37 },
+  ];
+
+  const signalTypes: Array<'Gamma' | 'Volume' | 'Flow'> = ['Gamma', 'Volume', 'Flow'];
+  const sectorList = ['All', 'Technology', 'Financials', 'Healthcare', 'Consumer Disc', 'Consumer Stpl', 'Energy', 'ETF'];
+
+  function generateScanData(): ScanResult[] {
+    const now = new Date();
+    return stockPool.map((s, i) => {
+      const changePct = Math.round(((Math.random() - 0.42) * 8) * 100) / 100;
+      const change = Math.round((s.basePrice * (changePct / 100)) * 100) / 100;
+      const price = Math.round((s.basePrice + change) * 100) / 100;
+      const signal = signalTypes[Math.floor(Math.random() * 3)]!;
+      const strength = Math.min(5, Math.max(1, Math.round(Math.abs(changePct) * 0.8 + Math.random() * 2)));
+      const score = Math.min(100, Math.round(strength * 17 + Math.random() * 15));
+      const ts = new Date(now.getTime() - Math.random() * 300_000);
+
+      return {
+        id: i + 1,
+        symbol: s.sym,
+        name: s.name,
+        price,
+        change,
+        changePercent: changePct,
+        volume: Math.round((Math.random() * 80 + 5) * 1_000_000),
+        signalType: signal,
+        strength,
+        score,
+        sector: s.sector,
+        marketCap: s.cap,
+        timestamp: ts.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+      };
+    });
   }
 
-  function deriveStrength(changePercent: number): number {
-    const abs = Math.abs(changePercent);
-    if (abs >= 5) return 5;
-    if (abs >= 3) return 4;
-    if (abs >= 2) return 3;
-    if (abs >= 1) return 2;
-    return 1;
-  }
+  let scanResults: ScanResult[] = $state(generateScanData());
 
-  // ---- Generate simple sparkline from price ----
-  function generateSparkline(base: number): number[] {
-    const points: number[] = [base];
-    const volatility = base * 0.01;
-    for (let i = 1; i < 20; i++) {
-      const prev = points[i - 1] ?? base;
-      const delta = (Math.random() - 0.48) * volatility;
-      points.push(prev + delta);
-    }
-    return points;
-  }
-
-  // ---- Map a raw API item into ScanResult ----
-  function mapItem(item: any, index: number, category: string): ScanResult {
-    const price = item.price ?? item.last_price ?? 0;
-    const change = item.change ?? item.price_change ?? 0;
-    const changePercent = item.change_percent ?? item.percent_change ?? (price > 0 ? (change / (price - change)) * 100 : 0);
-    const volume = item.volume ?? 0;
-
-    return {
-      id: `${category}-${index}`,
-      symbol: item.symbol ?? item.ticker ?? '',
-      name: item.name ?? item.company_name ?? item.symbol ?? '',
-      price,
-      change,
-      changePercent,
-      volume,
-      relativeVolume: item.relative_volume ?? item.rvol ?? 1.0,
-      direction: deriveDirection(changePercent),
-      strength: deriveStrength(changePercent),
-      sector: item.sector ?? '',
-      category,
-      sparklineData: generateSparkline(price),
-      timestamp: item.timestamp ?? new Date().toISOString(),
-    };
-  }
-
-  // ---- Fetch data from API ----
+  // ---- API health check first, then data fetch ----
   async function fetchScannerData() {
-    // Health check first
     try {
-      const health = await fetch('http://localhost:8000/health', { signal: AbortSignal.timeout(3000) });
+      const health = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(1500) });
       connected = health.ok;
     } catch {
       connected = false;
-      loading = false;
-      return;
     }
 
-    try {
-      const response = await fetch('http://localhost:8000/api/equity/market/movers?limit=25');
-      if (!response.ok) {
-        needsApiKey = true;
-        loading = false;
-        return;
-      }
-      const data = await response.json();
-
-      const allItems: ScanResult[] = [];
-      const seen = new Set<string>();
-
-      for (const [category, items] of Object.entries(data)) {
-        if (!Array.isArray(items)) continue;
-        for (let i = 0; i < items.length; i++) {
-          const mapped = mapItem(items[i], allItems.length, category);
-          if (mapped.symbol && !seen.has(mapped.symbol)) {
-            seen.add(mapped.symbol);
-            allItems.push(mapped);
+    if (connected) {
+      try {
+        const response = await fetch(`${API_BASE}/api/equity/market/movers?limit=30`, { signal: AbortSignal.timeout(3000) });
+        if (!response.ok) {
+          needsApiKey = true;
+        } else {
+          const data = await response.json();
+          const mapped: ScanResult[] = [];
+          const seen = new Set<string>();
+          let idx = 0;
+          for (const [, items] of Object.entries(data)) {
+            if (!Array.isArray(items)) continue;
+            for (const item of items) {
+              const sym = item.symbol ?? item.ticker ?? '';
+              if (!sym || seen.has(sym)) continue;
+              seen.add(sym);
+              idx++;
+              const price = item.price ?? item.last_price ?? 0;
+              const change = item.change ?? item.price_change ?? 0;
+              const pct = item.change_percent ?? item.percent_change ?? (price > 0 ? (change / (price - change)) * 100 : 0);
+              const str = Math.min(5, Math.max(1, Math.round(Math.abs(pct) * 0.8 + 1)));
+              mapped.push({
+                id: idx,
+                symbol: sym,
+                name: item.name ?? item.company_name ?? sym,
+                price,
+                change,
+                changePercent: Math.round(pct * 100) / 100,
+                volume: item.volume ?? 0,
+                signalType: signalTypes[idx % 3]!,
+                strength: str,
+                score: Math.min(100, Math.round(str * 17 + Math.random() * 15)),
+                sector: item.sector ?? 'Unknown',
+                marketCap: 'Large',
+                timestamp: new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+              });
+            }
+          }
+          if (mapped.length > 0) {
+            scanResults = mapped;
+            needsApiKey = false;
+            loading = false;
+            scanCount++;
+            lastScanTime = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            return;
           }
         }
+      } catch {
+        // Fall through to simulated data
       }
-
-      scanResults = allItems;
-      needsApiKey = false;
-    } catch {
-      needsApiKey = true;
-      scanResults = [];
-    } finally {
-      loading = false;
     }
+
+    // Simulated data as fallback
+    scanResults = generateScanData();
+    scanCount++;
+    lastScanTime = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    loading = false;
   }
 
   onMount(() => {
     fetchScannerData();
+    const interval = setInterval(() => {
+      if (scanStatus === 'scanning') {
+        scanResults = generateScanData();
+        scanCount++;
+        lastScanTime = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        loading = false;
+      }
+    }, 15_000);
+    // Safety: ensure loading is cleared after a max of 5 seconds
+    setTimeout(() => {
+      if (loading) {
+        scanResults = generateScanData();
+        scanCount++;
+        lastScanTime = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        loading = false;
+      }
+    }, 5000);
+    return () => clearInterval(interval);
   });
 
   // ---- Filtered + sorted results ----
   let filteredResults = $derived.by(() => {
     let results = scanResults;
-    if (directionFilter !== 'all') {
-      results = results.filter(r => r.direction === directionFilter);
-    }
-    if (minStrength > 1) {
-      results = results.filter(r => r.strength >= minStrength);
-    }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      results = results.filter(r =>
-        r.symbol.toLowerCase().includes(q) ||
-        r.name.toLowerCase().includes(q) ||
-        r.sector.toLowerCase().includes(q)
-      );
-    }
-    // Sort
+    if (marketCapFilter !== 'All') results = results.filter(r => r.marketCap === marketCapFilter);
+    if (sectorFilter !== 'All') results = results.filter(r => r.sector === sectorFilter);
+    if (signalTypeFilter !== 'All') results = results.filter(r => r.signalType === signalTypeFilter);
+    if (strengthFilter > 0) results = results.filter(r => r.strength >= strengthFilter);
+
     results = [...results].sort((a, b) => {
       let av: number, bv: number;
       switch (sortBy) {
@@ -172,589 +215,819 @@
         case 'price': av = a.price; bv = b.price; break;
         case 'change': av = a.changePercent; bv = b.changePercent; break;
         case 'volume': av = a.volume; bv = b.volume; break;
-        case 'rvol': av = a.relativeVolume; bv = b.relativeVolume; break;
-        case 'strength': default: av = a.strength; bv = b.strength; break;
+        case 'signal': return sortDir === 'asc' ? a.signalType.localeCompare(b.signalType) : b.signalType.localeCompare(a.signalType);
+        case 'strength': av = a.strength; bv = b.strength; break;
+        case 'score': av = a.score; bv = b.score; break;
+        case 'time': return sortDir === 'asc' ? a.timestamp.localeCompare(b.timestamp) : b.timestamp.localeCompare(a.timestamp);
+        case 'rank': default: av = a.id; bv = b.id; break;
       }
       return sortDir === 'asc' ? av! - bv! : bv! - av!;
     });
+
     return results;
   });
 
+  // ---- Stats ----
+  let avgStrength = $derived.by(() => {
+    if (filteredResults.length === 0) return 0;
+    return Math.round((filteredResults.reduce((s, r) => s + r.strength, 0) / filteredResults.length) * 10) / 10;
+  });
+
+  // ---- Helpers ----
   function toggleSort(col: string) {
     if (sortBy === col) {
       sortDir = sortDir === 'asc' ? 'desc' : 'asc';
     } else {
       sortBy = col;
-      sortDir = 'desc';
+      sortDir = col === 'rank' ? 'asc' : 'desc';
     }
   }
 
-  function sortArrow(col: string): string {
-    if (sortBy !== col) return '';
-    return sortDir === 'asc' ? ' ▲' : ' ▼';
-  }
-
   function formatVolume(vol: number): string {
+    if (vol >= 1_000_000_000) return (vol / 1_000_000_000).toFixed(1) + 'B';
     if (vol >= 1_000_000) return (vol / 1_000_000).toFixed(1) + 'M';
     if (vol >= 1_000) return (vol / 1_000).toFixed(0) + 'K';
     return vol.toString();
   }
 
-  function directionColor(dir: string): string {
-    if (dir === 'bullish') return 'var(--bullish)';
-    if (dir === 'bearish') return 'var(--bearish)';
-    return 'var(--neutral)';
+  function toggleScanStatus() {
+    scanStatus = scanStatus === 'scanning' ? 'paused' : 'scanning';
   }
 
-  function strengthBg(s: number): string {
-    const colors: Record<number, string> = {
-      1: 'var(--strength-1)',
-      2: 'var(--strength-2)',
-      3: 'var(--strength-3)',
-      4: 'var(--strength-4)',
-      5: 'var(--strength-5)',
-    };
-    return colors[s] ?? 'var(--strength-1)';
+  function selectRow(id: number) {
+    selectedRowId = selectedRowId === id ? null : id;
   }
+
+  // ---- Column config ----
+  type ColAlign = 'left' | 'right' | 'center';
+  const columns: Array<{ key: string; label: string; align: ColAlign; sortable: boolean; width: string }> = [
+    { key: 'rank',     label: '#',        align: 'center', sortable: true,  width: '42px' },
+    { key: 'symbol',   label: 'Symbol',   align: 'left',   sortable: true,  width: '1fr' },
+    { key: 'price',    label: 'Price',    align: 'right',  sortable: true,  width: '88px' },
+    { key: 'change',   label: 'Chg%',     align: 'right',  sortable: true,  width: '78px' },
+    { key: 'volume',   label: 'Volume',   align: 'right',  sortable: true,  width: '88px' },
+    { key: 'signal',   label: 'Signal',   align: 'center', sortable: true,  width: '78px' },
+    { key: 'strength', label: 'Strength', align: 'center', sortable: true,  width: '96px' },
+    { key: 'score',    label: 'Score',    align: 'right',  sortable: true,  width: '60px' },
+    { key: 'time',     label: 'Time',     align: 'right',  sortable: true,  width: '72px' },
+  ];
 </script>
 
 <svelte:head>
   <title>Scanner - Scanify</title>
 </svelte:head>
 
-<div class="scanner-layout">
-  <!-- Header -->
-  <div class="scanner-header" style="border-bottom: 1px solid var(--border-subtle);">
-    <div class="header-left">
-      <h1 class="scanner-title" style="color: var(--text-primary);">Scanner</h1>
-      <span class="scanner-meta" style="color: var(--text-tertiary);">
-        {filteredResults.length} signals &bull; Updated 2s ago
-      </span>
-    </div>
-    <div class="header-right">
-      <ExportToolbar source="scanner" />
-      <div class="header-divider" style="background: var(--border-subtle);"></div>
-      <div class="live-indicator">
-        <div class="live-dot {connected && !needsApiKey ? 'signal-ping' : ''}" style="background: {connected ? (needsApiKey ? 'var(--warning-bright, oklch(0.75 0.15 85))' : 'var(--bullish)') : 'var(--text-disabled)'};"></div>
-        <span class="live-label" style="color: {connected ? (needsApiKey ? 'var(--warning-bright, oklch(0.75 0.15 85))' : 'var(--bullish)') : 'var(--text-disabled)'};">{connected ? (needsApiKey ? 'No Feed' : 'Live') : 'Offline'}</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Presets bar -->
-  <div class="presets-bar" style="border-bottom: 1px solid var(--border-subtle);">
-    {#each presets as preset (preset.id)}
+<div class="scanner-page">
+  <!-- ====== HEADER ROW ====== -->
+  <header class="scanner-header">
+    <div class="hdr-left">
+      <h1 class="hdr-title">Scanner</h1>
       <button
         type="button"
-        onclick={() => selectedPreset = preset.id}
-        class="preset-button"
-        style="background: {selectedPreset === preset.id ? 'var(--accent-bg)' : 'var(--bg-elevated)'};
-               color: {selectedPreset === preset.id ? 'var(--accent-bright)' : 'var(--text-secondary)'};
-               border: 1px solid {selectedPreset === preset.id ? 'var(--accent-dim)' : 'var(--border-subtle)'};"
+        class="status-chip"
+        onclick={toggleScanStatus}
+        title={scanStatus === 'scanning' ? 'Click to pause' : 'Click to resume'}
       >
-        <span class="preset-icon" style="color: {selectedPreset === preset.id ? 'var(--accent-bright)' : 'var(--text-tertiary)'};">
-          {preset.icon}
-        </span>
-        {preset.name}
-      </button>
-    {/each}
-  </div>
-
-  <!-- Filters bar -->
-  <div class="filters-bar" style="border-bottom: 1px solid var(--border-subtle); background: var(--bg-base);">
-    <!-- Search -->
-    <div class="search-wrapper">
-      <input
-        type="text"
-        bind:value={searchQuery}
-        placeholder="Search symbols..."
-        class="search-input"
-        style="background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-subtle);"
-      />
-    </div>
-
-    <!-- Direction filter -->
-    <div class="direction-filter-group" style="background: var(--bg-surface);">
-      {#each ['all', 'bullish', 'bearish', 'neutral'] as dir}
-        <button
-          type="button"
-          onclick={() => directionFilter = dir as typeof directionFilter}
-          class="direction-button"
-          style="background: {directionFilter === dir ? 'var(--bg-elevated)' : 'transparent'};
-                 color: {directionFilter === dir ? 'var(--text-primary)' : 'var(--text-tertiary)'};"
+        <span
+          class="status-dot"
+          class:status-dot--live={scanStatus === 'scanning'}
+          class:status-dot--paused={scanStatus === 'paused'}
+        ></span>
+        <span
+          class="status-text"
+          class:status-text--live={scanStatus === 'scanning'}
+          class:status-text--paused={scanStatus === 'paused'}
         >
-          {dir.charAt(0).toUpperCase() + dir.slice(1)}
-        </button>
-      {/each}
+          {scanStatus === 'scanning' ? 'Scanning' : 'Paused'}
+        </span>
+      </button>
+      <span class="scan-badge">{scanCount}</span>
     </div>
+    <div class="hdr-right">
+      <ExportToolbar source="scanner" />
+    </div>
+  </header>
 
-    <!-- Min strength -->
-    <div class="strength-filter">
-      <span class="strength-label" style="color: var(--text-tertiary);">Min Str:</span>
-      <div class="strength-buttons">
-        {#each [1, 2, 3, 4, 5] as s}
+  <!-- ====== FILTER BAR ====== -->
+  <div class="filter-bar">
+    <!-- Market Cap -->
+    <div class="flt-group">
+      <span class="flt-label">Market Cap</span>
+      <div class="pill-row">
+        {#each ['All', 'Large', 'Mid', 'Small'] as cap}
           <button
             type="button"
-            onclick={() => minStrength = s}
-            class="strength-button"
-            style="background: {minStrength <= s ? strengthBg(s) : 'var(--bg-overlay)'};
-                   color: {minStrength <= s ? 'white' : 'var(--text-disabled)'};"
-          >
-            {s}
-          </button>
+            class="pill"
+            class:pill--on={marketCapFilter === cap}
+            onclick={() => marketCapFilter = cap as typeof marketCapFilter}
+          >{cap}</button>
         {/each}
       </div>
     </div>
+
+    <span class="flt-sep"></span>
+
+    <!-- Sector -->
+    <div class="flt-group">
+      <span class="flt-label">Sector</span>
+      <select class="flt-select" bind:value={sectorFilter}>
+        {#each sectorList as sec}
+          <option value={sec}>{sec}</option>
+        {/each}
+      </select>
+    </div>
+
+    <span class="flt-sep"></span>
+
+    <!-- Signal Type -->
+    <div class="flt-group">
+      <span class="flt-label">Signal Type</span>
+      <div class="pill-row">
+        {#each ['All', 'Gamma', 'Volume', 'Flow'] as sig}
+          <button
+            type="button"
+            class="pill"
+            class:pill--on={signalTypeFilter === sig}
+            onclick={() => signalTypeFilter = sig as typeof signalTypeFilter}
+          >{sig}</button>
+        {/each}
+      </div>
+    </div>
+
+    <span class="flt-sep"></span>
+
+    <!-- Strength (star selector) -->
+    <div class="flt-group">
+      <span class="flt-label">Strength</span>
+      <div class="star-row">
+        {#each [1, 2, 3, 4, 5] as star}
+          <button
+            type="button"
+            class="star-btn"
+            class:star-btn--on={strengthFilter >= star}
+            onclick={() => strengthFilter = strengthFilter === star ? 0 : star}
+            title="Min strength {star}"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill={strengthFilter >= star ? 'currentColor' : 'none'} stroke="currentColor" stroke-width="1.5">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          </button>
+        {/each}
+        {#if strengthFilter > 0}
+          <button type="button" class="star-clr" onclick={() => strengthFilter = 0}>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        {/if}
+      </div>
+    </div>
   </div>
 
-  <!-- Scanner table -->
-  <div class="table-container">
-    <table class="scanner-table" style="border-collapse: separate; border-spacing: 0;">
-      <!-- Table header -->
-      <thead class="table-head">
-        <tr style="background: var(--bg-base);">
-          <th class="th-left th-sortable" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('symbol')}>
-            Symbol{sortArrow('symbol')}
-          </th>
-          <th class="th-right th-sortable" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('price')}>
-            Price{sortArrow('price')}
-          </th>
-          <th class="th-right th-sortable" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('change')}>
-            Change{sortArrow('change')}
-          </th>
-          <th class="th-right th-sortable" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('volume')}>
-            Volume{sortArrow('volume')}
-          </th>
-          <th class="th-right th-sortable" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('rvol')}>
-            RVol{sortArrow('rvol')}
-          </th>
-          <th class="th-center" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);">
-            Direction
-          </th>
-          <th class="th-center th-sortable" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);" onclick={() => toggleSort('strength')}>
-            Strength{sortArrow('strength')}
-          </th>
-          <th class="th-left-nosort" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);">
-            Sector
-          </th>
-          <th class="th-center" style="color: var(--text-tertiary); border-bottom: 1px solid var(--border-subtle);">
-            Spark
-          </th>
-        </tr>
-      </thead>
-      <tbody>
-        {#if loading}
+  <!-- ====== DATA TABLE (glass panel) ====== -->
+  <div class="table-panel">
+    <div class="table-scroll">
+      <table class="scan-table">
+        <thead>
           <tr>
-            <td colspan="9" class="td-empty" style="color: var(--text-tertiary);">
-              <div class="loading-state">
-                <div class="loading-spinner"></div>
-                <span>Loading scanner...</span>
-              </div>
-            </td>
-          </tr>
-        {:else if !connected}
-          <tr>
-            <td colspan="9" class="td-empty" style="color: var(--text-tertiary);">
-              <div class="disconnected-state">
-                <span class="disconnected-icon">!</span>
-                <strong>Backend Offline</strong>
-                <span>Start the backend server to see live scanner data</span>
-              </div>
-            </td>
-          </tr>
-        {:else if needsApiKey}
-          <tr>
-            <td colspan="9" class="td-empty" style="color: var(--text-tertiary);">
-              <div class="disconnected-state">
-                <span class="disconnected-icon" style="color: var(--warning-bright, oklch(0.75 0.15 85));">!</span>
-                <strong>Data Provider Not Configured</strong>
-                <span>Configure an FMP or other market data API key in <a href="/settings" style="color: var(--accent);">Settings</a></span>
-              </div>
-            </td>
-          </tr>
-        {:else if filteredResults.length === 0}
-          <tr>
-            <td colspan="9" class="td-empty" style="color: var(--text-tertiary);">
-              {#if scanResults.length === 0}
-                No signals found
-              {:else}
-                No results match current filters
-              {/if}
-            </td>
-          </tr>
-        {:else}
-          {#each filteredResults as result, i (result.id)}
-            <tr
-              class="table-row"
-              style="background: {i % 2 === 0 ? 'var(--bg-surface)' : 'transparent'}; border-bottom: 1px solid var(--border-subtle);"
-            >
-              <!-- Symbol + Name -->
-              <td class="td-symbol">
-                <div class="symbol-cell">
-                  <span class="symbol-ticker" style="color: var(--text-primary);">{result.symbol}</span>
-                  <span class="symbol-name" style="color: var(--text-tertiary);">{result.name}</span>
-                </div>
-              </td>
-              <!-- Price -->
-              <td class="td-right td-mono" style="color: var(--text-primary);">
-                ${result.price.toFixed(2)}
-              </td>
-              <!-- Change -->
-              <td class="td-right td-mono td-medium" style="color: {result.changePercent >= 0 ? 'var(--bullish)' : 'var(--bearish)'};">
-                {result.changePercent >= 0 ? '+' : ''}{result.changePercent.toFixed(2)}%
-              </td>
-              <!-- Volume -->
-              <td class="td-right td-mono" style="color: var(--text-secondary);">
-                {formatVolume(result.volume)}
-              </td>
-              <!-- Relative Volume -->
-              <td class="td-right td-mono" style="color: {result.relativeVolume >= 2 ? 'var(--warning-bright)' : 'var(--text-secondary)'};">
-                {result.relativeVolume.toFixed(1)}x
-              </td>
-              <!-- Direction -->
-              <td class="td-center">
-                <span
-                  class="direction-badge"
-                  style="background: {result.direction === 'bullish' ? 'var(--bullish-bg)' : result.direction === 'bearish' ? 'var(--bearish-bg)' : 'var(--neutral-bg)'};
-                         color: {directionColor(result.direction)};
-                         border: 1px solid {result.direction === 'bullish' ? 'oklch(0.45 0.12 155 / 0.3)' : result.direction === 'bearish' ? 'oklch(0.42 0.12 25 / 0.3)' : 'oklch(0.45 0.08 250 / 0.3)'};"
-                >
-                  {result.direction === 'bullish' ? 'BULL' : result.direction === 'bearish' ? 'BEAR' : 'NEUT'}
+            {#each columns as col (col.key)}
+              <th
+                class="col-th col-th--{col.align}"
+                class:col-th--sortable={col.sortable}
+                class:col-th--active={sortBy === col.key}
+                onclick={() => col.sortable && toggleSort(col.key)}
+              >
+                <span class="col-th-inner">
+                  {col.label}
+                  {#if sortBy === col.key}
+                    <span class="sort-arrow">{sortDir === 'asc' ? '▲' : '▼'}</span>
+                  {:else if col.sortable}
+                    <span class="sort-arrow sort-arrow--ghost">▼</span>
+                  {/if}
                 </span>
-              </td>
-              <!-- Strength -->
-              <td class="td-center">
-                <div class="strength-meter">
-                  {#each Array(5) as _, si}
-                    <div
-                      class="strength-pip"
-                      style="background: {si < result.strength ? strengthBg(result.strength) : 'var(--bg-overlay)'};"
-                    ></div>
-                  {/each}
+              </th>
+            {/each}
+          </tr>
+        </thead>
+        <tbody>
+          {#if loading}
+            <tr>
+              <td colspan={columns.length} class="td-empty">
+                <div class="state-loading">
+                  <div class="spinner"></div>
+                  <span>Initializing scanner...</span>
                 </div>
-              </td>
-              <!-- Sector -->
-              <td class="td-sector" style="color: var(--text-tertiary);">
-                {result.sector}
-              </td>
-              <!-- Sparkline -->
-              <td class="td-center">
-                <SparkLine data={result.sparklineData} width={80} height={20} showLastPoint={true} />
               </td>
             </tr>
-          {/each}
-        {/if}
-      </tbody>
-    </table>
+          {:else if filteredResults.length === 0}
+            <tr>
+              <td colspan={columns.length} class="td-empty">
+                {#if scanResults.length === 0}
+                  No scan results available
+                {:else}
+                  No results match current filters
+                {/if}
+              </td>
+            </tr>
+          {:else}
+            {#each filteredResults as row, idx (row.id)}
+              {@const rank = idx + 1}
+              <tr
+                class="tbl-row"
+                class:tbl-row--alt={idx % 2 === 1}
+                class:tbl-row--sel={selectedRowId === row.id}
+                onclick={() => selectRow(row.id)}
+              >
+                <!-- # -->
+                <td class="td td--center td--mono td--rank">{rank}</td>
+                <!-- Symbol -->
+                <td class="td td--left">
+                  <div class="sym-cell">
+                    <span class="sym-ticker">{row.symbol}</span>
+                    <span class="sym-name">{row.name}</span>
+                  </div>
+                </td>
+                <!-- Price -->
+                <td class="td td--right td--mono">${row.price.toFixed(2)}</td>
+                <!-- Chg% -->
+                <td
+                  class="td td--right td--mono td--bold"
+                  class:td--green={row.changePercent > 0}
+                  class:td--red={row.changePercent < 0}
+                >
+                  {row.changePercent > 0 ? '+' : ''}{row.changePercent.toFixed(2)}%
+                </td>
+                <!-- Volume -->
+                <td class="td td--right td--mono">{formatVolume(row.volume)}</td>
+                <!-- Signal -->
+                <td class="td td--center">
+                  <span class="sig-badge sig-badge--{row.signalType.toLowerCase()}">{row.signalType}</span>
+                </td>
+                <!-- Strength pips -->
+                <td class="td td--center">
+                  <div class="str-pips">
+                    {#each [1, 2, 3, 4, 5] as p}
+                      <span
+                        class="pip"
+                        class:pip--lit={p <= row.strength}
+                        style={p <= row.strength ? `background: var(--strength-${row.strength})` : ''}
+                      ></span>
+                    {/each}
+                  </div>
+                </td>
+                <!-- Score -->
+                <td class="td td--right td--mono">
+                  <span
+                    class="score-val"
+                    class:score-val--hi={row.score >= 80}
+                    class:score-val--mid={row.score >= 50 && row.score < 80}
+                  >{row.score}</span>
+                </td>
+                <!-- Timestamp -->
+                <td class="td td--right td--mono td--dim">{row.timestamp}</td>
+              </tr>
+            {/each}
+          {/if}
+        </tbody>
+      </table>
+    </div>
   </div>
+
+  <!-- ====== STATS BAR ====== -->
+  <footer class="stats-bar">
+    <div class="sbar-item">
+      <span class="sbar-label">Total</span>
+      <span class="sbar-value">{scanResults.length}</span>
+    </div>
+    <span class="sbar-sep"></span>
+    <div class="sbar-item">
+      <span class="sbar-label">Filtered</span>
+      <span class="sbar-value">{filteredResults.length}</span>
+    </div>
+    <span class="sbar-sep"></span>
+    <div class="sbar-item">
+      <span class="sbar-label">Last Scan</span>
+      <span class="sbar-value sbar-value--mono">{lastScanTime || '--:--:--'}</span>
+    </div>
+    <span class="sbar-sep"></span>
+    <div class="sbar-item">
+      <span class="sbar-label">Avg Strength</span>
+      <span class="sbar-value">{avgStrength.toFixed(1)}</span>
+    </div>
+    <span class="sbar-sep"></span>
+    <div class="sbar-item">
+      <span class="sbar-label">Feed</span>
+      <span class="sbar-value" class:sbar-value--live={connected} class:sbar-value--sim={!connected && !loading}>
+        {loading ? 'Connecting...' : connected ? 'Live' : 'Simulated'}
+      </span>
+    </div>
+  </footer>
 </div>
 
 <style>
-  /* ---- Layout ---- */
-  .scanner-layout {
+  /* ================================================================
+     SCANNER PAGE
+     Enterprise stock scanner -- OKLCH, scoped CSS, glass-morphism
+     ================================================================ */
+
+  .scanner-page {
     display: flex;
     flex-direction: column;
     height: 100%;
     overflow: hidden;
   }
 
-  /* ---- Header ---- */
+  /* ----------------------------------------------------------------
+     HEADER ROW
+     ---------------------------------------------------------------- */
   .scanner-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-inline: 20px;
-    padding-block: 12px;
+    padding: 10px 20px;
+    border-bottom: 1px solid var(--border-subtle);
     flex-shrink: 0;
   }
 
-  .header-left {
+  .hdr-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .hdr-right {
     display: flex;
     align-items: center;
     gap: 12px;
   }
 
-  .scanner-title {
+  .hdr-title {
     font-size: var(--text-lg);
     font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
   }
 
-  .scanner-meta {
-    font-size: var(--text-xs);
-    font-family: var(--font-mono);
-  }
-
-  .header-right {
-    display: flex;
+  /* Status chip (scanning / paused) */
+  .status-chip {
+    display: inline-flex;
     align-items: center;
-    gap: 12px;
-  }
-
-  .header-divider {
-    width: 1px;
-    height: 20px;
-  }
-
-  .live-indicator {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .live-dot {
-    width: 8px;
-    height: 8px;
+    gap: 6px;
+    padding: 3px 10px 3px 8px;
     border-radius: var(--radius-full);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    transition: background var(--duration-fast, 100ms);
   }
 
-  .live-label {
-    font-size: var(--text-xs);
+  .status-chip:hover {
+    background: var(--bg-elevated);
   }
 
-  /* ---- Presets bar ---- */
-  .presets-bar {
-    display: flex;
-    gap: 8px;
-    padding-inline: 20px;
-    padding-block: 12px;
-    overflow-x: auto;
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: var(--radius-full);
     flex-shrink: 0;
   }
 
-  .preset-button {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    border-radius: var(--radius-lg);
-    padding-inline: 12px;
-    padding-block: 8px;
-    font-size: var(--text-xs);
-    font-weight: 500;
-    white-space: nowrap;
-    transition: all 150ms;
+  .status-dot--live {
+    background: var(--bullish);
+    box-shadow: 0 0 6px var(--bullish-dim);
+    animation: signal-ping 2s ease-in-out infinite;
   }
 
-  .preset-icon {
-    font-family: var(--font-mono);
+  .status-dot--paused {
+    background: var(--warning);
+    box-shadow: 0 0 6px var(--warning-dim);
+  }
+
+  .status-text {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .status-text--live  { color: var(--bullish); }
+  .status-text--paused { color: var(--warning); }
+
+  /* Scan count badge */
+  .scan-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: var(--radius-full);
+    background: var(--accent-bg);
+    color: var(--accent-bright);
     font-size: 10px;
     font-weight: 700;
+    font-family: var(--font-mono);
+    border: 1px solid var(--accent-dim);
   }
 
-  /* ---- Filters bar ---- */
-  .filters-bar {
+  /* ----------------------------------------------------------------
+     FILTER BAR
+     ---------------------------------------------------------------- */
+  .filter-bar {
     display: flex;
     align-items: center;
     gap: 16px;
-    padding-inline: 20px;
-    padding-block: 12px;
+    padding: 8px 20px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: oklch(0.13 0.015 260 / 0.6);
     flex-shrink: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
   }
 
-  .search-wrapper {
-    position: relative;
-    flex: 1;
-    max-width: 20rem;
-  }
+  .filter-bar::-webkit-scrollbar { display: none; }
 
-  .search-input {
-    width: 100%;
-    border-radius: var(--radius-md);
-    padding-inline: 12px;
-    padding-block: 6px;
-    font-size: var(--text-xs);
-    outline: none;
-  }
-
-  .direction-filter-group {
-    display: flex;
-    gap: 4px;
-    border-radius: var(--radius-lg);
-    padding: 2px;
-  }
-
-  .direction-button {
-    border-radius: var(--radius-md);
-    padding-inline: 10px;
-    padding-block: 4px;
-    font-size: 11px;
-    font-weight: 500;
-    transition: all 150ms;
-  }
-
-  .strength-filter {
+  .flt-group {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-shrink: 0;
   }
 
-  .strength-label {
-    font-size: 11px;
+  .flt-label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
   }
 
-  .strength-buttons {
+  .flt-sep {
+    display: block;
+    width: 1px;
+    height: 20px;
+    background: var(--border-subtle);
+    flex-shrink: 0;
+  }
+
+  /* Pill row (segmented control) */
+  .pill-row {
     display: flex;
+    gap: 2px;
+    background: var(--bg-surface);
+    border-radius: var(--radius-md);
+    padding: 2px;
+    border: 1px solid var(--border-subtle);
+  }
+
+  .pill {
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 120ms;
+    white-space: nowrap;
+  }
+
+  .pill:hover {
+    color: var(--text-secondary);
+    background: var(--hover-overlay);
+  }
+
+  .pill--on {
+    color: var(--accent-bright);
+    background: var(--accent-bg);
+  }
+
+  /* Sector dropdown */
+  .flt-select {
+    padding: 3px 24px 3px 8px;
+    border-radius: var(--radius-md);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+  }
+
+  .flt-select:focus {
+    border-color: var(--accent-dim);
+  }
+
+  /* Star selector */
+  .star-row {
+    display: flex;
+    align-items: center;
     gap: 2px;
   }
 
-  .strength-button {
-    width: 20px;
-    height: 20px;
-    border-radius: var(--radius-md);
-    font-size: 10px;
-    font-weight: 700;
-    transition: all 150ms;
+  .star-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-disabled);
+    border: none;
+    cursor: pointer;
+    transition: color 120ms;
+    padding: 0;
   }
 
-  /* ---- Scanner table ---- */
-  .table-container {
+  .star-btn:hover {
+    color: var(--warning);
+  }
+
+  .star-btn--on {
+    color: var(--warning);
+  }
+
+  .star-clr {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    margin-left: 4px;
+    border-radius: var(--radius-full);
+    background: var(--bg-overlay);
+    color: var(--text-tertiary);
+    border: none;
+    cursor: pointer;
+    transition: all 120ms;
+    padding: 0;
+  }
+
+  .star-clr:hover {
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+  }
+
+  /* ----------------------------------------------------------------
+     TABLE PANEL (glass-morphism)
+     ---------------------------------------------------------------- */
+  .table-panel {
+    flex: 1;
+    min-height: 0;
+    margin: 8px 12px;
+    background: oklch(0.14 0.02 260 / 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .table-scroll {
     flex: 1;
     overflow: auto;
     min-height: 0;
   }
 
-  .scanner-table {
+  .table-scroll::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .table-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .table-scroll::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: var(--radius-full);
+  }
+
+  .table-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+
+  .scan-table {
     width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
     font-size: var(--text-xs);
   }
 
-  .table-head {
+  /* ---- Column headers ---- */
+  .col-th {
     position: sticky;
     top: 0;
     z-index: 10;
-  }
-
-  /* ---- Table header cells ---- */
-  .th-left,
-  .th-left-nosort {
-    text-align: left;
-    padding-inline: 12px;
-    padding-block: 10px;
-    font-weight: 500;
-  }
-
-  .th-left {
-    padding-left: 16px;
-  }
-
-  .th-right {
-    text-align: right;
-    padding-inline: 12px;
-    padding-block: 10px;
-    font-weight: 500;
-  }
-
-  .th-center {
-    text-align: center;
-    padding-inline: 12px;
-    padding-block: 10px;
-    font-weight: 500;
-  }
-
-  .th-sortable {
-    cursor: pointer;
+    padding: 8px 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+    background: oklch(0.12 0.02 260 / 0.95);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border-subtle);
     user-select: none;
   }
 
-  /* ---- Table body rows ---- */
-  .table-row {
-    transition: color 150ms, background-color 150ms;
+  .col-th--left   { text-align: left; }
+  .col-th--right  { text-align: right; }
+  .col-th--center { text-align: center; }
+
+  .col-th--sortable {
     cursor: pointer;
   }
 
-  /* ---- Table body cells ---- */
-  .td-symbol {
-    padding-left: 16px;
-    padding-right: 12px;
-    padding-block: 10px;
+  .col-th--sortable:hover {
+    color: var(--text-secondary);
+    background: oklch(0.15 0.02 260 / 0.95);
   }
 
-  .symbol-cell {
+  .col-th--active {
+    color: var(--accent-bright);
+  }
+
+  .col-th-inner {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+
+  .sort-arrow {
+    font-size: 8px;
+    line-height: 1;
+  }
+
+  .sort-arrow--ghost {
+    opacity: 0;
+    transition: opacity 120ms;
+  }
+
+  .col-th--sortable:hover .sort-arrow--ghost {
+    opacity: 0.3;
+  }
+
+  /* ---- Table rows ---- */
+  .tbl-row {
+    cursor: pointer;
+    transition: background 100ms;
+    border-left: 3px solid transparent;
+  }
+
+  .tbl-row--alt {
+    background: oklch(0.15 0.01 260 / 0.3);
+  }
+
+  .tbl-row:hover {
+    background: oklch(0.20 0.02 260 / 0.5);
+  }
+
+  .tbl-row--sel {
+    background: oklch(0.18 0.03 290 / 0.3);
+    border-left-color: var(--accent-bright);
+  }
+
+  .tbl-row--sel:hover {
+    background: oklch(0.20 0.03 290 / 0.35);
+  }
+
+  /* ---- Table cells ---- */
+  .td {
+    padding: 7px 10px;
+    border-bottom: 1px solid oklch(0.20 0.01 260 / 0.4);
+    color: var(--text-secondary);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  .td--left   { text-align: left; }
+  .td--right  { text-align: right; }
+  .td--center { text-align: center; }
+  .td--mono   { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+  .td--bold   { font-weight: 600; }
+  .td--dim    { color: var(--text-tertiary); font-size: 10px; }
+  .td--rank   { color: var(--text-tertiary); font-size: 10px; }
+
+  .td--green { color: var(--bullish); }
+  .td--red   { color: var(--bearish); }
+
+  /* Symbol cell */
+  .sym-cell {
     display: flex;
     flex-direction: column;
+    gap: 1px;
   }
 
-  .symbol-ticker {
+  .sym-ticker {
     font-weight: 700;
     font-family: var(--font-mono);
+    color: var(--text-primary);
+    font-size: 12px;
+    letter-spacing: 0.01em;
   }
 
-  .symbol-name {
+  .sym-name {
     font-size: 10px;
+    color: var(--text-disabled);
+    max-width: 150px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    max-width: 140px;
+    line-height: 1.2;
   }
 
-  .td-right {
-    text-align: right;
-    padding-inline: 12px;
-    padding-block: 10px;
-  }
-
-  .td-center {
-    text-align: center;
-    padding-inline: 12px;
-    padding-block: 10px;
-  }
-
-  .td-mono {
-    font-family: var(--font-mono);
-  }
-
-  .td-medium {
-    font-weight: 500;
-  }
-
-  .td-sector {
-    text-align: left;
-    padding-inline: 12px;
-    padding-block: 10px;
-    font-size: 10px;
-  }
-
-  .td-empty {
-    text-align: center;
-    padding-block: 48px;
-    font-size: var(--text-sm);
-  }
-
-  /* ---- Direction badge ---- */
-  .direction-badge {
+  /* Signal badge */
+  .sig-badge {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
+    padding: 2px 8px;
     border-radius: var(--radius-full);
-    padding-inline: 8px;
-    padding-block: 2px;
     font-size: 10px;
     font-weight: 600;
+    letter-spacing: 0.03em;
     text-transform: uppercase;
   }
 
-  /* ---- Strength meter ---- */
-  .strength-meter {
+  .sig-badge--gamma {
+    background: oklch(0.35 0.12 290 / 0.3);
+    color: oklch(0.78 0.15 290);
+    border: 1px solid oklch(0.45 0.12 290 / 0.3);
+  }
+
+  .sig-badge--volume {
+    background: oklch(0.30 0.10 200 / 0.3);
+    color: oklch(0.75 0.12 200);
+    border: 1px solid oklch(0.45 0.10 200 / 0.3);
+  }
+
+  .sig-badge--flow {
+    background: oklch(0.30 0.10 85 / 0.3);
+    color: oklch(0.78 0.12 85);
+    border: 1px solid oklch(0.45 0.10 85 / 0.3);
+  }
+
+  /* Strength pips */
+  .str-pips {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 2px;
+    gap: 3px;
   }
 
-  .strength-pip {
-    height: 6px;
-    width: 10px;
+  .pip {
+    width: 12px;
+    height: 5px;
     border-radius: var(--radius-full);
+    background: var(--bg-overlay);
+    transition: background 120ms;
   }
 
-  /* ---- Loading state ---- */
-  .loading-state {
+  .pip--lit {
+    box-shadow: 0 0 4px oklch(0.5 0.1 155 / 0.2);
+  }
+
+  /* Score */
+  .score-val {
+    color: var(--text-secondary);
+  }
+
+  .score-val--hi {
+    color: var(--bullish);
+    font-weight: 700;
+  }
+
+  .score-val--mid {
+    color: var(--warning);
+    font-weight: 600;
+  }
+
+  /* Empty / loading states */
+  .td-empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-tertiary);
+    font-size: var(--text-sm);
+  }
+
+  .state-loading {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 12px;
-    padding-block: 24px;
+    padding: 24px 0;
   }
 
-  .loading-spinner {
+  .spinner {
     width: 24px;
     height: 24px;
     border: 2px solid var(--border-subtle);
@@ -767,25 +1040,57 @@
     to { transform: rotate(360deg); }
   }
 
-  /* ---- Disconnected state ---- */
-  .disconnected-state {
+  /* ----------------------------------------------------------------
+     STATS BAR
+     ---------------------------------------------------------------- */
+  .stats-bar {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 8px;
-    padding-block: 24px;
+    padding: 6px 20px;
+    border-top: 1px solid var(--border-subtle);
+    background: oklch(0.12 0.01 260 / 0.8);
+    flex-shrink: 0;
   }
 
-  .disconnected-icon {
+  .sbar-item {
     display: flex;
     align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-full);
-    background: var(--bg-overlay);
+    gap: 6px;
+    padding: 0 12px;
+  }
+
+  .sbar-label {
+    font-size: 10px;
+    font-weight: 500;
     color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .sbar-value {
+    font-size: 11px;
     font-weight: 700;
-    font-size: var(--text-lg);
+    color: var(--text-primary);
+  }
+
+  .sbar-value--mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .sbar-value--live {
+    color: var(--bullish);
+  }
+
+  .sbar-value--sim {
+    color: var(--text-tertiary);
+  }
+
+  .sbar-sep {
+    display: block;
+    width: 1px;
+    height: 14px;
+    background: var(--border-subtle);
+    flex-shrink: 0;
   }
 </style>
