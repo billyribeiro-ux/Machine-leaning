@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import FlowFeed from '$components/options/FlowFeed.svelte';
+  import { fetchOptionsData } from '$lib/api';
 
   let activeTab = $state<'flow' | 'unusual' | 'chain'>('flow');
 
@@ -9,28 +11,70 @@
     { id: 'chain', label: 'Chain' },
   ];
 
-  const now = Date.now();
+  // ── Data state ──
 
-  const flowItems = [
-    { id: 'f1',  symbol: 'AAPL',  timestamp: new Date(now - 12_000).toISOString(),  type: 'call' as const, strike: 180, expiration: '2026-03-21', side: 'buy' as const,  size: 500,  premium: 245_000,   isUnusual: true,  isSweep: false },
-    { id: 'f2',  symbol: 'NVDA',  timestamp: new Date(now - 25_000).toISOString(),  type: 'call' as const, strike: 900, expiration: '2026-04-17', side: 'buy' as const,  size: 1500, premium: 2_250_000, isUnusual: true,  isSweep: true },
-    { id: 'f3',  symbol: 'TSLA',  timestamp: new Date(now - 38_000).toISOString(),  type: 'put' as const,  strike: 240, expiration: '2026-03-14', side: 'buy' as const,  size: 1200, premium: 456_000,   isUnusual: false, isSweep: false },
-    { id: 'f4',  symbol: 'MSFT',  timestamp: new Date(now - 52_000).toISOString(),  type: 'call' as const, strike: 420, expiration: '2026-03-21', side: 'sell' as const, size: 200,  premium: 178_000,   isUnusual: false, isSweep: false },
-    { id: 'f5',  symbol: 'AMD',   timestamp: new Date(now - 68_000).toISOString(),  type: 'call' as const, strike: 170, expiration: '2026-04-17', side: 'buy' as const,  size: 800,  premium: 320_000,   isUnusual: true,  isSweep: true },
-    { id: 'f6',  symbol: 'META',  timestamp: new Date(now - 79_000).toISOString(),  type: 'put' as const,  strike: 500, expiration: '2026-03-14', side: 'sell' as const, size: 150,  premium: 195_000,   isUnusual: false, isSweep: false },
-    { id: 'f7',  symbol: 'GOOGL', timestamp: new Date(now - 95_000).toISOString(),  type: 'call' as const, strike: 155, expiration: '2026-04-17', side: 'buy' as const,  size: 600,  premium: 210_000,   isUnusual: false, isSweep: false },
-    { id: 'f8',  symbol: 'AMZN',  timestamp: new Date(now - 112_000).toISOString(), type: 'call' as const, strike: 190, expiration: '2026-03-21', side: 'buy' as const,  size: 400,  premium: 168_000,   isUnusual: true,  isSweep: false },
-    { id: 'f9',  symbol: 'SPY',   timestamp: new Date(now - 130_000).toISOString(), type: 'put' as const,  strike: 495, expiration: '2026-03-14', side: 'buy' as const,  size: 2000, premium: 540_000,   isUnusual: true,  isSweep: true },
-    { id: 'f10', symbol: 'QQQ',   timestamp: new Date(now - 145_000).toISOString(), type: 'call' as const, strike: 440, expiration: '2026-04-17', side: 'buy' as const,  size: 350,  premium: 287_000,   isUnusual: false, isSweep: false },
-  ];
+  interface FlowItem {
+    id: string;
+    symbol: string;
+    timestamp: string | number;
+    type: 'call' | 'put';
+    strike: number;
+    expiration: string;
+    side: 'buy' | 'sell';
+    size: number;
+    premium: number;
+    isUnusual: boolean;
+    isSweep: boolean;
+  }
 
-  const unusualData = [
-    { symbol: 'NVDA', strike: '900C', expiry: 'Apr 17', volume: 12_500, oi: 3200, ratio: 3.9, premium: '$8.9M', sentiment: 'Bullish' },
-    { symbol: 'AAPL', strike: '185C', expiry: 'Mar 21', volume: 8_400,  oi: 5100, ratio: 1.6, premium: '$2.1M', sentiment: 'Bullish' },
-    { symbol: 'TSLA', strike: '230P', expiry: 'Mar 14', volume: 6_200,  oi: 1800, ratio: 3.4, premium: '$3.4M', sentiment: 'Bearish' },
-    { symbol: 'SPY',  strike: '490P', expiry: 'Mar 21', volume: 15_600, oi: 8900, ratio: 1.8, premium: '$5.2M', sentiment: 'Bearish' },
-    { symbol: 'AMD',  strike: '175C', expiry: 'Apr 17', volume: 9_800,  oi: 2400, ratio: 4.1, premium: '$1.8M', sentiment: 'Bullish' },
-  ];
+  interface UnusualRow {
+    symbol: string;
+    strike: string;
+    expiry: string;
+    volume: number;
+    oi: number;
+    ratio: number;
+    premium: string;
+    sentiment: string;
+  }
+
+  let flowItems = $state<FlowItem[]>([]);
+  let unusualData = $state<UnusualRow[]>([]);
+  let loading = $state(true);
+  let connected = $state(false);
+
+  // ── Fetch live data ──
+
+  onMount(async () => {
+    try {
+      const result = await fetchOptionsData();
+
+      if (result === null) {
+        // fetchOptionsData returns null when any request fails (502/503 = no vendor configured)
+        connected = false;
+        loading = false;
+        return;
+      }
+
+      connected = true;
+
+      // Map chain summary data into flow items if available
+      if (result.chainSummary && Array.isArray(result.chainSummary)) {
+        flowItems = result.chainSummary as FlowItem[];
+      }
+
+      // Map unusual activity data if available
+      if (result.gexLevels && Array.isArray(result.gexLevels)) {
+        unusualData = result.gexLevels as UnusualRow[];
+      }
+    } catch {
+      connected = false;
+    } finally {
+      loading = false;
+    }
+  });
+
+  // ── Helpers ──
 
   function sentimentColor(s: string): string {
     return s === 'Bullish' ? 'var(--bullish)' : 'var(--bearish)';
@@ -70,61 +114,90 @@
 
   <!-- Tab content -->
   <div class="tab-content">
-    {#if activeTab === 'flow'}
-      <FlowFeed items={flowItems} />
+    {#if loading}
+      <div class="status-message">
+        <div class="status-icon-box" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle);">
+          <div class="spinner"></div>
+        </div>
+        <p class="status-title" style="color: var(--text-secondary);">Loading options data...</p>
+      </div>
+    {:else if !connected}
+      <div class="status-message">
+        <div class="status-icon-box" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle);">
+          <svg class="status-icon" style="color: var(--text-disabled);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+        </div>
+        <p class="status-title" style="color: var(--text-secondary);">No Options Data</p>
+        <p class="status-subtitle" style="color: var(--text-tertiary);">Connect an options data provider (FMP, Tradier, or CBOE) in Settings &rarr; Vendor API Keys to see live options flow</p>
+      </div>
+    {:else if activeTab === 'flow'}
+      {#if flowItems.length === 0}
+        <div class="status-message">
+          <p class="status-title" style="color: var(--text-secondary);">No options flow data available</p>
+        </div>
+      {:else}
+        <FlowFeed items={flowItems} />
+      {/if}
 
     {:else if activeTab === 'unusual'}
-      <!-- Unusual Activity Table -->
-      <div class="unusual-scroll">
-        <div class="panel unusual-panel">
-          <div class="unusual-header" style="border-bottom: 1px solid var(--border-subtle);">
-            <span class="unusual-title" style="color: var(--text-primary);">Unusual Options Activity</span>
-            <span class="unusual-count" style="color: var(--text-tertiary);">{unusualData.length} entries</span>
-          </div>
-          <div class="table-scroll">
-            <table class="unusual-table">
-              <thead class="table-head" style="background: var(--bg-elevated);">
-                <tr style="border-bottom: 1px solid var(--border-subtle);">
-                  <th class="th-cell th-left th-first" style="color: var(--text-tertiary);">Symbol</th>
-                  <th class="th-cell th-left" style="color: var(--text-tertiary);">Strike</th>
-                  <th class="th-cell th-left" style="color: var(--text-tertiary);">Expiry</th>
-                  <th class="th-cell th-right" style="color: var(--text-tertiary);">Volume</th>
-                  <th class="th-cell th-right" style="color: var(--text-tertiary);">OI</th>
-                  <th class="th-cell th-right" style="color: var(--text-tertiary);">Vol/OI</th>
-                  <th class="th-cell th-right" style="color: var(--text-tertiary);">Premium</th>
-                  <th class="th-cell th-center" style="color: var(--text-tertiary);">Sentiment</th>
-                </tr>
-              </thead>
-              <tbody>
-                {#each unusualData as row, i (row.symbol + row.strike)}
-                  <tr
-                    class="table-row"
-                    style="background: {i % 2 === 0 ? 'var(--bg-surface)' : 'transparent'}; border-bottom: 1px solid var(--border-subtle);"
-                  >
-                    <td class="td-symbol" style="color: var(--text-primary);">{row.symbol}</td>
-                    <td class="td-cell td-mono" style="color: var(--text-secondary);">{row.strike}</td>
-                    <td class="td-cell" style="color: var(--text-tertiary);">{row.expiry}</td>
-                    <td class="td-cell td-right td-mono" style="color: var(--text-secondary);">{row.volume.toLocaleString()}</td>
-                    <td class="td-cell td-right td-mono" style="color: var(--text-secondary);">{row.oi.toLocaleString()}</td>
-                    <td class="td-cell td-right td-mono td-bold" style="color: var(--warning-bright);">{row.ratio.toFixed(1)}x</td>
-                    <td class="td-cell td-right td-mono td-semibold" style="color: var(--text-primary);">{row.premium}</td>
-                    <td class="td-cell td-center">
-                      <span
-                        class="sentiment-badge"
-                        style="background: {sentimentBg(row.sentiment)};
-                               color: {sentimentColor(row.sentiment)};
-                               border: 1px solid {row.sentiment === 'Bullish' ? 'oklch(0.45 0.12 155 / 0.3)' : 'oklch(0.42 0.12 25 / 0.3)'};"
-                      >
-                        {row.sentiment}
-                      </span>
-                    </td>
+      {#if unusualData.length === 0}
+        <div class="status-message">
+          <p class="status-title" style="color: var(--text-secondary);">No options flow data available</p>
+        </div>
+      {:else}
+        <!-- Unusual Activity Table -->
+        <div class="unusual-scroll">
+          <div class="panel unusual-panel">
+            <div class="unusual-header" style="border-bottom: 1px solid var(--border-subtle);">
+              <span class="unusual-title" style="color: var(--text-primary);">Unusual Options Activity</span>
+              <span class="unusual-count" style="color: var(--text-tertiary);">{unusualData.length} entries</span>
+            </div>
+            <div class="table-scroll">
+              <table class="unusual-table">
+                <thead class="table-head" style="background: var(--bg-elevated);">
+                  <tr style="border-bottom: 1px solid var(--border-subtle);">
+                    <th class="th-cell th-left th-first" style="color: var(--text-tertiary);">Symbol</th>
+                    <th class="th-cell th-left" style="color: var(--text-tertiary);">Strike</th>
+                    <th class="th-cell th-left" style="color: var(--text-tertiary);">Expiry</th>
+                    <th class="th-cell th-right" style="color: var(--text-tertiary);">Volume</th>
+                    <th class="th-cell th-right" style="color: var(--text-tertiary);">OI</th>
+                    <th class="th-cell th-right" style="color: var(--text-tertiary);">Vol/OI</th>
+                    <th class="th-cell th-right" style="color: var(--text-tertiary);">Premium</th>
+                    <th class="th-cell th-center" style="color: var(--text-tertiary);">Sentiment</th>
                   </tr>
-                {/each}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {#each unusualData as row, i (row.symbol + row.strike)}
+                    <tr
+                      class="table-row"
+                      style="background: {i % 2 === 0 ? 'var(--bg-surface)' : 'transparent'}; border-bottom: 1px solid var(--border-subtle);"
+                    >
+                      <td class="td-symbol" style="color: var(--text-primary);">{row.symbol}</td>
+                      <td class="td-cell td-mono" style="color: var(--text-secondary);">{row.strike}</td>
+                      <td class="td-cell" style="color: var(--text-tertiary);">{row.expiry}</td>
+                      <td class="td-cell td-right td-mono" style="color: var(--text-secondary);">{row.volume.toLocaleString()}</td>
+                      <td class="td-cell td-right td-mono" style="color: var(--text-secondary);">{row.oi.toLocaleString()}</td>
+                      <td class="td-cell td-right td-mono td-bold" style="color: var(--warning-bright);">{row.ratio.toFixed(1)}x</td>
+                      <td class="td-cell td-right td-mono td-semibold" style="color: var(--text-primary);">{row.premium}</td>
+                      <td class="td-cell td-center">
+                        <span
+                          class="sentiment-badge"
+                          style="background: {sentimentBg(row.sentiment)};
+                                 color: {sentimentColor(row.sentiment)};
+                                 border: 1px solid {row.sentiment === 'Bullish' ? 'oklch(0.45 0.12 155 / 0.3)' : 'oklch(0.42 0.12 25 / 0.3)'};"
+                        >
+                          {row.sentiment}
+                        </span>
+                      </td>
+                    </tr>
+                  {/each}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
-      </div>
+      {/if}
 
     {:else if activeTab === 'chain'}
       <!-- Chain placeholder -->
@@ -293,6 +366,56 @@
     font-size: 10px;
     font-weight: 600;
     text-transform: uppercase;
+  }
+
+  /* Status message (loading / disconnected / empty) */
+  .status-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    gap: 16px;
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .status-icon-box {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .status-icon {
+    height: 32px;
+    width: 32px;
+  }
+
+  .status-title {
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+
+  .status-subtitle {
+    font-size: var(--text-xs);
+    max-width: 420px;
+    line-height: 1.5;
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border-subtle);
+    border-top-color: var(--accent);
+    border-radius: var(--radius-full);
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   /* Chain placeholder */

@@ -6,13 +6,13 @@
       id: 'ac1',
       name: 'Momentum Breakout Scanner',
       description: 'Alerts when stocks break above key resistance with high relative volume',
-      enabled: true,
+      enabled: false,
     },
     {
       id: 'ac2',
       name: 'Unusual Options Activity',
       description: 'Triggers on options volume exceeding 3x open interest',
-      enabled: true,
+      enabled: false,
     },
     {
       id: 'ac3',
@@ -22,13 +22,7 @@
     },
   ]);
 
-  const alertHistory = [
-    { id: 'ah1', symbol: 'NVDA', message: 'Momentum Breakout detected at $875.30', time: '14:32:15', type: 'bullish' as const },
-    { id: 'ah2', symbol: 'TSLA', message: 'Unusual put activity - 6,200 contracts at $230P', time: '14:28:43', type: 'bearish' as const },
-    { id: 'ah3', symbol: 'AMD',  message: 'Relative volume spike to 2.8x average', time: '14:15:22', type: 'bullish' as const },
-    { id: 'ah4', symbol: 'SPY',  message: 'Dark pool block print: 45,000 shares at $502.10', time: '13:58:07', type: 'neutral' as const },
-    { id: 'ah5', symbol: 'COIN', message: 'Breakout above $225 with 3.8x relative volume', time: '13:42:51', type: 'bullish' as const },
-  ];
+  let alertHistory = $state<any[]>([]);
 
   function typeColor(t: string): string {
     if (t === 'bullish') return 'var(--bullish)';
@@ -113,35 +107,48 @@
     <!-- Alert History Section -->
     <div class="section">
       <h2 class="section-title">Alert History</h2>
-      <div class="alert-history-list">
-        {#each alertHistory as alert (alert.id)}
-          <div
-            class="panel alert-history-row"
-            style="border-left: 3px solid {typeColor(alert.type)};"
-          >
-            <!-- Direction dot -->
-            <div class="direction-dot" style="background: {typeColor(alert.type)};"></div>
-
-            <!-- Content -->
-            <div class="alert-history-content">
-              <div class="alert-history-header">
-                <span class="alert-symbol">{alert.symbol}</span>
-                <span
-                  class="alert-type-badge"
-                  style="background: {typeBg(alert.type)}; color: {typeColor(alert.type)};
-                         border: 1px solid {typeBorder(alert.type)};"
-                >
-                  {alert.type}
-                </span>
-              </div>
-              <p class="alert-message">{alert.message}</p>
-            </div>
-
-            <!-- Timestamp -->
-            <span class="alert-timestamp">{alert.time}</span>
+      {#if alertHistory.length === 0}
+        <div class="panel empty-state">
+          <div class="empty-state-icon">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
           </div>
-        {/each}
-      </div>
+          <p class="empty-state-title">No alerts yet</p>
+          <p class="empty-state-desc">Alerts will appear here when scanner signals match your active alert rules</p>
+        </div>
+      {:else}
+        <div class="alert-history-list">
+          {#each alertHistory as alert (alert.id)}
+            <div
+              class="panel alert-history-row"
+              style="border-left: 3px solid {typeColor(alert.type)};"
+            >
+              <!-- Direction dot -->
+              <div class="direction-dot" style="background: {typeColor(alert.type)};"></div>
+
+              <!-- Content -->
+              <div class="alert-history-content">
+                <div class="alert-history-header">
+                  <span class="alert-symbol">{alert.symbol}</span>
+                  <span
+                    class="alert-type-badge"
+                    style="background: {typeBg(alert.type)}; color: {typeColor(alert.type)};
+                           border: 1px solid {typeBorder(alert.type)};"
+                  >
+                    {alert.type}
+                  </span>
+                </div>
+                <p class="alert-message">{alert.message}</p>
+              </div>
+
+              <!-- Timestamp -->
+              <span class="alert-timestamp">{alert.time}</span>
+            </div>
+          {/each}
+        </div>
+      {/if}
     </div>
   </div>
 </div>
@@ -320,5 +327,32 @@
     font-family: var(--font-mono);
     flex-shrink: 0;
     color: var(--text-tertiary);
+  }
+
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 24px;
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    color: var(--text-disabled);
+    margin-bottom: 12px;
+  }
+
+  .empty-state-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+  }
+
+  .empty-state-desc {
+    font-size: var(--text-xs);
+    color: var(--text-tertiary);
+    max-width: 320px;
   }
 </style>

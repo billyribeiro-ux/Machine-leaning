@@ -1,29 +1,60 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import FlowFeed from '$components/options/FlowFeed.svelte';
   import ExportToolbar from '$lib/components/ui/ExportToolbar.svelte';
+  import { fetchOptionsData } from '$lib/api';
+
+  // ── Filter state ──
 
   let typeFilter = $state<'all' | 'calls' | 'puts'>('all');
   let minPremium = $state('');
 
-  const now = Date.now();
+  // ── Data state ──
 
-  const allFlowItems = [
-    { id: 'fl1',  symbol: 'NVDA',  timestamp: new Date(now - 10_000).toISOString(),  type: 'call' as const, strike: 900,  expiration: '2026-03-21', side: 'buy' as const,  size: 1500, premium: 2_250_000, isUnusual: true,  isSweep: true },
-    { id: 'fl2',  symbol: 'AAPL',  timestamp: new Date(now - 30_000).toISOString(),  type: 'put' as const,  strike: 180,  expiration: '2026-02-28', side: 'buy' as const,  size: 800,  premium: 480_000,   isUnusual: false, isSweep: false },
-    { id: 'fl3',  symbol: 'TSLA',  timestamp: new Date(now - 60_000).toISOString(),  type: 'call' as const, strike: 260,  expiration: '2026-03-21', side: 'buy' as const,  size: 2200, premium: 1_980_000, isUnusual: true,  isSweep: true },
-    { id: 'fl4',  symbol: 'META',  timestamp: new Date(now - 95_000).toISOString(),  type: 'call' as const, strike: 520,  expiration: '2026-04-17', side: 'buy' as const,  size: 500,  premium: 750_000,   isUnusual: false, isSweep: false },
-    { id: 'fl5',  symbol: 'SPY',   timestamp: new Date(now - 130_000).toISOString(), type: 'put' as const,  strike: 495,  expiration: '2026-02-21', side: 'sell' as const, size: 3000, premium: 1_200_000, isUnusual: true,  isSweep: false },
-    { id: 'fl6',  symbol: 'AMD',   timestamp: new Date(now - 170_000).toISOString(), type: 'call' as const, strike: 175,  expiration: '2026-03-21', side: 'buy' as const,  size: 1200, premium: 840_000,   isUnusual: true,  isSweep: true },
-    { id: 'fl7',  symbol: 'AMZN',  timestamp: new Date(now - 210_000).toISOString(), type: 'call' as const, strike: 190,  expiration: '2026-04-17', side: 'buy' as const,  size: 650,  premium: 520_000,   isUnusual: false, isSweep: false },
-    { id: 'fl8',  symbol: 'GOOGL', timestamp: new Date(now - 250_000).toISOString(), type: 'put' as const,  strike: 148,  expiration: '2026-02-28', side: 'buy' as const,  size: 400,  premium: 180_000,   isUnusual: false, isSweep: false },
-    { id: 'fl9',  symbol: 'COIN',  timestamp: new Date(now - 290_000).toISOString(), type: 'call' as const, strike: 240,  expiration: '2026-03-21', side: 'buy' as const,  size: 1800, premium: 2_700_000, isUnusual: true,  isSweep: true },
-    { id: 'fl10', symbol: 'QQQ',   timestamp: new Date(now - 330_000).toISOString(), type: 'put' as const,  strike: 430,  expiration: '2026-02-21', side: 'sell' as const, size: 2500, premium: 1_625_000, isUnusual: false, isSweep: false },
-    { id: 'fl11', symbol: 'NFLX',  timestamp: new Date(now - 370_000).toISOString(), type: 'call' as const, strike: 650,  expiration: '2026-04-17', side: 'buy' as const,  size: 350,  premium: 630_000,   isUnusual: false, isSweep: false },
-    { id: 'fl12', symbol: 'MSFT',  timestamp: new Date(now - 410_000).toISOString(), type: 'call' as const, strike: 425,  expiration: '2026-03-21', side: 'buy' as const,  size: 900,  premium: 810_000,   isUnusual: true,  isSweep: false },
-    { id: 'fl13', symbol: 'BA',    timestamp: new Date(now - 450_000).toISOString(), type: 'call' as const, strike: 210,  expiration: '2026-03-21', side: 'buy' as const,  size: 1100, premium: 550_000,   isUnusual: false, isSweep: true },
-    { id: 'fl14', symbol: 'PLTR',  timestamp: new Date(now - 490_000).toISOString(), type: 'call' as const, strike: 27,   expiration: '2026-04-17', side: 'buy' as const,  size: 5000, premium: 400_000,   isUnusual: true,  isSweep: false },
-    { id: 'fl15', symbol: 'SMCI',  timestamp: new Date(now - 530_000).toISOString(), type: 'put' as const,  strike: 700,  expiration: '2026-02-28', side: 'buy' as const,  size: 600,  premium: 960_000,   isUnusual: true,  isSweep: true },
-  ];
+  interface FlowItem {
+    id: string;
+    symbol: string;
+    timestamp: string | number;
+    type: 'call' | 'put';
+    strike: number;
+    expiration: string;
+    side: 'buy' | 'sell';
+    size: number;
+    premium: number;
+    isUnusual: boolean;
+    isSweep: boolean;
+  }
+
+  let allFlowItems = $state<FlowItem[]>([]);
+  let loading = $state(true);
+  let connected = $state(false);
+
+  // ── Fetch live data ──
+  // There is no dedicated real-time flow endpoint yet.
+  // We attempt the options API to check connectivity; if no vendor is
+  // configured (502/503), we show the "no provider" message.
+
+  onMount(async () => {
+    try {
+      const result = await fetchOptionsData();
+
+      if (result === null) {
+        connected = false;
+        loading = false;
+        return;
+      }
+
+      // API is reachable but there is no live flow endpoint,
+      // so allFlowItems stays empty. connected = true shows "no data" vs "no provider".
+      connected = true;
+    } catch {
+      connected = false;
+    } finally {
+      loading = false;
+    }
+  });
+
+  // ── Derived stats & filtering ──
 
   let totalPremium = $derived(allFlowItems.reduce((s, i) => s + i.premium, 0));
   let callCount = $derived(allFlowItems.filter(i => i.type === 'call').length);
@@ -56,10 +87,12 @@
   <div class="flow-header" style="border-bottom: 1px solid var(--border-subtle);">
     <div class="header-left">
       <h1 class="flow-title" style="color: var(--text-primary);">Options Flow</h1>
-      <div class="live-indicator">
-        <div class="live-dot signal-ping" style="background: var(--bullish);"></div>
-        <span class="live-label" style="color: var(--bullish);">Live</span>
-      </div>
+      {#if connected && !loading}
+        <div class="live-indicator">
+          <div class="live-dot signal-ping" style="background: var(--bullish);"></div>
+          <span class="live-label" style="color: var(--bullish);">Live</span>
+        </div>
+      {/if}
     </div>
     <div class="header-right">
       <ExportToolbar source="options-flow" />
@@ -68,64 +101,89 @@
     </div>
   </div>
 
-  <!-- Stats bar -->
-  <div class="stats-bar" style="background: var(--bg-base); border-bottom: 1px solid var(--border-subtle);">
-    <div class="stat-item">
-      <span class="stat-label" style="color: var(--text-tertiary);">Total Premium</span>
-      <span class="stat-value" style="color: var(--text-primary);">{formatPremiumLarge(totalPremium)}</span>
+  {#if loading}
+    <div class="status-message">
+      <div class="status-icon-box" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle);">
+        <div class="spinner"></div>
+      </div>
+      <p class="status-title" style="color: var(--text-secondary);">Loading options data...</p>
     </div>
-    <div class="stats-divider" style="background: var(--border-subtle);"></div>
-    <div class="stat-item">
-      <span class="stat-label" style="color: var(--text-tertiary);">Call/Put</span>
-      <span class="stat-value" style="color: var(--bullish);">{callPutRatio}</span>
+  {:else if !connected}
+    <div class="status-message">
+      <div class="status-icon-box" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle);">
+        <svg class="status-icon" style="color: var(--text-disabled);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+        </svg>
+      </div>
+      <p class="status-title" style="color: var(--text-secondary);">No Options Data</p>
+      <p class="status-subtitle" style="color: var(--text-tertiary);">Connect an options data provider (FMP, Tradier, or CBOE) in Settings &rarr; Vendor API Keys to see live options flow</p>
     </div>
-    <div class="stats-divider" style="background: var(--border-subtle);"></div>
-    <div class="stat-item">
-      <span class="stat-label" style="color: var(--text-tertiary);">Sweeps</span>
-      <span class="stat-value" style="color: var(--accent-bright);">{sweepCount}</span>
-    </div>
-    <div class="stats-divider" style="background: var(--border-subtle);"></div>
-    <div class="stat-item">
-      <span class="stat-label" style="color: var(--text-tertiary);">Count</span>
-      <span class="stat-value" style="color: var(--text-primary);">{filteredItems.length}</span>
-    </div>
-  </div>
-
-  <!-- Filter row -->
-  <div class="filter-row" style="border-bottom: 1px solid var(--border-subtle);">
-    <!-- Type dropdown -->
-    <div class="filter-group">
-      <span class="filter-label" style="color: var(--text-tertiary);">Type:</span>
-      <div class="filter-buttons" style="background: var(--bg-surface);">
-        {#each [['all', 'All'], ['calls', 'Calls'], ['puts', 'Puts']] as [key, label]}
-          <button
-            type="button"
-            onclick={() => typeFilter = key as typeof typeFilter}
-            class="filter-button"
-            style="background: {typeFilter === key ? 'var(--bg-elevated)' : 'transparent'};
-                   color: {typeFilter === key ? 'var(--text-primary)' : 'var(--text-tertiary)'};"
-          >
-            {label}
-          </button>
-        {/each}
+  {:else}
+    <!-- Stats bar -->
+    <div class="stats-bar" style="background: var(--bg-base); border-bottom: 1px solid var(--border-subtle);">
+      <div class="stat-item">
+        <span class="stat-label" style="color: var(--text-tertiary);">Total Premium</span>
+        <span class="stat-value" style="color: var(--text-primary);">{formatPremiumLarge(totalPremium)}</span>
+      </div>
+      <div class="stats-divider" style="background: var(--border-subtle);"></div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: var(--text-tertiary);">Call/Put</span>
+        <span class="stat-value" style="color: var(--bullish);">{callPutRatio}</span>
+      </div>
+      <div class="stats-divider" style="background: var(--border-subtle);"></div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: var(--text-tertiary);">Sweeps</span>
+        <span class="stat-value" style="color: var(--accent-bright);">{sweepCount}</span>
+      </div>
+      <div class="stats-divider" style="background: var(--border-subtle);"></div>
+      <div class="stat-item">
+        <span class="stat-label" style="color: var(--text-tertiary);">Count</span>
+        <span class="stat-value" style="color: var(--text-primary);">{filteredItems.length}</span>
       </div>
     </div>
 
-    <!-- Min premium input -->
-    <div class="filter-group">
-      <span class="filter-label" style="color: var(--text-tertiary);">Min Premium ($K):</span>
-      <input
-        type="number"
-        bind:value={minPremium}
-        placeholder="0"
-        class="premium-input"
-        style="background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-subtle);"
-      />
-    </div>
-  </div>
+    <!-- Filter row -->
+    <div class="filter-row" style="border-bottom: 1px solid var(--border-subtle);">
+      <!-- Type dropdown -->
+      <div class="filter-group">
+        <span class="filter-label" style="color: var(--text-tertiary);">Type:</span>
+        <div class="filter-buttons" style="background: var(--bg-surface);">
+          {#each [['all', 'All'], ['calls', 'Calls'], ['puts', 'Puts']] as [key, label]}
+            <button
+              type="button"
+              onclick={() => typeFilter = key as typeof typeFilter}
+              class="filter-button"
+              style="background: {typeFilter === key ? 'var(--bg-elevated)' : 'transparent'};
+                     color: {typeFilter === key ? 'var(--text-primary)' : 'var(--text-tertiary)'};"
+            >
+              {label}
+            </button>
+          {/each}
+        </div>
+      </div>
 
-  <!-- Flow Feed -->
-  <FlowFeed items={filteredItems} class="flow-embed" />
+      <!-- Min premium input -->
+      <div class="filter-group">
+        <span class="filter-label" style="color: var(--text-tertiary);">Min Premium ($K):</span>
+        <input
+          type="number"
+          bind:value={minPremium}
+          placeholder="0"
+          class="premium-input"
+          style="background: var(--bg-surface); color: var(--text-primary); border: 1px solid var(--border-subtle);"
+        />
+      </div>
+    </div>
+
+    <!-- Flow Feed -->
+    {#if filteredItems.length === 0}
+      <div class="status-message">
+        <p class="status-title" style="color: var(--text-secondary);">No options flow data available</p>
+      </div>
+    {:else}
+      <FlowFeed items={filteredItems} class="flow-embed" />
+    {/if}
+  {/if}
 </div>
 
 <style>
@@ -258,6 +316,56 @@
     font-size: var(--text-xs);
     outline: none;
     font-family: var(--font-mono);
+  }
+
+  /* Status message (loading / disconnected / empty) */
+  .status-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    gap: 16px;
+    padding: 40px 20px;
+    text-align: center;
+  }
+
+  .status-icon-box {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-xl);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .status-icon {
+    height: 32px;
+    width: 32px;
+  }
+
+  .status-title {
+    font-size: var(--text-sm);
+    font-weight: 500;
+  }
+
+  .status-subtitle {
+    font-size: var(--text-xs);
+    max-width: 420px;
+    line-height: 1.5;
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border-subtle);
+    border-top-color: var(--accent);
+    border-radius: var(--radius-full);
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
   }
 
   :global(.flow-embed) {

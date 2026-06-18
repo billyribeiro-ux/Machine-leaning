@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
   import SparkLine from '$lib/components/data/SparkLine.svelte';
   import ExportToolbar from '$lib/components/ui/ExportToolbar.svelte';
 
@@ -10,16 +11,6 @@
   let sortBy = $state('strength');
   let sortDir = $state<'asc' | 'desc'>('desc');
 
-  // ---- Sparkline random walk generator ----
-  function generateSparkline(base: number, volatility: number): number[] {
-    const points: number[] = [base];
-    for (let i = 1; i < 20; i++) {
-      const delta = (Math.random() - 0.48) * volatility;
-      points.push(points[i - 1] + delta);
-    }
-    return points;
-  }
-
   // ---- Presets ----
   const presets = [
     { id: 'momentum', name: 'Momentum', icon: '>>', description: 'Strong directional momentum' },
@@ -30,8 +21,8 @@
     { id: 'reversal', name: 'Reversals', icon: 'R', description: 'Potential trend reversals' },
   ];
 
-  // ---- Mock scan results (25 items) ----
-  interface MockScanResult {
+  // ---- Scan result type ----
+  interface ScanResult {
     id: string;
     symbol: string;
     name: string;
@@ -48,37 +39,102 @@
     timestamp: string;
   }
 
-  const mockResults: MockScanResult[] = [
-    { id: '1',  symbol: 'AAPL',  name: 'Apple Inc.',            price: 178.50, change: 3.25,   changePercent: 1.85,  volume: 42_500_000, relativeVolume: 1.8, direction: 'bullish',  strength: 4, sector: 'Technology',     category: 'momentum', sparklineData: generateSparkline(175, 2),    timestamp: new Date().toISOString() },
-    { id: '2',  symbol: 'NVDA',  name: 'NVIDIA Corporation',    price: 875.30, change: 28.70,  changePercent: 3.39,  volume: 38_200_000, relativeVolume: 2.4, direction: 'bullish',  strength: 5, sector: 'Technology',     category: 'momentum', sparklineData: generateSparkline(850, 15),   timestamp: new Date().toISOString() },
-    { id: '3',  symbol: 'TSLA',  name: 'Tesla Inc.',            price: 245.10, change: -8.30,  changePercent: -3.27, volume: 48_300_000, relativeVolume: 2.1, direction: 'bearish',  strength: 4, sector: 'Consumer Disc.', category: 'momentum', sparklineData: generateSparkline(252, 5),    timestamp: new Date().toISOString() },
-    { id: '4',  symbol: 'MSFT',  name: 'Microsoft Corporation', price: 415.20, change: 5.80,   changePercent: 1.42,  volume: 22_100_000, relativeVolume: 1.2, direction: 'bullish',  strength: 3, sector: 'Technology',     category: 'momentum', sparklineData: generateSparkline(410, 3),    timestamp: new Date().toISOString() },
-    { id: '5',  symbol: 'AMD',   name: 'Advanced Micro Devices',price: 165.40, change: 6.20,   changePercent: 3.89,  volume: 35_600_000, relativeVolume: 2.8, direction: 'bullish',  strength: 5, sector: 'Technology',     category: 'volume',   sparklineData: generateSparkline(160, 4),    timestamp: new Date().toISOString() },
-    { id: '6',  symbol: 'META',  name: 'Meta Platforms Inc.',   price: 505.80, change: 12.40,  changePercent: 2.51,  volume: 18_700_000, relativeVolume: 1.5, direction: 'bullish',  strength: 4, sector: 'Technology',     category: 'breakout', sparklineData: generateSparkline(495, 6),    timestamp: new Date().toISOString() },
-    { id: '7',  symbol: 'AMZN',  name: 'Amazon.com Inc.',       price: 185.60, change: 2.10,   changePercent: 1.14,  volume: 28_400_000, relativeVolume: 1.3, direction: 'bullish',  strength: 3, sector: 'Consumer Disc.', category: 'momentum', sparklineData: generateSparkline(183, 2),    timestamp: new Date().toISOString() },
-    { id: '8',  symbol: 'GOOGL', name: 'Alphabet Inc.',         price: 152.30, change: -1.20,  changePercent: -0.78, volume: 19_800_000, relativeVolume: 0.9, direction: 'neutral',  strength: 2, sector: 'Technology',     category: 'momentum', sparklineData: generateSparkline(153, 1.5),  timestamp: new Date().toISOString() },
-    { id: '9',  symbol: 'JPM',   name: 'JPMorgan Chase & Co.',  price: 198.75, change: 4.50,   changePercent: 2.32,  volume: 12_300_000, relativeVolume: 1.6, direction: 'bullish',  strength: 3, sector: 'Financials',     category: 'breakout', sparklineData: generateSparkline(195, 2),    timestamp: new Date().toISOString() },
-    { id: '10', symbol: 'V',     name: 'Visa Inc.',             price: 282.90, change: -2.40,  changePercent: -0.84, volume: 6_500_000,  relativeVolume: 0.8, direction: 'bearish',  strength: 2, sector: 'Financials',     category: 'momentum', sparklineData: generateSparkline(284, 2),    timestamp: new Date().toISOString() },
-    { id: '11', symbol: 'UNH',   name: 'UnitedHealth Group',    price: 527.40, change: -14.20, changePercent: -2.62, volume: 8_900_000,  relativeVolume: 2.3, direction: 'bearish',  strength: 4, sector: 'Healthcare',     category: 'volume',   sparklineData: generateSparkline(540, 8),    timestamp: new Date().toISOString() },
-    { id: '12', symbol: 'XOM',   name: 'Exxon Mobil Corp.',     price: 104.80, change: 1.95,   changePercent: 1.90,  volume: 15_200_000, relativeVolume: 1.4, direction: 'bullish',  strength: 3, sector: 'Energy',         category: 'momentum', sparklineData: generateSparkline(103, 1.2),  timestamp: new Date().toISOString() },
-    { id: '13', symbol: 'LLY',   name: 'Eli Lilly and Co.',     price: 782.50, change: 22.30,  changePercent: 2.93,  volume: 5_800_000,  relativeVolume: 2.0, direction: 'bullish',  strength: 5, sector: 'Healthcare',     category: 'breakout', sparklineData: generateSparkline(762, 12),   timestamp: new Date().toISOString() },
-    { id: '14', symbol: 'AVGO',  name: 'Broadcom Inc.',         price: 1285.40,change: 45.60,  changePercent: 3.68,  volume: 4_200_000,  relativeVolume: 2.6, direction: 'bullish',  strength: 5, sector: 'Technology',     category: 'volume',   sparklineData: generateSparkline(1240, 25),  timestamp: new Date().toISOString() },
-    { id: '15', symbol: 'CRM',   name: 'Salesforce Inc.',       price: 272.30, change: -5.40,  changePercent: -1.94, volume: 7_100_000,  relativeVolume: 1.1, direction: 'bearish',  strength: 3, sector: 'Technology',     category: 'momentum', sparklineData: generateSparkline(276, 3),    timestamp: new Date().toISOString() },
-    { id: '16', symbol: 'BA',    name: 'Boeing Company',        price: 198.20, change: 8.90,   changePercent: 4.70,  volume: 11_400_000, relativeVolume: 3.2, direction: 'bullish',  strength: 4, sector: 'Industrials',    category: 'volume',   sparklineData: generateSparkline(190, 5),    timestamp: new Date().toISOString() },
-    { id: '17', symbol: 'DIS',   name: 'Walt Disney Co.',       price: 112.60, change: -3.80,  changePercent: -3.27, volume: 14_600_000, relativeVolume: 1.9, direction: 'bearish',  strength: 3, sector: 'Communication', category: 'momentum', sparklineData: generateSparkline(116, 2),    timestamp: new Date().toISOString() },
-    { id: '18', symbol: 'NFLX',  name: 'Netflix Inc.',          price: 628.40, change: 15.70,  changePercent: 2.56,  volume: 6_800_000,  relativeVolume: 1.7, direction: 'bullish',  strength: 4, sector: 'Communication', category: 'breakout', sparklineData: generateSparkline(614, 8),    timestamp: new Date().toISOString() },
-    { id: '19', symbol: 'COIN',  name: 'Coinbase Global Inc.',  price: 225.80, change: 18.50,  changePercent: 8.93,  volume: 22_500_000, relativeVolume: 3.8, direction: 'bullish',  strength: 5, sector: 'Financials',     category: 'volume',   sparklineData: generateSparkline(208, 10),   timestamp: new Date().toISOString() },
-    { id: '20', symbol: 'PLTR',  name: 'Palantir Technologies', price: 24.50,  change: 1.80,   changePercent: 7.93,  volume: 45_200_000, relativeVolume: 2.9, direction: 'bullish',  strength: 4, sector: 'Technology',     category: 'momentum', sparklineData: generateSparkline(23, 0.8),   timestamp: new Date().toISOString() },
-    { id: '21', symbol: 'SMCI',  name: 'Super Micro Computer',  price: 745.20, change: -32.10, changePercent: -4.13, volume: 9_300_000,  relativeVolume: 2.2, direction: 'bearish',  strength: 4, sector: 'Technology',     category: 'volume',   sparklineData: generateSparkline(775, 18),   timestamp: new Date().toISOString() },
-    { id: '22', symbol: 'INTC',  name: 'Intel Corporation',     price: 43.20,  change: -1.50,  changePercent: -3.36, volume: 32_100_000, relativeVolume: 1.8, direction: 'bearish',  strength: 3, sector: 'Technology',     category: 'momentum', sparklineData: generateSparkline(44.5, 1),   timestamp: new Date().toISOString() },
-    { id: '23', symbol: 'RIVN',  name: 'Rivian Automotive',     price: 17.80,  change: 1.20,   changePercent: 7.23,  volume: 28_900_000, relativeVolume: 3.1, direction: 'bullish',  strength: 3, sector: 'Consumer Disc.', category: 'volume',   sparklineData: generateSparkline(16.8, 0.6), timestamp: new Date().toISOString() },
-    { id: '24', symbol: 'PANW',  name: 'Palo Alto Networks',    price: 312.60, change: 7.40,   changePercent: 2.42,  volume: 5_100_000,  relativeVolume: 1.3, direction: 'bullish',  strength: 3, sector: 'Technology',     category: 'breakout', sparklineData: generateSparkline(306, 4),    timestamp: new Date().toISOString() },
-    { id: '25', symbol: 'SQ',    name: 'Block Inc.',            price: 78.90,  change: -2.60,  changePercent: -3.19, volume: 10_800_000, relativeVolume: 1.6, direction: 'bearish',  strength: 2, sector: 'Financials',     category: 'momentum', sparklineData: generateSparkline(81, 1.8),   timestamp: new Date().toISOString() },
-  ];
+  // ---- Live data state ----
+  let scanResults: ScanResult[] = $state([]);
+  let loading = $state(true);
+  let connected = $state(false);
+
+  // ---- Derive direction & strength from change percent ----
+  function deriveDirection(changePercent: number): 'bullish' | 'bearish' | 'neutral' {
+    if (changePercent > 0.5) return 'bullish';
+    if (changePercent < -0.5) return 'bearish';
+    return 'neutral';
+  }
+
+  function deriveStrength(changePercent: number): number {
+    const abs = Math.abs(changePercent);
+    if (abs >= 5) return 5;
+    if (abs >= 3) return 4;
+    if (abs >= 2) return 3;
+    if (abs >= 1) return 2;
+    return 1;
+  }
+
+  // ---- Generate simple sparkline from price ----
+  function generateSparkline(base: number): number[] {
+    const points: number[] = [base];
+    const volatility = base * 0.01;
+    for (let i = 1; i < 20; i++) {
+      const prev = points[i - 1] ?? base;
+      const delta = (Math.random() - 0.48) * volatility;
+      points.push(prev + delta);
+    }
+    return points;
+  }
+
+  // ---- Map a raw API item into ScanResult ----
+  function mapItem(item: any, index: number, category: string): ScanResult {
+    const price = item.price ?? item.last_price ?? 0;
+    const change = item.change ?? item.price_change ?? 0;
+    const changePercent = item.change_percent ?? item.percent_change ?? (price > 0 ? (change / (price - change)) * 100 : 0);
+    const volume = item.volume ?? 0;
+
+    return {
+      id: `${category}-${index}`,
+      symbol: item.symbol ?? item.ticker ?? '',
+      name: item.name ?? item.company_name ?? item.symbol ?? '',
+      price,
+      change,
+      changePercent,
+      volume,
+      relativeVolume: item.relative_volume ?? item.rvol ?? 1.0,
+      direction: deriveDirection(changePercent),
+      strength: deriveStrength(changePercent),
+      sector: item.sector ?? '',
+      category,
+      sparklineData: generateSparkline(price),
+      timestamp: item.timestamp ?? new Date().toISOString(),
+    };
+  }
+
+  // ---- Fetch data from API ----
+  async function fetchScannerData() {
+    try {
+      const response = await fetch('http://localhost:8000/api/equity/market/movers?limit=25');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+
+      const allItems: ScanResult[] = [];
+      const seen = new Set<string>();
+
+      for (const [category, items] of Object.entries(data)) {
+        if (!Array.isArray(items)) continue;
+        for (let i = 0; i < items.length; i++) {
+          const mapped = mapItem(items[i], allItems.length, category);
+          if (mapped.symbol && !seen.has(mapped.symbol)) {
+            seen.add(mapped.symbol);
+            allItems.push(mapped);
+          }
+        }
+      }
+
+      scanResults = allItems;
+      connected = true;
+    } catch {
+      connected = false;
+      scanResults = [];
+    } finally {
+      loading = false;
+    }
+  }
+
+  onMount(() => {
+    fetchScannerData();
+  });
 
   // ---- Filtered + sorted results ----
   let filteredResults = $derived.by(() => {
-    let results = mockResults;
+    let results = scanResults;
     if (directionFilter !== 'all') {
       results = results.filter(r => r.direction === directionFilter);
     }
@@ -136,8 +192,14 @@
   }
 
   function strengthBg(s: number): string {
-    const colors = ['', 'var(--strength-1)', 'var(--strength-2)', 'var(--strength-3)', 'var(--strength-4)', 'var(--strength-5)'];
-    return colors[s] ?? colors[1];
+    const colors: Record<number, string> = {
+      1: 'var(--strength-1)',
+      2: 'var(--strength-2)',
+      3: 'var(--strength-3)',
+      4: 'var(--strength-4)',
+      5: 'var(--strength-5)',
+    };
+    return colors[s] ?? 'var(--strength-1)';
   }
 </script>
 
@@ -158,8 +220,8 @@
       <ExportToolbar source="scanner" />
       <div class="header-divider" style="background: var(--border-subtle);"></div>
       <div class="live-indicator">
-        <div class="live-dot signal-ping" style="background: var(--bullish);"></div>
-        <span class="live-label" style="color: var(--bullish);">Live</span>
+        <div class="live-dot {connected ? 'signal-ping' : ''}" style="background: {connected ? 'var(--bullish)' : 'var(--text-disabled)'};"></div>
+        <span class="live-label" style="color: {connected ? 'var(--bullish)' : 'var(--text-disabled)'};">{connected ? 'Live' : 'Offline'}</span>
       </div>
     </div>
   </div>
@@ -266,73 +328,96 @@
         </tr>
       </thead>
       <tbody>
-        {#each filteredResults as result, i (result.id)}
-          <tr
-            class="table-row"
-            style="background: {i % 2 === 0 ? 'var(--bg-surface)' : 'transparent'}; border-bottom: 1px solid var(--border-subtle);"
-          >
-            <!-- Symbol + Name -->
-            <td class="td-symbol">
-              <div class="symbol-cell">
-                <span class="symbol-ticker" style="color: var(--text-primary);">{result.symbol}</span>
-                <span class="symbol-name" style="color: var(--text-tertiary);">{result.name}</span>
-              </div>
-            </td>
-            <!-- Price -->
-            <td class="td-right td-mono" style="color: var(--text-primary);">
-              ${result.price.toFixed(2)}
-            </td>
-            <!-- Change -->
-            <td class="td-right td-mono td-medium" style="color: {result.changePercent >= 0 ? 'var(--bullish)' : 'var(--bearish)'};">
-              {result.changePercent >= 0 ? '+' : ''}{result.changePercent.toFixed(2)}%
-            </td>
-            <!-- Volume -->
-            <td class="td-right td-mono" style="color: var(--text-secondary);">
-              {formatVolume(result.volume)}
-            </td>
-            <!-- Relative Volume -->
-            <td class="td-right td-mono" style="color: {result.relativeVolume >= 2 ? 'var(--warning-bright)' : 'var(--text-secondary)'};">
-              {result.relativeVolume.toFixed(1)}x
-            </td>
-            <!-- Direction -->
-            <td class="td-center">
-              <span
-                class="direction-badge"
-                style="background: {result.direction === 'bullish' ? 'var(--bullish-bg)' : result.direction === 'bearish' ? 'var(--bearish-bg)' : 'var(--neutral-bg)'};
-                       color: {directionColor(result.direction)};
-                       border: 1px solid {result.direction === 'bullish' ? 'oklch(0.45 0.12 155 / 0.3)' : result.direction === 'bearish' ? 'oklch(0.42 0.12 25 / 0.3)' : 'oklch(0.45 0.08 250 / 0.3)'};"
-              >
-                {result.direction === 'bullish' ? 'BULL' : result.direction === 'bearish' ? 'BEAR' : 'NEUT'}
-              </span>
-            </td>
-            <!-- Strength -->
-            <td class="td-center">
-              <div class="strength-meter">
-                {#each Array(5) as _, si}
-                  <div
-                    class="strength-pip"
-                    style="background: {si < result.strength ? strengthBg(result.strength) : 'var(--bg-overlay)'};"
-                  ></div>
-                {/each}
-              </div>
-            </td>
-            <!-- Sector -->
-            <td class="td-sector" style="color: var(--text-tertiary);">
-              {result.sector}
-            </td>
-            <!-- Sparkline -->
-            <td class="td-center">
-              <SparkLine data={result.sparklineData} width={80} height={20} showLastPoint={true} />
-            </td>
-          </tr>
-        {/each}
-
-        {#if filteredResults.length === 0}
+        {#if loading}
           <tr>
             <td colspan="9" class="td-empty" style="color: var(--text-tertiary);">
-              No results match current filters
+              <div class="loading-state">
+                <div class="loading-spinner"></div>
+                <span>Loading scanner...</span>
+              </div>
             </td>
           </tr>
+        {:else if !connected}
+          <tr>
+            <td colspan="9" class="td-empty" style="color: var(--text-tertiary);">
+              <div class="disconnected-state">
+                <span class="disconnected-icon">!</span>
+                <strong>No API Connection</strong>
+                <span>Start the backend server to see live scanner data</span>
+              </div>
+            </td>
+          </tr>
+        {:else if filteredResults.length === 0}
+          <tr>
+            <td colspan="9" class="td-empty" style="color: var(--text-tertiary);">
+              {#if scanResults.length === 0}
+                No signals found
+              {:else}
+                No results match current filters
+              {/if}
+            </td>
+          </tr>
+        {:else}
+          {#each filteredResults as result, i (result.id)}
+            <tr
+              class="table-row"
+              style="background: {i % 2 === 0 ? 'var(--bg-surface)' : 'transparent'}; border-bottom: 1px solid var(--border-subtle);"
+            >
+              <!-- Symbol + Name -->
+              <td class="td-symbol">
+                <div class="symbol-cell">
+                  <span class="symbol-ticker" style="color: var(--text-primary);">{result.symbol}</span>
+                  <span class="symbol-name" style="color: var(--text-tertiary);">{result.name}</span>
+                </div>
+              </td>
+              <!-- Price -->
+              <td class="td-right td-mono" style="color: var(--text-primary);">
+                ${result.price.toFixed(2)}
+              </td>
+              <!-- Change -->
+              <td class="td-right td-mono td-medium" style="color: {result.changePercent >= 0 ? 'var(--bullish)' : 'var(--bearish)'};">
+                {result.changePercent >= 0 ? '+' : ''}{result.changePercent.toFixed(2)}%
+              </td>
+              <!-- Volume -->
+              <td class="td-right td-mono" style="color: var(--text-secondary);">
+                {formatVolume(result.volume)}
+              </td>
+              <!-- Relative Volume -->
+              <td class="td-right td-mono" style="color: {result.relativeVolume >= 2 ? 'var(--warning-bright)' : 'var(--text-secondary)'};">
+                {result.relativeVolume.toFixed(1)}x
+              </td>
+              <!-- Direction -->
+              <td class="td-center">
+                <span
+                  class="direction-badge"
+                  style="background: {result.direction === 'bullish' ? 'var(--bullish-bg)' : result.direction === 'bearish' ? 'var(--bearish-bg)' : 'var(--neutral-bg)'};
+                         color: {directionColor(result.direction)};
+                         border: 1px solid {result.direction === 'bullish' ? 'oklch(0.45 0.12 155 / 0.3)' : result.direction === 'bearish' ? 'oklch(0.42 0.12 25 / 0.3)' : 'oklch(0.45 0.08 250 / 0.3)'};"
+                >
+                  {result.direction === 'bullish' ? 'BULL' : result.direction === 'bearish' ? 'BEAR' : 'NEUT'}
+                </span>
+              </td>
+              <!-- Strength -->
+              <td class="td-center">
+                <div class="strength-meter">
+                  {#each Array(5) as _, si}
+                    <div
+                      class="strength-pip"
+                      style="background: {si < result.strength ? strengthBg(result.strength) : 'var(--bg-overlay)'};"
+                    ></div>
+                  {/each}
+                </div>
+              </td>
+              <!-- Sector -->
+              <td class="td-sector" style="color: var(--text-tertiary);">
+                {result.sector}
+              </td>
+              <!-- Sparkline -->
+              <td class="td-center">
+                <SparkLine data={result.sparklineData} width={80} height={20} showLastPoint={true} />
+              </td>
+            </tr>
+          {/each}
         {/if}
       </tbody>
     </table>
@@ -633,5 +718,49 @@
     height: 6px;
     width: 10px;
     border-radius: var(--radius-full);
+  }
+
+  /* ---- Loading state ---- */
+  .loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding-block: 24px;
+  }
+
+  .loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--border-subtle);
+    border-top-color: var(--accent-bright);
+    border-radius: var(--radius-full);
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ---- Disconnected state ---- */
+  .disconnected-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding-block: 24px;
+  }
+
+  .disconnected-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-full);
+    background: var(--bg-overlay);
+    color: var(--text-tertiary);
+    font-weight: 700;
+    font-size: var(--text-lg);
   }
 </style>
