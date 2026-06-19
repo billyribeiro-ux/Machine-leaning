@@ -19,6 +19,14 @@
     CaretDown,
     ChartLine,
     Warning,
+    MagnifyingGlass,
+    GitDiff,
+    Bank,
+    Bell,
+    Swap,
+    Funnel,
+    ArrowUp,
+    ArrowDown,
   } from 'phosphor-svelte';
 
   const API_BASE = 'http://localhost:8000';
@@ -102,6 +110,103 @@
     { name: 'Utilities',        ticker: 'XLU',  change: 0.14,  weight: 2.6 },
     { name: 'Real Estate',      ticker: 'XLRE', change: -0.44, weight: 2.4 },
     { name: 'Materials',        ticker: 'XLB',  change: 0.21,  weight: 2.0 },
+  ];
+
+  // ---------------------------------------------------------------------------
+  // SCANNER RESULTS (top 10 from the scanner page)
+  // ---------------------------------------------------------------------------
+
+  const SIM_SCANNER: {
+    rank: number; symbol: string; name: string; price: number;
+    changePct: number; volume: number; signal: 'Gamma' | 'Volume' | 'Flow';
+    strength: number; score: number;
+  }[] = [
+    { rank: 1,  symbol: 'NVDA',  name: 'NVIDIA Corp',         price: 141.28, changePct: 4.82,  volume: 87_200_000, signal: 'Gamma',  strength: 5, score: 96 },
+    { rank: 2,  symbol: 'TSLA',  name: 'Tesla Inc',           price: 352.74, changePct: 3.14,  volume: 65_800_000, signal: 'Volume', strength: 5, score: 94 },
+    { rank: 3,  symbol: 'META',  name: 'Meta Platforms',      price: 627.14, changePct: 1.87,  volume: 26_300_000, signal: 'Flow',   strength: 4, score: 88 },
+    { rank: 4,  symbol: 'AMD',   name: 'AMD',                 price: 168.93, changePct: 2.05,  volume: 36_400_000, signal: 'Gamma',  strength: 4, score: 85 },
+    { rank: 5,  symbol: 'MSFT',  name: 'Microsoft',           price: 468.35, changePct: 2.94,  volume: 54_600_000, signal: 'Flow',   strength: 5, score: 92 },
+    { rank: 6,  symbol: 'COIN',  name: 'Coinbase',            price: 278.93, changePct: 6.18,  volume: 42_100_000, signal: 'Volume', strength: 5, score: 91 },
+    { rank: 7,  symbol: 'AAPL',  name: 'Apple Inc',           price: 234.56, changePct: -0.42, volume: 81_200_000, signal: 'Gamma',  strength: 3, score: 72 },
+    { rank: 8,  symbol: 'SPY',   name: 'SPDR S&P 500',       price: 587.42, changePct: 0.56,  volume: 39_500_000, signal: 'Flow',   strength: 3, score: 68 },
+    { rank: 9,  symbol: 'AMZN',  name: 'Amazon',              price: 213.47, changePct: 2.15,  volume: 28_800_000, signal: 'Volume', strength: 4, score: 82 },
+    { rank: 10, symbol: 'GOOGL', name: 'Alphabet',            price: 182.65, changePct: 1.52,  volume: 43_000_000, signal: 'Gamma',  strength: 4, score: 79 },
+  ];
+
+  // ---------------------------------------------------------------------------
+  // GEX SCANNER DATA
+  // ---------------------------------------------------------------------------
+
+  const SIM_GEX = {
+    totalGex:  3.43,
+    callGex:   12.13,
+    putGex:    -8.70,
+    netGex:    3.43,
+    dealerPos: 'Long Gamma' as 'Long Gamma' | 'Short Gamma' | 'Neutral',
+    keyStrike: 5580,
+    spotPrice: 5512.40,
+    spotSymbol: 'SPX',
+    profile: [
+      { strike: 5400, callGex: 0.42, putGex: -0.38, net: 0.04 },
+      { strike: 5420, callGex: 0.58, putGex: -0.52, net: 0.06 },
+      { strike: 5440, callGex: 0.91, putGex: -0.73, net: 0.18 },
+      { strike: 5460, callGex: 1.24, putGex: -0.96, net: 0.28 },
+      { strike: 5480, callGex: 1.52, putGex: -1.18, net: 0.34 },
+      { strike: 5500, callGex: 1.78, putGex: -1.42, net: 0.36 },
+      { strike: 5520, callGex: 1.62, putGex: -1.28, net: 0.34 },
+      { strike: 5540, callGex: 1.34, putGex: -1.08, net: 0.26 },
+      { strike: 5560, callGex: 0.98, putGex: -0.82, net: 0.16 },
+      { strike: 5580, callGex: 0.74, putGex: -0.43, net: 0.31 },
+    ],
+  };
+
+  const gexMaxAbs = Math.max(...SIM_GEX.profile.map(g => Math.max(Math.abs(g.callGex), Math.abs(g.putGex))));
+
+  // ---------------------------------------------------------------------------
+  // OPTIONS FLOW SCANNER
+  // ---------------------------------------------------------------------------
+
+  const SIM_FLOW: {
+    time: string; symbol: string; type: 'C' | 'P'; strike: number;
+    expiry: string; side: 'BUY' | 'SELL'; premium: number;
+    flags: string[];
+  }[] = [
+    { time: '15:42:18', symbol: 'SPX',  type: 'C', strike: 5520, expiry: 'Jun 20', side: 'BUY',  premium: 4_850_000, flags: ['SWP', 'UNU'] },
+    { time: '15:41:05', symbol: 'SPY',  type: 'C', strike: 553,  expiry: 'Jun 22', side: 'BUY',  premium: 2_340_000, flags: ['SWP', 'UNU'] },
+    { time: '15:39:47', symbol: 'QQQ',  type: 'P', strike: 475,  expiry: 'Jun 26', side: 'BUY',  premium: 920_000,   flags: ['UNU'] },
+    { time: '15:38:22', symbol: 'NVDA', type: 'C', strike: 145,  expiry: 'Jun 20', side: 'BUY',  premium: 1_150_000, flags: ['SWP'] },
+    { time: '15:36:51', symbol: 'META', type: 'P', strike: 505,  expiry: 'Jun 22', side: 'BUY',  premium: 1_680_000, flags: ['SWP', 'UNU'] },
+    { time: '15:33:42', symbol: 'SPX',  type: 'C', strike: 5550, expiry: 'Jun 27', side: 'BUY',  premium: 6_100_000, flags: ['SWP', 'UNU'] },
+  ];
+
+  // ---------------------------------------------------------------------------
+  // DARK POOL SCANNER
+  // ---------------------------------------------------------------------------
+
+  const SIM_DARKPOOL: {
+    time: string; symbol: string; price: number; size: number;
+    notional: number; exchange: string; side: 'BUY' | 'SELL';
+  }[] = [
+    { time: '15:42:18', symbol: 'SPY',  price: 585.42, size: 850_000,  notional: 49_800_000, exchange: 'FINRA ADF', side: 'BUY' },
+    { time: '15:41:05', symbol: 'NVDA', price: 142.50, size: 280_000,  notional: 39_900_000, exchange: 'IEX',       side: 'BUY' },
+    { time: '15:39:33', symbol: 'AAPL', price: 198.75, size: 150_000,  notional: 29_800_000, exchange: 'FINRA ADF', side: 'SELL' },
+    { time: '15:37:12', symbol: 'MSFT', price: 448.20, size: 55_000,   notional: 24_700_000, exchange: 'CBOE BYX',  side: 'BUY' },
+    { time: '15:34:48', symbol: 'TSLA', price: 268.90, size: 75_000,   notional: 20_200_000, exchange: 'IEX',       side: 'SELL' },
+  ];
+
+  // ---------------------------------------------------------------------------
+  // ACTIVE ALERTS
+  // ---------------------------------------------------------------------------
+
+  const SIM_ALERTS: {
+    time: string; symbol: string; type: string; direction: 'BULL' | 'BEAR';
+    description: string; strength: number; price: number;
+  }[] = [
+    { time: '2m ago',  symbol: 'NVDA', type: 'Momentum Break',  direction: 'BULL', description: 'Broke 20-day high with 3.2x volume', strength: 5, price: 142.50 },
+    { time: '8m ago',  symbol: 'TSLA', type: 'Volume Surge',    direction: 'BEAR', description: '4.8x relative volume on decline',     strength: 4, price: 268.90 },
+    { time: '15m ago', symbol: 'AMD',  type: 'Squeeze Fire',    direction: 'BULL', description: 'Bollinger squeeze fired bullish',      strength: 4, price: 178.30 },
+    { time: '22m ago', symbol: 'SPY',  type: 'GEX Flip',        direction: 'BEAR', description: 'Dealer gamma flipped negative',        strength: 3, price: 585.42 },
+    { time: '31m ago', symbol: 'META', type: 'Dark Pool Print',  direction: 'BULL', description: '$28M block at ask',                   strength: 4, price: 542.60 },
   ];
 
   // ---------------------------------------------------------------------------
@@ -305,6 +410,18 @@
     if (dir === 'bullish') return 'var(--bullish-bright)';
     if (dir === 'bearish') return 'var(--bearish-bright)';
     return 'var(--neutral-bright)';
+  }
+
+  function fmtPremium(v: number): string {
+    if (v >= 1_000_000) return '$' + (v / 1_000_000).toFixed(1) + 'M';
+    if (v >= 1_000)     return '$' + (v / 1_000).toFixed(0) + 'K';
+    return '$' + v.toFixed(0);
+  }
+
+  function fmtVol(v: number): string {
+    if (v >= 1_000_000) return (v / 1_000_000).toFixed(1) + 'M';
+    if (v >= 1_000)     return (v / 1_000).toFixed(0) + 'K';
+    return v.toString();
   }
 
   function sectorHeatBg(change: number): string {
@@ -744,6 +861,221 @@
             </span>
             <span class="summary-lbl">declining</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         ROW 2: SCANNER RESULTS + GEX OVERVIEW
+         ================================================================ -->
+    <div class="scanner-row">
+
+      <!-- Scanner Results (compact table) -->
+      <div class="glass-panel scanner-table-panel">
+        <div class="panel-hdr">
+          <div class="panel-title-grp">
+            <MagnifyingGlass size={15} weight="duotone" />
+            <h2 class="panel-title">Scanner Results</h2>
+            <span class="count-badge mono-nums">{SIM_SCANNER.length}</span>
+          </div>
+          <a href="/scanner" class="link-all">
+            Full Scanner
+            <CaretUp size={11} style="transform:rotate(90deg);" />
+          </a>
+        </div>
+
+        <div class="mini-table-wrap">
+          <table class="mini-table">
+            <thead>
+              <tr>
+                <th class="th-rank">#</th>
+                <th class="th-sym">Symbol</th>
+                <th class="th-num">Price</th>
+                <th class="th-num">Chg%</th>
+                <th class="th-num">Volume</th>
+                <th class="th-signal">Signal</th>
+                <th class="th-str">Str</th>
+                <th class="th-num">Score</th>
+              </tr>
+            </thead>
+            <tbody>
+              {#each SIM_SCANNER as row (row.rank)}
+                <tr class="tbl-row">
+                  <td class="td-rank mono-nums">{row.rank}</td>
+                  <td class="td-sym">
+                    <span class="sym-ticker">{row.symbol}</span>
+                    <span class="sym-name">{row.name}</span>
+                  </td>
+                  <td class="td-num mono-nums">${row.price.toFixed(2)}</td>
+                  <td class="td-num mono-nums" style="color:{changeBright(row.changePct)};">
+                    {row.changePct >= 0 ? '+' : ''}{row.changePct.toFixed(2)}%
+                  </td>
+                  <td class="td-num mono-nums">{fmtVol(row.volume)}</td>
+                  <td class="td-signal">
+                    <span class="signal-badge signal-badge--{row.signal.toLowerCase()}">{row.signal}</span>
+                  </td>
+                  <td class="td-str">
+                    {#each Array(5) as _, si}
+                      <span class="str-pip" style="background:{si < row.strength ? 'var(--accent-bright)' : 'var(--bg-overlay)'};"></span>
+                    {/each}
+                  </td>
+                  <td class="td-num mono-nums td-score" style="color:{row.score >= 90 ? 'var(--bullish-bright)' : row.score >= 75 ? 'var(--text-primary)' : 'var(--text-secondary)'};">
+                    {row.score}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- GEX Scanner Overview -->
+      <div class="glass-panel gex-panel">
+        <div class="panel-hdr">
+          <div class="panel-title-grp">
+            <GitDiff size={15} weight="duotone" />
+            <h2 class="panel-title">GEX Scanner</h2>
+          </div>
+          <a href="/options" class="link-all">
+            Full Analytics
+            <CaretUp size={11} style="transform:rotate(90deg);" />
+          </a>
+        </div>
+
+        <!-- GEX KPI strip -->
+        <div class="gex-kpis">
+          <div class="gex-kpi">
+            <span class="gex-kpi-label">Net GEX</span>
+            <span class="gex-kpi-val mono-nums" style="color:{SIM_GEX.netGex >= 0 ? 'var(--bullish-bright)' : 'var(--bearish-bright)'};">
+              {SIM_GEX.netGex >= 0 ? '+' : ''}{SIM_GEX.netGex.toFixed(2)}B
+            </span>
+          </div>
+          <div class="gex-kpi">
+            <span class="gex-kpi-label">Dealer</span>
+            <span class="gex-kpi-val mono-nums" style="color:{SIM_GEX.dealerPos === 'Long Gamma' ? 'var(--bullish-bright)' : SIM_GEX.dealerPos === 'Short Gamma' ? 'var(--bearish-bright)' : 'var(--text-secondary)'};">
+              {SIM_GEX.dealerPos}
+            </span>
+          </div>
+          <div class="gex-kpi">
+            <span class="gex-kpi-label">Key Strike</span>
+            <span class="gex-kpi-val mono-nums">{SIM_GEX.keyStrike.toLocaleString()}</span>
+          </div>
+          <div class="gex-kpi">
+            <span class="gex-kpi-label">{SIM_GEX.spotSymbol}</span>
+            <span class="gex-kpi-val mono-nums">{SIM_GEX.spotPrice.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+          </div>
+        </div>
+
+        <!-- Mini GEX profile chart -->
+        <div class="gex-chart">
+          {#each SIM_GEX.profile as bar (bar.strike)}
+            <div class="gex-bar-row">
+              <span class="gex-strike mono-nums">{bar.strike.toLocaleString()}</span>
+              <div class="gex-bar-container">
+                <div class="gex-bar gex-bar--put" style="width:{(Math.abs(bar.putGex) / gexMaxAbs * 100).toFixed(1)}%;"></div>
+                <div class="gex-bar gex-bar--call" style="width:{(bar.callGex / gexMaxAbs * 100).toFixed(1)}%;"></div>
+              </div>
+              <span class="gex-net mono-nums" style="color:{bar.net >= 0 ? 'var(--bullish)' : 'var(--bearish)'};">
+                {bar.net >= 0 ? '+' : ''}{bar.net.toFixed(2)}
+              </span>
+            </div>
+          {/each}
+        </div>
+      </div>
+    </div>
+
+    <!-- ================================================================
+         ROW 3: OPTIONS FLOW + DARK POOL + ALERTS
+         ================================================================ -->
+    <div class="bottom-grid">
+
+      <!-- Options Flow Scanner -->
+      <div class="glass-panel flow-panel">
+        <div class="panel-hdr">
+          <div class="panel-title-grp">
+            <Swap size={15} weight="duotone" />
+            <h2 class="panel-title">Options Flow</h2>
+            <span class="count-badge mono-nums">{SIM_FLOW.length}</span>
+          </div>
+          <a href="/options/flow" class="link-all">
+            Full Flow
+            <CaretUp size={11} style="transform:rotate(90deg);" />
+          </a>
+        </div>
+
+        <div class="mini-feed">
+          {#each SIM_FLOW as flow, i (i)}
+            <div class="feed-row">
+              <span class="feed-time mono-nums">{flow.time}</span>
+              <span class="feed-sym mono-nums">{flow.symbol}</span>
+              <span class="feed-badge feed-badge--{flow.type === 'C' ? 'call' : 'put'}">{flow.type}</span>
+              <span class="feed-detail mono-nums">{flow.strike.toLocaleString()}</span>
+              <span class="feed-expiry">{flow.expiry}</span>
+              <span class="feed-side feed-side--{flow.side.toLowerCase()}">{flow.side}</span>
+              <span class="feed-premium mono-nums">{fmtPremium(flow.premium)}</span>
+              <span class="feed-flags">
+                {#each flow.flags as flag}
+                  <span class="flag-chip">{flag}</span>
+                {/each}
+              </span>
+            </div>
+          {/each}
+        </div>
+      </div>
+
+      <!-- Dark Pool Scanner -->
+      <div class="glass-panel darkpool-panel">
+        <div class="panel-hdr">
+          <div class="panel-title-grp">
+            <Bank size={15} weight="duotone" />
+            <h2 class="panel-title">Dark Pool</h2>
+            <span class="count-badge mono-nums">{SIM_DARKPOOL.length}</span>
+          </div>
+          <a href="/institutional" class="link-all">
+            Full View
+            <CaretUp size={11} style="transform:rotate(90deg);" />
+          </a>
+        </div>
+
+        <div class="mini-feed">
+          {#each SIM_DARKPOOL as dp, i (i)}
+            <div class="feed-row">
+              <span class="feed-time mono-nums">{dp.time}</span>
+              <span class="feed-sym mono-nums">{dp.symbol}</span>
+              <span class="feed-detail mono-nums">${dp.price.toFixed(2)}</span>
+              <span class="feed-detail mono-nums">{fmtVol(dp.size)}</span>
+              <span class="feed-premium mono-nums">{fmtPremium(dp.notional)}</span>
+              <span class="feed-side feed-side--{dp.side.toLowerCase()}">{dp.side}</span>
+            </div>
+          {/each}
+        </div>
+      </div>
+
+      <!-- Active Alerts -->
+      <div class="glass-panel alerts-panel">
+        <div class="panel-hdr">
+          <div class="panel-title-grp">
+            <Bell size={15} weight="duotone" />
+            <h2 class="panel-title">Active Alerts</h2>
+            <span class="count-badge mono-nums">{SIM_ALERTS.length}</span>
+          </div>
+          <a href="/alerts" class="link-all">
+            All Alerts
+            <CaretUp size={11} style="transform:rotate(90deg);" />
+          </a>
+        </div>
+
+        <div class="mini-feed">
+          {#each SIM_ALERTS as alert, i (i)}
+            <div class="feed-row alert-row">
+              <span class="feed-time mono-nums">{alert.time}</span>
+              <span class="feed-sym mono-nums">{alert.symbol}</span>
+              <span class="alert-dir-badge alert-dir--{alert.direction.toLowerCase()}">{alert.direction}</span>
+              <span class="alert-type">{alert.type}</span>
+              <span class="alert-desc">{alert.description}</span>
+              <span class="feed-premium mono-nums">${alert.price.toFixed(2)}</span>
+            </div>
+          {/each}
         </div>
       </div>
     </div>
@@ -1437,6 +1769,376 @@
   }
 
   /* ===================================================================
+     SCANNER ROW (Scanner + GEX)
+     =================================================================== */
+  .scanner-row {
+    display: grid;
+    grid-template-columns: 1.8fr 1fr;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .mini-table-wrap {
+    overflow-x: auto;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .mini-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+  }
+
+  .mini-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+
+  .mini-table th {
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 6px 8px;
+    text-align: left;
+    background: oklch(0.12 0.02 260);
+    border-bottom: 1px solid var(--border-subtle);
+    white-space: nowrap;
+  }
+
+  .th-num, .th-str { text-align: right; }
+  .th-rank { width: 28px; text-align: center; }
+  .th-signal { text-align: center; }
+
+  .tbl-row {
+    transition: background-color 100ms;
+  }
+
+  .tbl-row:hover {
+    background: var(--hover-overlay);
+  }
+
+  .tbl-row td {
+    padding: 5px 8px;
+    border-bottom: 1px solid oklch(0.18 0 0 / 0.4);
+    vertical-align: middle;
+  }
+
+  .td-rank { text-align: center; font-size: 10px; color: var(--text-tertiary); font-weight: 600; }
+  .td-num { text-align: right; font-size: 11px; font-weight: 600; color: var(--text-primary); }
+  .td-score { font-weight: 800; }
+  .td-signal { text-align: center; }
+  .td-str { text-align: right; display: flex; gap: 2px; justify-content: flex-end; align-items: center; }
+
+  .td-sym {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .sym-ticker {
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--text-primary);
+    font-family: var(--font-mono);
+  }
+
+  .sym-name {
+    font-size: 9px;
+    color: var(--text-tertiary);
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+  }
+
+  .signal-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 8px;
+    border-radius: var(--radius-full);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    display: inline-block;
+  }
+
+  .signal-badge--gamma {
+    color: oklch(0.80 0.14 290);
+    background: oklch(0.20 0.06 290 / 0.50);
+    border: 1px solid oklch(0.40 0.10 290 / 0.35);
+  }
+
+  .signal-badge--volume {
+    color: oklch(0.80 0.14 155);
+    background: oklch(0.20 0.06 155 / 0.50);
+    border: 1px solid oklch(0.40 0.10 155 / 0.35);
+  }
+
+  .signal-badge--flow {
+    color: oklch(0.80 0.14 85);
+    background: oklch(0.20 0.06 85 / 0.50);
+    border: 1px solid oklch(0.40 0.10 85 / 0.35);
+  }
+
+  /* GEX Panel */
+  .gex-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .gex-kpi {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    padding: 6px 4px;
+    background: oklch(0.12 0.01 260 / 0.5);
+    border-radius: var(--radius-md);
+    border: 1px solid oklch(0.20 0.01 260 / 0.4);
+  }
+
+  .gex-kpi-label {
+    font-size: 8px;
+    font-weight: 700;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .gex-kpi-val {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .gex-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .gex-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .gex-strike {
+    flex-shrink: 0;
+    width: 38px;
+    font-size: 9px;
+    color: var(--text-tertiary);
+    text-align: right;
+    font-weight: 500;
+  }
+
+  .gex-bar-container {
+    flex: 1;
+    display: flex;
+    height: 14px;
+    gap: 1px;
+    position: relative;
+  }
+
+  .gex-bar {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 300ms ease;
+  }
+
+  .gex-bar--call {
+    background: oklch(0.50 0.14 155);
+  }
+
+  .gex-bar--put {
+    background: oklch(0.50 0.14 25);
+  }
+
+  .gex-net {
+    flex-shrink: 0;
+    width: 36px;
+    font-size: 9px;
+    text-align: right;
+    font-weight: 600;
+  }
+
+  /* ===================================================================
+     BOTTOM GRID (Flow + Dark Pool + Alerts)
+     =================================================================== */
+  .bottom-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    flex-shrink: 0;
+  }
+
+  .mini-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  .feed-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 6px;
+    border-radius: var(--radius-sm);
+    transition: background-color 100ms;
+    flex-shrink: 0;
+  }
+
+  .feed-row:hover {
+    background: var(--hover-overlay);
+  }
+
+  .feed-time {
+    flex-shrink: 0;
+    font-size: 9px;
+    color: var(--text-tertiary);
+    width: 48px;
+    font-weight: 500;
+  }
+
+  .feed-sym {
+    flex-shrink: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary);
+    width: 36px;
+  }
+
+  .feed-badge {
+    flex-shrink: 0;
+    font-size: 9px;
+    font-weight: 700;
+    width: 16px;
+    text-align: center;
+    padding: 1px 0;
+    border-radius: 3px;
+  }
+
+  .feed-badge--call {
+    color: oklch(0.80 0.14 155);
+    background: oklch(0.20 0.06 155 / 0.5);
+  }
+
+  .feed-badge--put {
+    color: oklch(0.80 0.14 25);
+    background: oklch(0.20 0.06 25 / 0.5);
+  }
+
+  .feed-detail {
+    font-size: 10px;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+  }
+
+  .feed-expiry {
+    font-size: 9px;
+    color: var(--text-tertiary);
+    flex-shrink: 0;
+  }
+
+  .feed-side {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .feed-side--buy {
+    color: oklch(0.78 0.14 155);
+    background: oklch(0.20 0.06 155 / 0.5);
+  }
+
+  .feed-side--sell {
+    color: oklch(0.78 0.14 25);
+    background: oklch(0.20 0.06 25 / 0.5);
+  }
+
+  .feed-premium {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .feed-flags {
+    display: flex;
+    gap: 3px;
+    flex-shrink: 0;
+  }
+
+  .flag-chip {
+    font-size: 8px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: oklch(0.85 0.12 250);
+    background: oklch(0.20 0.06 250 / 0.5);
+    border: 1px solid oklch(0.35 0.08 250 / 0.3);
+    letter-spacing: 0.04em;
+  }
+
+  /* Alert-specific */
+  .alert-row {
+    flex-wrap: nowrap;
+  }
+
+  .alert-dir-badge {
+    font-size: 8px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    letter-spacing: 0.04em;
+  }
+
+  .alert-dir--bull {
+    color: oklch(0.78 0.14 155);
+    background: oklch(0.20 0.06 155 / 0.5);
+  }
+
+  .alert-dir--bear {
+    color: oklch(0.78 0.14 25);
+    background: oklch(0.20 0.06 25 / 0.5);
+  }
+
+  .alert-type {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-primary);
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  .alert-desc {
+    font-size: 9px;
+    color: var(--text-tertiary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+  }
+
+  /* ===================================================================
      RESPONSIVE
      =================================================================== */
   @media (max-width: 1280px) {
@@ -1455,6 +2157,14 @@
     }
 
     .skel-main-row {
+      grid-template-columns: 1fr;
+    }
+
+    .scanner-row {
+      grid-template-columns: 1fr;
+    }
+
+    .bottom-grid {
       grid-template-columns: 1fr;
     }
   }
