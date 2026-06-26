@@ -89,7 +89,7 @@ class SchwabAdapter:
         client_id: Optional[str] = None,
         client_secret: Optional[str] = None,
         credential_store=None,
-        redirect_uri: str = "https://127.0.0.1:8182",
+        redirect_uri: str = "https://127.0.0.1",
         refresh_token: Optional[str] = None,
     ) -> None:
         import os
@@ -104,7 +104,7 @@ class SchwabAdapter:
                 self._client_id = credential_store.get("schwab", "client_id")
             if not self._client_secret:
                 self._client_secret = credential_store.get("schwab", "client_secret")
-            if not self._redirect_uri or self._redirect_uri == "https://127.0.0.1:8182":
+            if not self._redirect_uri or self._redirect_uri == "https://127.0.0.1":
                 stored_uri = credential_store.get("schwab", "redirect_uri")
                 if stored_uri:
                     self._redirect_uri = stored_uri
@@ -117,6 +117,9 @@ class SchwabAdapter:
             self._client_secret = os.environ.get("SCANIFY_SCHWAB_CLIENT_SECRET", "")
         if not self._refresh_token:
             self._refresh_token = os.environ.get("SCANIFY_SCHWAB_REFRESH_TOKEN", "")
+        env_uri = os.environ.get("SCANIFY_SCHWAB_REDIRECT_URI")
+        if env_uri:
+            self._redirect_uri = env_uri
 
         self._access_token: Optional[str] = None
         self._token_expiry: float = 0.0
