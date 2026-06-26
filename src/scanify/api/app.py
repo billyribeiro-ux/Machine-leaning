@@ -18,6 +18,7 @@ from .equity_institutional import router as equity_institutional_router
 from .equity_macro import router as equity_macro_router
 from .equity_market import router as equity_market_router
 from .admin_credentials import router as admin_router
+from .schwab_auth import router as schwab_auth_router
 
 
 @asynccontextmanager
@@ -26,6 +27,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     from ..yahoo_adapter import YahooFinanceAdapter
     from ..edgar_adapter import EDGARAdapter
     from ..fmp_adapter import FMPAdapter
+    from ..schwab_adapter import SchwabAdapter
     from ..gex_engine import GEXEngine
     from ..config import GEXConfig
     from ..data_feeds import VIX1DAnalyzer
@@ -42,6 +44,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     app.state.yahoo = YahooFinanceAdapter()
     app.state.edgar = EDGARAdapter(user_agent=edgar_ua)
     app.state.fmp = FMPAdapter(credential_store=store)
+    app.state.schwab = SchwabAdapter(credential_store=store)
     app.state.gex_engine = GEXEngine(GEXConfig())
     app.state.vix1d_analyzer = VIX1DAnalyzer()
     app.state.internals_scorer = MarketInternalsScorer()
@@ -82,6 +85,7 @@ def create_app() -> FastAPI:
     app.include_router(equity_macro_router)
     app.include_router(equity_market_router)
     app.include_router(admin_router)
+    app.include_router(schwab_auth_router)
 
     @app.get("/", tags=["health"])
     async def root():
@@ -96,6 +100,7 @@ def create_app() -> FastAPI:
                 "equity_macro": "/api/equity/macro",
                 "equity_market": "/api/equity/market",
                 "admin_credentials": "/api/admin/credentials",
+                "schwab_auth": "/api/admin/schwab",
             },
         }
 
