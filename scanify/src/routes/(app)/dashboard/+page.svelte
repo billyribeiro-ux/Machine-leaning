@@ -1080,9 +1080,11 @@
                     <span class="signal-badge signal-badge--{row.signal.toLowerCase()}">{row.signal}</span>
                   </td>
                   <td class="td-str">
-                    {#each Array(5) as _, si}
-                      <span class="str-pip" style="background:{si < row.strength ? 'var(--accent-bright)' : 'var(--bg-overlay)'};"></span>
-                    {/each}
+                    <div class="str-pips">
+                      {#each Array(5) as _, si}
+                        <span class="str-pip" style="background:{si < row.strength ? 'var(--accent-bright)' : 'var(--bg-overlay)'};"></span>
+                      {/each}
+                    </div>
                   </td>
                   <td class="td-num mono-nums td-score" style="color:{row.score >= 90 ? 'var(--bullish-bright)' : row.score >= 75 ? 'var(--text-primary)' : 'var(--text-secondary)'};">
                     {row.score}
@@ -1927,8 +1929,10 @@
     display: grid;
     grid-template-columns: 1fr;
     gap: 12px;
-    flex: 1;
-    min-height: 0;
+    /* Size to content and never grow/shrink, matching every other row.
+       A flex-grow row inside this scrollable height:100% column would
+       squeeze below its content and paint over the next row. */
+    flex-shrink: 0;
   }
 
   @media (min-width: 1024px) {
@@ -2334,6 +2338,7 @@
   .mini-table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: auto;
     font-size: 11px;
   }
 
@@ -2375,32 +2380,49 @@
   }
 
   .td-rank { text-align: center; font-size: 10px; color: var(--text-tertiary); font-weight: 600; }
-  .td-num { text-align: right; font-size: 11px; font-weight: 600; color: var(--text-primary); }
+  .td-num { text-align: right; font-size: 11px; font-weight: 600; color: var(--text-primary); font-variant-numeric: tabular-nums; }
   .td-score { font-weight: 800; }
   .td-signal { text-align: center; }
-  .td-str { text-align: right; display: flex; gap: 2px; justify-content: flex-end; align-items: center; }
+  .td-str { text-align: right; }
 
-  .td-sym {
+  /* Flex lives on an inner wrapper, never on the <td> itself — a flex <td>
+     drops out of the table column model and misaligns every column. */
+  .str-pips {
     display: flex;
-    flex-direction: column;
-    gap: 0;
+    gap: 2px;
+    justify-content: flex-end;
+    align-items: center;
+  }
+
+  /* Symbol cell stays a real <td>; the two lines stack as block spans.
+     Never make the <td> itself flex/block — that drops it out of the
+     table column model and misaligns every following column. The block
+     stacking is scoped to spans INSIDE .td-sym so that tables which put
+     `.sym-ticker` directly on a <td> keep normal table-cell behaviour. */
+  .td-sym { text-align: left; }
+
+  .td-sym .sym-ticker,
+  .td-sym .sym-name {
+    display: block;
   }
 
   .sym-ticker {
     font-weight: 700;
     font-size: 11px;
+    line-height: 1.25;
     color: var(--text-primary);
     font-family: var(--font-mono);
   }
 
   .sym-name {
     font-size: 9px;
+    line-height: 1.2;
     color: var(--text-tertiary);
     font-weight: 400;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 120px;
+    max-width: 100%;
   }
 
   .signal-badge {
