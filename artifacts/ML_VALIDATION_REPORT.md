@@ -62,10 +62,56 @@ truthful result — not a failure of the engineering.
 - Larger model + far more data (intraday, options) once Schwab OAuth is connected.
 - Walk-forward with **honest `n_trials`** in the Deflated Sharpe (every architecture tried counts).
 
+---
+
+# Experiment 2 — Market-Neutral Cross-Sectional Alpha
+
+`scripts/train_market_neutral.py` · XGBoost · 120 S&P 500 names ·
+150,338 rows · 2021–2026 · expanding-window walk-forward.
+
+To remove the beta that flattered Experiment 1, this ranks the universe
+cross-sectionally each day and trades **dollar-neutral long-short** (long top
+20%, short bottom 20%), net of 2bp costs.
+
+| Metric | Value | Reading |
+|---|---|---|
+| **Market beta of L/S** | **−0.013** | ✅ genuinely market-neutral (clean alpha test) |
+| Cross-sectional IC (daily mean) | +0.0147 | faint; t-stat ≈ 2.7 (statistically detectable) |
+| ICIR (annualized) | +1.34 | looks strong, but see Sharpe |
+| **Long-short Sharpe (net)** | **+0.06** | ≈ **zero** — not tradeable |
+| L/S annualized return | **+0.16%** | economically negligible |
+| Per-fold Sharpe | −0.45, −0.02, −0.68, +0.34, +0.78 | **3 of 5 negative** — unstable |
+| Deflated Sharpe prob | 0.97 | (single config; not decisive) |
+
+**Verdict: NO RELIABLE ALPHA.** There is a *statistically* faint cross-sectional
+signal (IC ≈ 0.015), but it is **economically negligible and entirely consumed by
+transaction costs** (net Sharpe 0.06, +0.16%/yr), and it is unstable across time
+(the first three folds lose money). A tradeable edge requires the gross signal to
+clear costs with a stable, positive sign across regimes — this does not.
+
+*Methodology note:* the PBO statistic is only meaningful across many competing
+strategy configurations; with a single config it is not informative here, so the
+honest evidence is the near-zero net Sharpe and the negative folds, not PBO.
+
+---
+
+# Overall conclusion (two honest experiments)
+
+Both the long-only directional model and the market-neutral cross-sectional
+model find **no tradeable edge** on daily S&P data with generic technical
+features. This is the *expected* result — daily equity prediction is close to
+efficient — and the validation framework correctly refused to certify an edge in
+both cases. The value delivered here is a **trustworthy measurement apparatus**,
+not a profitable strategy. A real edge, if one exists for this project, is far
+more likely in its actual specialty: **intraday 0DTE SPX options / GEX signals**,
+which needs the Schwab options feed (pending OAuth) — not daily OHLCV.
+
 ## Reproduce
 
 ```bash
-SCANIFY_FMP_API_KEY=... python scripts/train_and_validate.py
+SCANIFY_FMP_API_KEY=... python scripts/train_and_validate.py        # Exp 1
+SCANIFY_FMP_API_KEY=... python scripts/train_market_neutral.py      # Exp 2
 ```
-Artifacts: `artifacts/tft_model.pt`, `artifacts/validation_metrics.json`, this report.
+Artifacts: `artifacts/tft_model.pt`, `artifacts/validation_metrics.json`,
+`artifacts/market_neutral_metrics.json`, this report.
 Tests: `pytest tests/ml/test_ml_core.py` (11 tests).

@@ -1,0 +1,21 @@
+{
+  "generated_utc": "2026-06-27T23:49:30.792804+00:00",
+  "experiment": "market_neutral_cross_sectional_long_short",
+  "universe_size": 120,
+  "panel_rows": 150338,
+  "n_features": 115,
+  "oos_days": 1020,
+  "horizon": 1,
+  "quantile": 0.2,
+  "txn_cost_bps": 2.0,
+  "cross_sectional_ic": 0.01469983501019809,
+  "icir": 1.3410598800843452,
+  "long_short_sharpe_net": 0.0602964161375021,
+  "ls_cumulative_return": 0.006629235154457458,
+  "ls_annualized_return": 0.0016337392946890184,
+  "market_beta": -0.013344601011666901,
+  "deflated_sharpe_probability": 0.9728077386267681,
+  "probability_of_overfitting": 0.9999999999,
+  "verdict": "NO RELIABLE ALPHA DETECTED",
+  "runtime_seconds": 135.7
+}
