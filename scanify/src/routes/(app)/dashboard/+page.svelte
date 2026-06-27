@@ -2,6 +2,7 @@
   import { onMount } from 'svelte';
   import InternalsBar from '$lib/components/market/InternalsBar.svelte';
   import ExportToolbar from '$lib/components/ui/ExportToolbar.svelte';
+  import Gex3DChart from '$lib/components/charts/Gex3DChart.svelte';
   import {
     TrendUp,
     TrendDown,
@@ -1133,20 +1134,9 @@
           </div>
         </div>
 
-        <!-- Mini GEX profile chart -->
-        <div class="gex-chart">
-          {#each SIM_GEX.profile as bar (bar.strike)}
-            <div class="gex-bar-row">
-              <span class="gex-strike mono-nums">{bar.strike.toLocaleString()}</span>
-              <div class="gex-bar-container">
-                <div class="gex-bar gex-bar--put" style="width:{(Math.abs(bar.putGex) / gexMaxAbs * 100).toFixed(1)}%;"></div>
-                <div class="gex-bar gex-bar--call" style="width:{(bar.callGex / gexMaxAbs * 100).toFixed(1)}%;"></div>
-              </div>
-              <span class="gex-net mono-nums" style="color:{bar.net >= 0 ? 'var(--bullish)' : 'var(--bearish)'};">
-                {bar.net >= 0 ? '+' : ''}{bar.net.toFixed(2)}
-              </span>
-            </div>
-          {/each}
+        <!-- 3D GEX profile (Threlte / Three.js + d3 scales) -->
+        <div class="gex-chart-3d">
+          <Gex3DChart profile={SIM_GEX.profile} keyStrike={SIM_GEX.keyStrike} height="300px" />
         </div>
       </div>
     </div>
