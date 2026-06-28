@@ -29,6 +29,9 @@ logs/
 *.log
 *.csv
 *.parquet
+
+# Paper-trading runtime log (regenerable, grows per run)
+artifacts/paper_run_history.jsonl
 .idea/
 .vscode/
 .ipynb_checkpoints/
