@@ -495,6 +495,43 @@ class SchwabAdapter:
     # Price history
     # ------------------------------------------------------------------
 
+    def get_historical_daily(self, symbol: str, limit: int = 4000) -> List[Dict]:
+        """Daily OHLCV bars in the same shape as ``FMPAdapter.get_historical_daily``.
+
+        Returns a list of dicts (newest last) with keys:
+        ``date`` (YYYY-MM-DD), ``open``, ``high``, ``low``, ``close``, ``volume``.
+        This makes SchwabAdapter a drop-in data source for the ML / paper-trading
+        pipelines once OAuth is connected.
+        """
+        try:
+            data = self._get("/pricehistory", params={
+                "symbol": symbol,
+                "periodType": "year",
+                "period": 20,
+                "frequencyType": "daily",
+                "frequency": 1,
+                "needExtendedHoursData": "false",
+            })
+        except Exception as exc:
+            logger.error("Schwab daily history failed for %s: %s", symbol, exc)
+            return []
+
+        out: List[Dict] = []
+        for c in data.get("candles", []):
+            ts_ms = c.get("datetime", 0)
+            d = datetime.fromtimestamp(ts_ms / 1000, tz=timezone.utc).date().isoformat() if ts_ms else ""
+            out.append({
+                "date": d,
+                "open": _safe_float(c.get("open")),
+                "high": _safe_float(c.get("high")),
+                "low": _safe_float(c.get("low")),
+                "close": _safe_float(c.get("close")),
+                "volume": _safe_int(c.get("volume")),
+            })
+        if limit and len(out) > limit:
+            out = out[-limit:]
+        return out
+
     def fetch_price_bars(
         self, period: str = "1d", interval: str = "1m"
     ) -> List[SPXPriceBar]:
