@@ -192,7 +192,7 @@
 
   onMount(async () => {
     try {
-      const health = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(1500) });
+      const health = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(5000) });
       connected = health.ok;
     } catch {
       connected = false;

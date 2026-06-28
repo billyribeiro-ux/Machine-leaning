@@ -21,6 +21,14 @@ from pydantic import BaseModel
 router = APIRouter(prefix="/api/options", tags=["options"])
 
 
+def _get_options_adapter(request: Request):
+    """Return Schwab adapter if configured with tokens, else Yahoo."""
+    schwab = getattr(request.app.state, "schwab", None)
+    if schwab and schwab.is_configured and schwab.has_refresh_token:
+        return schwab
+    return request.app.state.yahoo
+
+
 # ---------------------------------------------------------------------------
 # Response models
 # ---------------------------------------------------------------------------
@@ -151,11 +159,11 @@ class StrikeGreeksResponse(BaseModel):
 @router.get("/gex", response_model=GEXFullResponse)
 async def compute_gex(request: Request, expiry: Optional[str] = Query(None)):
     """Full GEX surface computation across the entire options chain."""
-    yahoo = request.app.state.yahoo
+    adapter = _get_options_adapter(request)
     engine = request.app.state.gex_engine
 
     try:
-        chain = yahoo.fetch_spx_options_chain(expiry_date=expiry)
+        chain = adapter.fetch_spx_options_chain(expiry_date=expiry)
         spot = chain.underlying_price
         gex = engine.compute_gex(chain, spot)
         high_speed = engine.get_high_speed_strikes(gex, spot)
@@ -189,11 +197,11 @@ async def compute_gex(request: Request, expiry: Optional[str] = Query(None)):
 @router.get("/gex/levels", response_model=GEXLevelsResponse)
 async def gex_levels(request: Request, expiry: Optional[str] = Query(None)):
     """Key GEX levels: call wall, put wall, gamma flip, max pain, vol trigger."""
-    yahoo = request.app.state.yahoo
+    adapter = _get_options_adapter(request)
     engine = request.app.state.gex_engine
 
     try:
-        chain = yahoo.fetch_spx_options_chain(expiry_date=expiry)
+        chain = adapter.fetch_spx_options_chain(expiry_date=expiry)
         spot = chain.underlying_price
         gex = engine.compute_gex(chain, spot)
     except Exception as exc:
@@ -240,13 +248,13 @@ async def gex_levels(request: Request, expiry: Optional[str] = Query(None)):
 @router.get("/gex/signals", response_model=List[GEXSignalResponse])
 async def gex_signals(request: Request, expiry: Optional[str] = Query(None)):
     """Detect active GEX signals (gamma flip, wall approach, collapse, etc.)."""
-    yahoo = request.app.state.yahoo
+    adapter = _get_options_adapter(request)
     engine = request.app.state.gex_engine
 
     try:
-        chain = yahoo.fetch_spx_options_chain(expiry_date=expiry)
+        chain = adapter.fetch_spx_options_chain(expiry_date=expiry)
         spot = chain.underlying_price
-        vix_data = yahoo.fetch_vix_data()
+        vix_data = adapter.fetch_vix_data()
         gex = engine.compute_gex(chain, spot)
         signals = engine.detect_signals(gex, None, spot, vix1d=vix_data.vix1d)
     except Exception as exc:
@@ -268,11 +276,11 @@ async def gex_signals(request: Request, expiry: Optional[str] = Query(None)):
 @router.get("/gex/dealer", response_model=DealerResponse)
 async def dealer_positioning(request: Request, expiry: Optional[str] = Query(None)):
     """Dealer positioning summary with charm, vanna, and gamma landmines."""
-    yahoo = request.app.state.yahoo
+    adapter = _get_options_adapter(request)
     engine = request.app.state.gex_engine
 
     try:
-        chain = yahoo.fetch_spx_options_chain(expiry_date=expiry)
+        chain = adapter.fetch_spx_options_chain(expiry_date=expiry)
         spot = chain.underlying_price
         gex = engine.compute_gex(chain, spot)
         high_speed = engine.get_high_speed_strikes(gex, spot)
@@ -305,10 +313,10 @@ async def options_chain(
     min_oi: int = Query(0),
 ):
     """Raw options chain data with optional filters."""
-    yahoo = request.app.state.yahoo
+    adapter = _get_options_adapter(request)
 
     try:
-        chain = yahoo.fetch_spx_options_chain(expiry_date=expiry)
+        chain = adapter.fetch_spx_options_chain(expiry_date=expiry)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Data fetch failed: {exc}")
 
@@ -344,10 +352,10 @@ async def options_chain(
 @router.get("/chain/summary", response_model=ChainSummaryResponse)
 async def chain_summary(request: Request, expiry: Optional[str] = Query(None)):
     """Chain statistics: OI distribution, volume ratios, IV skew."""
-    yahoo = request.app.state.yahoo
+    adapter = _get_options_adapter(request)
 
     try:
-        chain = yahoo.fetch_spx_options_chain(expiry_date=expiry)
+        chain = adapter.fetch_spx_options_chain(expiry_date=expiry)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Data fetch failed: {exc}")
 
@@ -387,14 +395,14 @@ async def chain_summary(request: Request, expiry: Optional[str] = Query(None)):
 @router.get("/expected-move", response_model=ExpectedMoveResponse)
 async def expected_move(request: Request):
     """Blended expected move envelope (VIX1D + straddle + RV-adjusted)."""
-    yahoo = request.app.state.yahoo
+    adapter = _get_options_adapter(request)
     analyzer = request.app.state.vix1d_analyzer
 
     try:
-        spot = yahoo.fetch_spx_price()
-        vix_data = yahoo.fetch_vix_data()
-        prior = yahoo.fetch_prior_session()
-        chain = yahoo.fetch_spx_options_chain()
+        spot = adapter.fetch_spx_price()
+        vix_data = adapter.fetch_vix_data()
+        prior = adapter.fetch_prior_session()
+        chain = adapter.fetch_spx_options_chain()
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Data fetch failed: {exc}")
 
@@ -439,12 +447,12 @@ async def strike_greeks(
     expiry: Optional[str] = Query(None),
 ):
     """Per-strike Greeks including higher-order charm, vanna, and speed."""
-    yahoo = request.app.state.yahoo
+    adapter = _get_options_adapter(request)
     engine = request.app.state.gex_engine
 
     try:
-        spot = yahoo.fetch_spx_price()
-        chain = yahoo.fetch_spx_options_chain(expiry_date=expiry)
+        spot = adapter.fetch_spx_price()
+        chain = adapter.fetch_spx_options_chain(expiry_date=expiry)
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"Data fetch failed: {exc}")
 

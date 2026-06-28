@@ -809,3 +809,38 @@ class InterpretableAttention(nn.Module):
     def get_feature_importance(self) -> Optional[torch.Tensor]:
         """Get last computed feature importance scores."""
         return self._importance_scores
+
+
+# =============================================================================
+# Factory functions
+# =============================================================================
+
+def create_tft_model(
+    input_dim: int,
+    config: Optional[ModelConfig] = None,
+    **overrides,
+) -> "TemporalFusionTransformer":
+    """Build a Temporal Fusion Transformer sized for *input_dim* features.
+
+    Args:
+        input_dim: number of input features per timestep.
+        config: optional base ModelConfig; a default is created if omitted.
+        **overrides: any ModelConfig field to override (hidden_dim, num_layers,
+            num_heads, sequence_length, prediction_horizon, device, etc.).
+    """
+    if config is None:
+        config = ModelConfig()
+    # dataclasses.replace keeps this immutable-friendly and explicit.
+    import dataclasses
+
+    config = dataclasses.replace(config, input_dim=input_dim, **overrides)
+    return TemporalFusionTransformer(config)
+
+
+def create_ensemble(
+    models: List[nn.Module],
+    hidden_dim: int = 128,
+    learnable_weights: bool = True,
+) -> "EnsembleModel":
+    """Combine several forecasters into a learnable-weight ensemble."""
+    return EnsembleModel(models, hidden_dim=hidden_dim, learnable_weights=learnable_weights)

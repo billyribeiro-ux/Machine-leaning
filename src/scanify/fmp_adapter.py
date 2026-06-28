@@ -13,6 +13,9 @@ FMP provides comprehensive equity market data via REST API:
 All endpoints require an API key passed as ``?apikey=...`` query param.
 Free tier: 250 requests/day. Paid tiers: higher limits + real-time.
 
+Uses FMP's current ``/stable/`` endpoint namespace (the legacy ``/api/v3/``
+routes are no longer accessible on current plan tiers as of mid-2026).
+
 API docs: https://site.financialmodelingprep.com/developer/docs
 """
 
@@ -72,7 +75,7 @@ class FMPAdapter:
         If provided, the API key is resolved from the credential store.
     """
 
-    BASE_URL = "https://financialmodelingprep.com/api"
+    BASE_URL = "https://financialmodelingprep.com/stable"
 
     def __init__(
         self,
@@ -103,13 +106,13 @@ class FMPAdapter:
     # Internal request helper
     # ------------------------------------------------------------------
 
-    def _get(self, path: str, params: Optional[Dict] = None, version: str = "v3") -> any:
-        """Rate-limited GET request to FMP API."""
+    def _get(self, path: str, params: Optional[Dict] = None) -> any:
+        """Rate-limited GET request to the FMP ``/stable/`` API."""
         elapsed = time_module.time() - self._last_request
         if elapsed < self._min_interval:
             time_module.sleep(self._min_interval - elapsed)
 
-        url = f"{self.BASE_URL}/{version}/{path}"
+        url = f"{self.BASE_URL}/{path}"
         req_params = {"apikey": self._api_key}
         if params:
             req_params.update(params)
@@ -128,7 +131,7 @@ class FMPAdapter:
 
         Returns full quote dict with price, change, volume, market cap, etc.
         """
-        data = self._get(f"quote/{symbol}")
+        data = self._get("quote", params={"symbol": symbol})
         if isinstance(data, list) and data:
             return data[0]
         return data if isinstance(data, dict) else {}
@@ -148,7 +151,7 @@ class FMPAdapter:
     def get_batch_quotes(self, symbols: List[str]) -> List[Dict]:
         """Batch quotes for multiple symbols in a single request."""
         joined = ",".join(symbols)
-        data = self._get(f"quote/{joined}")
+        data = self._get("batch-quote", params={"symbols": joined})
         return data if isinstance(data, list) else [data]
 
     # ==================================================================
@@ -171,14 +174,18 @@ class FMPAdapter:
         to_date : str, optional — YYYY-MM-DD
         limit : int — max bars (FMP default 1 year if no dates)
         """
-        params = {}
+        params = {"symbol": symbol}
         if from_date:
             params["from"] = from_date
         if to_date:
             params["to"] = to_date
 
-        data = self._get(f"historical-price-full/{symbol}", params=params)
-        bars = data.get("historical", []) if isinstance(data, dict) else []
+        data = self._get("historical-price-eod/full", params=params)
+        # Stable returns a flat list (newest first); legacy nested under "historical".
+        if isinstance(data, dict):
+            bars = data.get("historical", [])
+        else:
+            bars = data if isinstance(data, list) else []
         return bars[:limit]
 
     def get_intraday_bars(
@@ -194,13 +201,13 @@ class FMPAdapter:
         ----------
         interval : str — one of "1min", "5min", "15min", "30min", "1hour", "4hour"
         """
-        params = {}
+        params = {"symbol": symbol}
         if from_date:
             params["from"] = from_date
         if to_date:
             params["to"] = to_date
 
-        data = self._get(f"historical-chart/{interval}/{symbol}", params=params)
+        data = self._get(f"historical-chart/{interval}", params=params)
         return data if isinstance(data, list) else []
 
     def fetch_price_bars(
@@ -301,7 +308,10 @@ class FMPAdapter:
 
         dxy = self.get_quote("DX-Y.NYB")
         dxy_level = _safe_float(dxy.get("price"), 100.0)
-        dxy_change = _safe_float(dxy.get("changesPercentage"))
+        # Stable uses "changePercentage"; fall back to legacy "changesPercentage".
+        dxy_change = _safe_float(
+            dxy.get("changePercentage", dxy.get("changesPercentage"))
+        )
 
         return CrossAssetData(
             us_10y_yield=us_10y,
@@ -334,27 +344,37 @@ class FMPAdapter:
 
     def get_gainers(self) -> List[Dict]:
         """Top gainers in the market."""
-        return self._get("stock_market/gainers")
+        return self._get("biggest-gainers")
 
     def get_losers(self) -> List[Dict]:
         """Top losers in the market."""
-        return self._get("stock_market/losers")
+        return self._get("biggest-losers")
 
     def get_most_active(self) -> List[Dict]:
         """Most actively traded stocks."""
-        return self._get("stock_market/actives")
+        return self._get("most-actives")
 
     # ==================================================================
     # Sector Performance
     # ==================================================================
 
-    def get_sector_performance(self) -> List[Dict]:
-        """Current sector performance breakdown."""
-        return self._get("sector-performance")
+    def get_sector_performance(self, snapshot_date: Optional[str] = None) -> List[Dict]:
+        """Current sector performance breakdown.
 
-    def get_historical_sector_performance(self, limit: int = 30) -> List[Dict]:
-        """Historical sector performance."""
-        return self._get("historical-sectors-performance", params={"limit": str(limit)})
+        The stable ``sector-performance-snapshot`` endpoint requires a date;
+        defaults to today.
+        """
+        d = snapshot_date or date.today().isoformat()
+        return self._get("sector-performance-snapshot", params={"date": d})
+
+    def get_historical_sector_performance(
+        self, sector: str = "Technology", limit: int = 30
+    ) -> List[Dict]:
+        """Historical sector performance for a given sector."""
+        return self._get(
+            "historical-sector-performance",
+            params={"sector": sector, "limit": str(limit)},
+        )
 
     # ==================================================================
     # Company Financials
@@ -362,34 +382,34 @@ class FMPAdapter:
 
     def get_company_profile(self, symbol: str) -> Dict:
         """Company profile (description, sector, industry, market cap, etc.)."""
-        data = self._get(f"profile/{symbol}")
+        data = self._get("profile", params={"symbol": symbol})
         if isinstance(data, list) and data:
             return data[0]
         return data if isinstance(data, dict) else {}
 
     def get_income_statement(self, symbol: str, period: str = "annual", limit: int = 5) -> List[Dict]:
         """Income statements (annual or quarterly)."""
-        return self._get(f"income-statement/{symbol}", params={"period": period, "limit": str(limit)})
+        return self._get("income-statement", params={"symbol": symbol, "period": period, "limit": str(limit)})
 
     def get_balance_sheet(self, symbol: str, period: str = "annual", limit: int = 5) -> List[Dict]:
         """Balance sheet statements."""
-        return self._get(f"balance-sheet-statement/{symbol}", params={"period": period, "limit": str(limit)})
+        return self._get("balance-sheet-statement", params={"symbol": symbol, "period": period, "limit": str(limit)})
 
     def get_cash_flow(self, symbol: str, period: str = "annual", limit: int = 5) -> List[Dict]:
         """Cash flow statements."""
-        return self._get(f"cash-flow-statement/{symbol}", params={"period": period, "limit": str(limit)})
+        return self._get("cash-flow-statement", params={"symbol": symbol, "period": period, "limit": str(limit)})
 
     def get_key_metrics(self, symbol: str, period: str = "annual", limit: int = 5) -> List[Dict]:
         """Key financial metrics (PE, PB, EV/EBITDA, etc.)."""
-        return self._get(f"key-metrics/{symbol}", params={"period": period, "limit": str(limit)})
+        return self._get("key-metrics", params={"symbol": symbol, "period": period, "limit": str(limit)})
 
     def get_ratios(self, symbol: str, period: str = "annual", limit: int = 5) -> List[Dict]:
         """Financial ratios (profitability, liquidity, leverage, efficiency)."""
-        return self._get(f"ratios/{symbol}", params={"period": period, "limit": str(limit)})
+        return self._get("ratios", params={"symbol": symbol, "period": period, "limit": str(limit)})
 
     def get_dcf(self, symbol: str) -> Dict:
         """Discounted cash flow valuation."""
-        data = self._get(f"discounted-cash-flow/{symbol}")
+        data = self._get("discounted-cash-flow", params={"symbol": symbol})
         if isinstance(data, list) and data:
             return data[0]
         return data if isinstance(data, dict) else {}
@@ -398,24 +418,43 @@ class FMPAdapter:
     # Technical Indicators
     # ==================================================================
 
+    # Map short indicator codes to the stable endpoint slugs.
+    _TECH_ENDPOINTS = {
+        "sma": "simple-moving-average",
+        "ema": "exponential-moving-average",
+        "wma": "weighted-moving-average",
+        "dema": "double-exponential-moving-average",
+        "tema": "triple-exponential-moving-average",
+        "rsi": "relative-strength-index",
+        "adx": "average-directional-index",
+        "williams": "standard-deviation",
+        "standarddeviation": "standard-deviation",
+    }
+
     def get_technical_indicator(
         self,
         symbol: str,
         indicator: str = "sma",
         period: int = 20,
-        interval: str = "daily",
+        interval: str = "1day",
     ) -> List[Dict]:
-        """Technical indicator data (SMA, EMA, RSI, MACD, etc.).
+        """Technical indicator data (SMA, EMA, RSI, ADX, etc.).
+
+        Note: technical indicators require FMP Premium tier or higher; lower
+        tiers return an empty list.
 
         Parameters
         ----------
-        indicator : str — sma, ema, rsi, macd, adx, williams, stochastic, etc.
-        period : int — lookback period
-        interval : str — "daily", "1min", "5min", "15min", "30min", "1hour", "4hour"
+        indicator : str — sma, ema, wma, dema, tema, rsi, adx, williams
+        period : int — lookback period (``periodLength``)
+        interval : str — "1day", "1min", "5min", "15min", "30min", "1hour", "4hour"
         """
+        slug = self._TECH_ENDPOINTS.get(indicator.lower(), "simple-moving-average")
+        # Normalise legacy "daily" to stable "1day".
+        timeframe = "1day" if interval == "daily" else interval
         return self._get(
-            f"technical_indicator/{interval}/{symbol}",
-            params={"period": str(period), "type": indicator},
+            slug,
+            params={"symbol": symbol, "periodLength": str(period), "timeframe": timeframe},
         )
 
     # ==================================================================
@@ -433,7 +472,7 @@ class FMPAdapter:
             params["from"] = from_date
         if to_date:
             params["to"] = to_date
-        return self._get("earning_calendar", params=params)
+        return self._get("earnings-calendar", params=params)
 
     def get_economic_calendar(
         self,
@@ -446,23 +485,26 @@ class FMPAdapter:
             params["from"] = from_date
         if to_date:
             params["to"] = to_date
-        return self._get("economic_calendar", params=params)
+        return self._get("economic-calendar", params=params)
 
     # ==================================================================
     # Institutional Holdings (13F via FMP)
     # ==================================================================
 
     def get_institutional_holders(self, symbol: str) -> List[Dict]:
-        """Institutional holders for a stock (from 13F filings)."""
-        return self._get(f"institutional-holder/{symbol}")
+        """Institutional position summary for a stock (from 13F filings).
+
+        Requires FMP Ultimate tier or higher.
+        """
+        return self._get("positions-summary", params={"symbol": symbol})
 
     def get_mutual_fund_holders(self, symbol: str) -> List[Dict]:
-        """Mutual fund holders for a stock."""
-        return self._get(f"mutual-fund-holder/{symbol}")
+        """Mutual fund disclosures for a stock. Requires Ultimate tier."""
+        return self._get("mutual-fund-disclosures", params={"symbol": symbol})
 
     def get_etf_holders(self, symbol: str) -> List[Dict]:
-        """ETF holders for a stock."""
-        return self._get(f"etf-holder/{symbol}")
+        """ETFs that hold a given security (asset exposure). Requires Ultimate tier."""
+        return self._get("etf-asset-exposure", params={"symbol": symbol})
 
     # ==================================================================
     # Market Index Data
@@ -474,7 +516,7 @@ class FMPAdapter:
 
     def get_index_constituents(self, index: str = "sp500") -> List[Dict]:
         """Constituents of a market index (sp500, nasdaq, dowjones)."""
-        return self._get(f"{index}_constituent")
+        return self._get(f"{index}-constituent")
 
     # ==================================================================
     # Screening
@@ -516,7 +558,7 @@ class FMPAdapter:
             params["priceMoreThan"] = str(price_min)
         if price_max is not None:
             params["priceLowerThan"] = str(price_max)
-        return self._get("stock-screener", params=params)
+        return self._get("company-screener", params=params)
 
 
 # ---------------------------------------------------------------------------
@@ -551,7 +593,8 @@ def run_fmp_test(api_key: Optional[str] = None) -> None:
     try:
         quotes = adapter.get_batch_quotes(["SPY", "QQQ", "IWM"])
         for q in quotes:
-            print(f"  {q.get('symbol')}: ${q.get('price')}  ({q.get('changesPercentage'):+.2f}%)")
+            pct = _safe_float(q.get("changePercentage", q.get("changesPercentage")))
+            print(f"  {q.get('symbol')}: ${q.get('price')}  ({pct:+.2f}%)")
     except Exception as exc:
         print(f"  ERROR: {exc}")
 
@@ -581,7 +624,8 @@ def run_fmp_test(api_key: Optional[str] = None) -> None:
     try:
         sectors = adapter.get_sector_performance()
         for s in sectors[:5]:
-            print(f"  {s.get('sector', 'N/A'):<30s}  {s.get('changesPercentage', 'N/A')}")
+            chg = s.get("averageChange", s.get("changesPercentage", "N/A"))
+            print(f"  {s.get('sector', 'N/A'):<30s}  {chg}")
     except Exception as exc:
         print(f"  ERROR: {exc}")
 
@@ -589,15 +633,16 @@ def run_fmp_test(api_key: Optional[str] = None) -> None:
     try:
         gainers = adapter.get_gainers()
         for g in gainers[:5]:
-            print(f"  {g.get('symbol'):<8s}  ${g.get('price'):>8.2f}  "
-                  f"{g.get('changesPercentage', 0):+.2f}%")
+            pct = _safe_float(g.get("changesPercentage", g.get("changePercentage")))
+            print(f"  {g.get('symbol'):<8s}  ${_safe_float(g.get('price')):>8.2f}  {pct:+.2f}%")
     except Exception as exc:
         print(f"  ERROR: {exc}")
 
     print("\n[8] AAPL Company Profile")
     try:
         profile = adapter.get_company_profile("AAPL")
-        print(f"  {profile.get('companyName')}  Mkt Cap: ${profile.get('mktCap', 0)/1e9:.0f}B  "
+        mktcap = _safe_float(profile.get("marketCap", profile.get("mktCap")))
+        print(f"  {profile.get('companyName')}  Mkt Cap: ${mktcap/1e9:.0f}B  "
               f"Sector: {profile.get('sector')}")
     except Exception as exc:
         print(f"  ERROR: {exc}")

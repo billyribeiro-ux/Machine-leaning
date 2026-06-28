@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { onMount } from 'svelte';
   import { page } from '$app/state';
   import { goto } from '$app/navigation';
   import AppShell from '$lib/components/layout/AppShell.svelte';
@@ -64,7 +65,11 @@
   // We use the meta modifier on Mac and ctrl on Windows for "Cmd/Ctrl" combos.
   const cmdMod = isMac ? 'meta' as const : 'ctrl' as const;
 
-  $effect(() => {
+  // Register global shortcuts once on mount. Using onMount (not $effect)
+  // is deliberate: registerShortcuts() both reads and writes the store's
+  // `shortcuts` state, which inside an $effect would create a self-
+  // retriggering loop (effect_update_depth_exceeded).
+  onMount(() => {
     keyboardStore.startListening();
 
     const cleanup = keyboardStore.registerShortcuts([
