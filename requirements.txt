@@ -45,3 +45,4 @@ ruff>=0.15.17            # 2026-06-11
 
 # Utilities
 python-dotenv>=1.2.2     # 2026-03-01
+matplotlib>=3.11.0

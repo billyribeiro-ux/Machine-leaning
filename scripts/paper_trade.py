@@ -30,6 +30,7 @@ from src.scanify.fmp_adapter import FMPAdapter  # noqa: E402
 from src.ml.data_pipeline import FeatureEngineer, FeatureConfig  # noqa: E402
 from src.ml.models import create_tft_model  # noqa: E402
 from src.execution.paper_broker import PaperBroker  # noqa: E402
+from src.execution.performance import compute_metrics  # noqa: E402
 
 UNIVERSE = ["SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "NVDA", "AMZN",
             "GOOGL", "META", "TSLA", "JPM", "XOM", "JNJ", "WMT"]
@@ -140,50 +141,101 @@ def main():
         broker.mark(prices_next, ts=d_next)
 
     print("\n[3/3] Results ...")
+    curve_dates = [d for d, _ in broker.equity_curve]
     eq = np.array([e for _, e in broker.equity_curve], dtype=float)
-    rets = np.diff(eq) / eq[:-1]
-    total_ret = eq[-1] / 100_000 - 1
-    ann = (1 + total_ret) ** (TRADING_DAYS / len(rets)) - 1 if len(rets) else 0.0
-    sharpe = float(rets.mean() / rets.std(ddof=1) * np.sqrt(TRADING_DAYS)) if rets.std(ddof=1) > 0 else 0.0
-    peak = np.maximum.accumulate(eq)
-    max_dd = float(((eq - peak) / peak).min())
 
-    # SPY buy-and-hold benchmark over the same window
+    # rich metrics from the reusable analytics module
+    traded_notional = sum(f.price * f.quantity for f in broker.fills)
+    m = compute_metrics(eq, traded_notional=traded_notional)
+
+    # SPY buy-and-hold benchmark, normalised to the same starting capital
     spy = close_by_sym.get("SPY")
-    spy_w = spy.loc[dates[1:]]
-    spy_ret = spy_w.iloc[-1] / spy_w.iloc[0] - 1
-    spy_d = spy.loc[dates].pct_change().dropna()
-    spy_sharpe = float(spy_d.mean() / spy_d.std(ddof=1) * np.sqrt(TRADING_DAYS)) if spy_d.std(ddof=1) > 0 else 0.0
+    spy_path = spy.loc[curve_dates]
+    spy_eq = (spy_path / spy_path.iloc[0] * eq[0]).values
+    spy_m = compute_metrics(spy_eq)
 
-    print(f"  Final equity:        ${eq[-1]:,.0f}  (start $100,000)")
-    print(f"  Total return:        {total_ret:+.2%}  (annualized {ann:+.2%})")
-    print(f"  Sharpe:              {sharpe:+.3f}")
-    print(f"  Max drawdown:        {max_dd:+.2%}")
+    print(f"  Final equity:        ${eq[-1]:,.0f}  (start ${eq[0]:,.0f})")
+    print(f"  Total return:        {m['total_return']:+.2%}  (annualized {m['annualized_return']:+.2%})")
+    print(f"  Volatility (ann):    {m['volatility']:.2%}")
+    print(f"  Sharpe:              {m['sharpe']:+.3f}")
+    print(f"  Sortino:             {m['sortino']:+.3f}")
+    print(f"  Calmar:              {m['calmar']:+.3f}")
+    print(f"  Max drawdown:        {m['max_drawdown']:+.2%}")
+    print(f"  Hit rate (active):   {m['hit_rate']:.1%}  (best {m['best_day']:+.2%} / worst {m['worst_day']:+.2%})")
+    print(f"  Time in market:      {m['pct_days_in_market']:.1%}  (cash otherwise)")
+    print(f"  Turnover (ann):      {m.get('turnover_annualized', 0):.1f}x")
     print(f"  Commission paid:     ${broker.total_commission:,.0f}  over {len(broker.fills)} fills")
     print(f"  --- benchmark (SPY buy & hold, same window) ---")
-    print(f"  SPY return:          {spy_ret:+.2%}   SPY Sharpe: {spy_sharpe:+.3f}")
+    print(f"  SPY return:          {spy_m['total_return']:+.2%}   SPY Sharpe: {spy_m['sharpe']:+.3f}   SPY maxDD: {spy_m['max_drawdown']:+.2%}")
     verdict = ("tracks market (beta), as expected for a no-alpha model"
-               if abs(sharpe - spy_sharpe) < 0.5 else "diverges from market — investigate")
+               if abs(m['sharpe'] - spy_m['sharpe']) < 0.5 else "diverges from market — investigate")
     print(f"\n  READING: {verdict}")
     print("  (Execution + accounting verified; ready to wire to Schwab live feed.)")
 
+    # ---- equity-curve chart (PNG) -------------------------------------- #
+    _render_chart(curve_dates, eq, spy_eq, ARTIFACT_DIR / "paper_equity_curve.png")
+    print(f"\n  saved {ARTIFACT_DIR/'paper_equity_curve.png'}")
+
     out = {
         "generated_utc": datetime.now(timezone.utc).isoformat(),
-        "window_start": str(dates[0].date()), "window_end": str(dates[-1].date()),
-        "days": len(rets), "final_equity": float(eq[-1]),
-        "total_return": float(total_ret), "annualized_return": float(ann),
-        "sharpe": sharpe, "max_drawdown": max_dd,
+        "window_start": str(curve_dates[0].date()), "window_end": str(curve_dates[-1].date()),
+        "final_equity": float(eq[-1]),
+        **{k: (float(v) if isinstance(v, (int, float, np.floating)) else v) for k, v in m.items()},
         "commission_paid": broker.total_commission, "n_fills": len(broker.fills),
-        "spy_return": float(spy_ret), "spy_sharpe": spy_sharpe,
+        "spy_total_return": spy_m["total_return"], "spy_sharpe": spy_m["sharpe"],
+        "spy_max_drawdown": spy_m["max_drawdown"],
         "reading": verdict, "runtime_seconds": round(time.time() - t0, 1),
     }
     (ARTIFACT_DIR / "paper_trading_metrics.json").write_text(json.dumps(out, indent=2))
     pd.DataFrame(broker.equity_curve, columns=["date", "equity"]).to_csv(
         ARTIFACT_DIR / "paper_equity_curve.csv", index=False)
-    print(f"\n  saved {ARTIFACT_DIR/'paper_trading_metrics.json'}")
+
+    # ---- append to run history (for scheduled/continuous runs) ---------- #
+    hist = ARTIFACT_DIR / "paper_run_history.jsonl"
+    rec = {"run_utc": out["generated_utc"], "window_end": out["window_end"],
+           "final_equity": out["final_equity"], "total_return": out["total_return"],
+           "sharpe": out["sharpe"], "max_drawdown": out["max_drawdown"]}
+    with hist.open("a") as fh:
+        fh.write(json.dumps(rec) + "\n")
+
+    print(f"  saved {ARTIFACT_DIR/'paper_trading_metrics.json'}")
     print(f"  saved {ARTIFACT_DIR/'paper_equity_curve.csv'}")
+    print(f"  appended {hist}")
     print(f"Done in {out['runtime_seconds']}s.")
     return out
+
+
+def _render_chart(dates, eq, spy_eq, path) -> None:
+    """Render strategy vs SPY equity + drawdown to a PNG."""
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    from src.execution.performance import drawdown_series
+
+    fig, (ax1, ax2) = plt.subplots(
+        2, 1, figsize=(11, 6.5), gridspec_kw={"height_ratios": [3, 1]}, sharex=True)
+    fig.patch.set_facecolor("#0d1017")
+    for ax in (ax1, ax2):
+        ax.set_facecolor("#11151c")
+        ax.tick_params(colors="#9aa4b2")
+        for sp in ax.spines.values():
+            sp.set_color("#2a3140")
+        ax.grid(True, color="#1c2430", linewidth=0.6)
+
+    ax1.plot(dates, eq, color="#34e29b", linewidth=1.8, label="Paper strategy")
+    ax1.plot(dates, spy_eq, color="#6b8cff", linewidth=1.4, alpha=0.9, label="SPY buy & hold")
+    ax1.set_title("Paper Trading — Equity Curve (zero risk)", color="#e6edf3", fontsize=13, fontweight="bold")
+    ax1.set_ylabel("Equity ($)", color="#9aa4b2")
+    ax1.legend(facecolor="#11151c", edgecolor="#2a3140", labelcolor="#e6edf3")
+
+    dd = drawdown_series(eq) * 100.0
+    ax2.fill_between(dates, dd, 0, color="#ef4444", alpha=0.35)
+    ax2.plot(dates, dd, color="#ef4444", linewidth=1.0)
+    ax2.set_ylabel("Drawdown (%)", color="#9aa4b2")
+    fig.autofmt_xdate()
+    fig.tight_layout()
+    fig.savefig(path, dpi=130, facecolor=fig.get_facecolor())
+    plt.close(fig)
 
 
 if __name__ == "__main__":
