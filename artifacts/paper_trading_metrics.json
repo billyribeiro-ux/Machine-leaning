@@ -1,0 +1,17 @@
+{
+  "generated_utc": "2026-06-28T00:41:49.029959+00:00",
+  "window_start": "2025-06-25",
+  "window_end": "2026-06-26",
+  "days": 251,
+  "final_equity": 114672.27806918461,
+  "total_return": 0.14672278069184608,
+  "annualized_return": 0.14734843201633252,
+  "sharpe": 1.6272709353288501,
+  "max_drawdown": -0.03553845207799928,
+  "commission_paid": 349.7926986707597,
+  "n_fills": 43,
+  "spy_return": 0.19141320868811995,
+  "spy_sharpe": 1.531641712351323,
+  "reading": "tracks market (beta), as expected for a no-alpha model",
+  "runtime_seconds": 23.3
+}
