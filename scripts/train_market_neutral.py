@@ -204,8 +204,9 @@ def main():
     cum = float((1 + ls).prod() - 1)
     ann = float((1 + cum) ** (TRADING_DAYS / max(1, len(ls))) - 1)
     skew = float(ls.skew()); kurt = float(ls.kurt())
-    dsr = deflated_sharpe_ratio(ls_sharpe, n_trials=1, n_observations=len(ls),
-                                skewness=skew, kurtosis=kurt)
+    dsr = deflated_sharpe_ratio(ls_sharpe, n_trials=10, n_observations=len(ls),
+                                skewness=skew, kurtosis=kurt,
+                                periods_per_year=TRADING_DAYS)
 
     # market beta of the L/S series (must be ~0 to be neutral)
     a = FMPAdapter()
@@ -216,11 +217,10 @@ def main():
     common = ls.index.intersection(mkt.index)
     beta = float(np.polyfit(mkt.loc[common].values, ls.loc[common].values, 1)[0]) if len(common) > 2 else float("nan")
 
-    m = min(len(fold_is_daily), len(fold_oos_daily))
-    pbo = probability_of_overfitting(
-        np.array(fold_is_daily[:m]).reshape(1, -1).repeat(2, 0),
-        np.array(fold_oos_daily[:m]).reshape(1, -1).repeat(2, 0),
-    ) if m > 10 else float("nan")
+    # A single strategy duplicated into two identical rows makes PBO a
+    # deterministic ~1.0 constant (audit P0-3) - meaningless. Report None
+    # until CSCV over genuinely distinct configs exists.
+    pbo = float("nan")
 
     print(f"  OOS trading days:      {len(ls)}")
     print(f"  Cross-sectional IC:    {mean_ic:+.4f}  (daily mean; >0.02 = useful)")

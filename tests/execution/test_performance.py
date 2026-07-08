@@ -54,3 +54,14 @@ def test_hit_rate_ignores_flat_cash_days():
 def test_empty_curve_is_safe():
     m = compute_metrics([100.0])
     assert m["sharpe"] == 0.0 and m["n_days"] == 0
+
+
+def test_sortino_hand_computed_value():
+    # returns: +2%, -1%, -1%, -1%  -> mean = -0.0025
+    # downside dev = sqrt(mean(min(r,0)^2)) = sqrt(3*0.0001/4) = 0.0086603
+    # sortino = -0.0025/0.0086603*sqrt(252) = -4.5826  (audit: old code gave -4.5e14)
+    eq = [100.0]
+    for r in (0.02, -0.01, -0.01, -0.01):
+        eq.append(eq[-1] * (1 + r))
+    m = compute_metrics(eq)
+    assert m["sortino"] == pytest.approx(-4.5826, abs=0.01)

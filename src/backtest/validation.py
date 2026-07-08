@@ -274,8 +274,9 @@ def deflated_sharpe_ratio(
     n_trials: int,
     n_observations: int,
     skewness: float = 0.0,
-    kurtosis: float = 3.0,
+    kurtosis: float = 0.0,
     sharpe_benchmark: float = 0.0,
+    periods_per_year: float = 1.0,
 ) -> float:
     """
     Compute the Deflated Sharpe Ratio.
@@ -298,23 +299,29 @@ def deflated_sharpe_ratio(
     Returns:
         Probability that observed Sharpe is significant
     """
-    if n_trials <= 0 or n_observations <= 0:
+    if n_trials <= 0 or n_observations <= 1:
         return 0.0
+
+    # The Bailey/Lopez de Prado PSR standard error requires SR and n in the
+    # SAME frequency. Callers usually hold annualized Sharpe with daily n;
+    # periods_per_year deflates SR to per-period units internally (passing 1.0
+    # means SR is already per-period). Kurtosis here is EXCESS (normal = 0),
+    # matching pandas .kurt(); the Mertens term is excess_kurt/4 * SR^2.
+    sr = sharpe_observed / np.sqrt(periods_per_year)
+    sr0 = sharpe_benchmark / np.sqrt(periods_per_year)
 
     e_max_sharpe = _expected_max_sharpe(n_trials, n_observations, skewness, kurtosis)
+    e_max_sharpe = sr0 + (e_max_sharpe - 0.0)  # E[max] above the benchmark
 
-    se_sharpe = np.sqrt(
-        (1 + 0.5 * sharpe_observed ** 2 - skewness * sharpe_observed +
-         (kurtosis - 3) / 4.0 * sharpe_observed ** 2) / (n_observations - 1)
-    )
-
-    if se_sharpe <= 0:
+    var_num = (1 + 0.5 * sr ** 2 - skewness * sr + (kurtosis / 4.0) * sr ** 2)
+    if not np.isfinite(var_num) or var_num <= 0:
+        return 0.0
+    se_sharpe = np.sqrt(var_num / (n_observations - 1))
+    if not np.isfinite(se_sharpe) or se_sharpe <= 0:
         return 0.0
 
-    t_stat = (sharpe_observed - e_max_sharpe) / se_sharpe
-    dsr = stats.norm.cdf(t_stat)
-
-    return float(dsr)
+    t_stat = (sr - e_max_sharpe) / se_sharpe
+    return float(stats.norm.cdf(t_stat))
 
 
 def _expected_max_sharpe(
@@ -787,9 +794,9 @@ class BacktestValidator:
         breakeven_bps = self.cost_model.breakeven_cost(returns, turnover)
 
         skew = float(stats.skew(returns))
-        kurt = float(stats.kurtosis(returns)) + 3.0
+        kurt = float(stats.kurtosis(returns))  # excess
         dsr = deflated_sharpe_ratio(
-            sharpe, self.n_trials, n, skew, kurt
+            sharpe, self.n_trials, n, skew, kurt, periods_per_year=252.0
         )
 
         mbl = minimum_backtest_length(
@@ -803,7 +810,8 @@ class BacktestValidator:
         oos_std = np.std(oos_returns)
         oos_sharpe = np.mean(oos_returns) / oos_std * np.sqrt(252) if oos_std > 0 else 0
 
-        t_stat = sharpe / np.sqrt((1 + 0.5 * sharpe ** 2) / (n - 1)) if n > 1 else 0
+        _sr_d = sharpe / np.sqrt(252.0)
+        t_stat = _sr_d / np.sqrt((1 + 0.5 * _sr_d ** 2) / (n - 1)) if n > 1 else 0
         p_value = 2 * (1 - stats.norm.cdf(abs(t_stat)))
 
         adjusted_p = min(p_value * max(self.n_trials, 1), 1.0)

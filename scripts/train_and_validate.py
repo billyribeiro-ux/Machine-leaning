@@ -114,7 +114,12 @@ def build_dataset():
         close = ohlcv["close"].values.astype(np.float64)
         dates = ohlcv.index.values
 
-        for i in range(len(fv) - SEQ_LEN - HORIZON + 1):
+        # Skip rolling-feature warm-up rows (largest window is 252 bars).
+        # These rows are zero-filled post-audit (previously bfilled with
+        # FUTURE values - a look-ahead leak); either way they are not valid
+        # training inputs.
+        WARMUP = 260
+        for i in range(WARMUP, len(fv) - SEQ_LEN - HORIZON + 1):
             X_parts.append(fv[i:i + SEQ_LEN])
             fut = (close[i + SEQ_LEN + HORIZON - 1] - close[i + SEQ_LEN - 1]) / close[i + SEQ_LEN - 1]
             y_parts.append(fut)
@@ -282,16 +287,22 @@ def main():
     skew = float(pd.Series(oos).skew())
     kurt = float(pd.Series(oos).kurt())
 
-    n_trials = 1                            # we honestly tried one config
+    # Honest trial accounting: this session ran >=2 experiment families with
+    # several implicit config choices each; 10 is a conservative effective-
+    # trials figure per Lopez de Prado. kurt is EXCESS (pandas .kurt()),
+    # matching the corrected formula; periods_per_year deflates the
+    # annualized Sharpe to daily units inside the DSR.
+    n_trials = 10
     dsr = deflated_sharpe_ratio(
-        sharpe_observed=oos_sharpe, n_trials=max(1, n_trials),
+        sharpe_observed=oos_sharpe, n_trials=n_trials,
         n_observations=n_days, skewness=skew, kurtosis=kurt,
+        periods_per_year=TRADING_DAYS,
     )
 
-    m = min(len(r) for r in fold_is_ret_list)
-    is_mat = np.vstack([r[:m] for r in fold_is_ret_list])
-    oos_mat = np.vstack([r[:m] for r in fold_oos_ret_list])
-    pbo = probability_of_overfitting(is_mat, oos_mat)
+    # PBO requires multiple genuinely distinct strategy configs under CSCV;
+    # ranking CV FOLDS of one strategy is not PBO (audit P1-4). Until a real
+    # config dimension exists, report None rather than a fabricated number.
+    pbo = float("nan")
 
     cum = float(np.prod(1 + oos) - 1)       # legit: one equal-weight daily curve
     ann = float((1 + cum) ** (TRADING_DAYS / max(1, n_days)) - 1)
@@ -304,7 +315,7 @@ def main():
     print(f"  Prob backtest overfit:{pbo:.4f}  (0 = robust, 1 = overfit)")
 
     # ---- verdict --------------------------------------------------------- #
-    edge = (mean_ic > 0.02 and oos_sharpe > 0.3 and dsr > 0.90 and pbo < 0.5)
+    edge = (mean_ic > 0.02 and oos_sharpe > 0.3 and dsr > 0.90)
     verdict = (
         "MEASURED EDGE (passes IC/Sharpe/DSR/PBO gates)" if edge
         else "NO RELIABLE EDGE DETECTED on this data/config"

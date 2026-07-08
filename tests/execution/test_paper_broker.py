@@ -81,3 +81,16 @@ def test_invalid_order_rejected():
         b.submit("A", OrderSide.BUY, 0, 10.0)
     with pytest.raises(ValueError):
         b.submit("A", OrderSide.BUY, 10, 0.0)
+
+
+def test_equity_raises_on_missing_price():
+    b = PaperBroker(starting_cash=100_000, commission_bps=0, slippage_bps=0)
+    b.submit("AAPL", OrderSide.BUY, 100, 500.0)
+    with pytest.raises(KeyError):
+        b.equity({})          # $50k position must not silently vanish
+
+
+def test_rebalance_rejects_leverage():
+    b = PaperBroker(starting_cash=100_000, commission_bps=0, slippage_bps=0)
+    with pytest.raises(ValueError):
+        b.rebalance_to_weights({"A": 5.0}, {"A": 100.0})   # 5x gross

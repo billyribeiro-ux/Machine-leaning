@@ -400,8 +400,8 @@ class GEXEngine:
             greeks = compute_greeks_for_strike(spot, strike, T, sigma, 0.0, 0.0)
             gamma = greeks["gamma"]
 
-            call_gex = -1.0 * gamma * call_oi * _OPT_MULTIPLIER * spot
-            put_gex = 1.0 * gamma * put_oi * _OPT_MULTIPLIER * spot
+            call_gex = 1.0 * gamma * call_oi * _OPT_MULTIPLIER * spot
+            put_gex = -1.0 * gamma * put_oi * _OPT_MULTIPLIER * spot
 
             result[strike] = {
                 "call_gex": call_gex,
@@ -497,8 +497,8 @@ class GEXEngine:
             speed = greeks["speed"]
 
             # Dealer GEX (Simple Model).
-            call_gex = -1.0 * gamma * call_oi * _OPT_MULTIPLIER * spot
-            put_gex = 1.0 * gamma * put_oi * _OPT_MULTIPLIER * spot
+            call_gex = 1.0 * gamma * call_oi * _OPT_MULTIPLIER * spot
+            put_gex = -1.0 * gamma * put_oi * _OPT_MULTIPLIER * spot
             net_gex = call_gex + put_gex
 
             result.call_gex_by_strike[strike] = call_gex

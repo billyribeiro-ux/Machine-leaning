@@ -50,6 +50,9 @@ class PaperBroker:
     starting_cash: float = 100_000.0
     commission_bps: float = 1.0
     slippage_bps: float = 1.0
+    # Reject rebalances whose gross exposure Sum(|w|) exceeds this multiple of
+    # equity. 1.0 = fully-invested unlevered book (long or long/short).
+    max_gross_leverage: float = 1.0
 
     cash: float = field(init=False)
     positions: Dict[str, Position] = field(default_factory=dict, init=False)
@@ -97,7 +100,16 @@ class PaperBroker:
 
     # ---- valuation ------------------------------------------------------ #
     def equity(self, prices: Dict[str, float]) -> float:
-        mv = sum(p.market_value(prices[s]) for s, p in self.positions.items() if s in prices)
+        """Mark-to-market equity. Raises KeyError if any open position has
+        no price - silently dropping a position's value corrupts every
+        downstream sizing decision (exactly what a live data hiccup causes)."""
+        mv = 0.0
+        for s, p in self.positions.items():
+            if abs(p.quantity) < 1e-12:
+                continue
+            if s not in prices or not prices[s] or prices[s] <= 0:
+                raise KeyError(f"No valid price for open position {s!r}")
+            mv += p.market_value(prices[s])
         return self.cash + mv
 
     def gross_exposure(self, prices: Dict[str, float]) -> float:
@@ -116,10 +128,23 @@ class PaperBroker:
         Positive weight = long, negative = short. Symbols absent from
         target_weights are flattened.
         """
+        gross = sum(abs(w) for w in target_weights.values())
+        if gross > self.max_gross_leverage + 1e-9:
+            raise ValueError(
+                f"Target gross exposure {gross:.3f} exceeds max_gross_leverage "
+                f"{self.max_gross_leverage:.3f} - refusing to lever the account"
+            )
         eq = self.equity(prices)
         if eq <= 0:
             return
         symbols = set(target_weights) | set(self.positions)
+        # A held symbol without a price cannot be valued OR safely traded.
+        for sym in symbols:
+            held = abs(self.positions.get(sym, Position(sym)).quantity) > 1e-12
+            px = prices.get(sym)
+            if held and (not px or px <= 0):
+                raise KeyError(f"No valid price for held symbol {sym!r} during rebalance")
+        trades = []
         for sym in symbols:
             px = prices.get(sym)
             if not px or px <= 0:
@@ -129,6 +154,10 @@ class PaperBroker:
             delta = target_qty - cur_qty
             if abs(delta * px) < 1e-6:
                 continue
+            trades.append((sym, delta, px))
+        # Sells first so buys are funded by freed cash.
+        trades.sort(key=lambda t: t[1])
+        for sym, delta, px in trades:
             side = OrderSide.BUY if delta > 0 else OrderSide.SELL
             self.submit(sym, side, abs(delta), px, ts)
 

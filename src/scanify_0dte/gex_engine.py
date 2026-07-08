@@ -230,8 +230,8 @@ class GEXEngine:
 
         # ---- Simple (OI-based) model ----
         # Convention: dollar gamma per 1-point move in underlying
-        simple_call_gex = -1.0 * gamma * call_oi * _CONTRACT_MULTIPLIER * spot
-        simple_put_gex = +1.0 * gamma * put_oi * _CONTRACT_MULTIPLIER * spot
+        simple_call_gex = 1.0 * gamma * call_oi * _CONTRACT_MULTIPLIER * spot
+        simple_put_gex = -1.0 * gamma * put_oi * _CONTRACT_MULTIPLIER * spot
 
         # ---- Flow-based model ----
         # Flow direction encodes net customer buying (+) or selling (-).

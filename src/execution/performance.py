@@ -63,9 +63,12 @@ def compute_metrics(
     vol = float(r.std(ddof=1) * np.sqrt(periods_per_year)) if r.std(ddof=1) > 0 else 0.0
     sharpe = float(r.mean() / r.std(ddof=1) * np.sqrt(periods_per_year)) if r.std(ddof=1) > 0 else 0.0
 
-    downside = r[r < 0]
-    dd_std = downside.std(ddof=1) if len(downside) > 1 else 0.0
-    sortino = float(r.mean() / dd_std * np.sqrt(periods_per_year)) if dd_std > 0 else 0.0
+    # Downside deviation: RMS of min(r, 0) over ALL periods (target = 0) -
+    # the standard Sortino convention. Taking std of the negative subset
+    # around its own mean collapses toward 0 for similar-sized losses and
+    # produced astronomically wrong values.
+    downside_dev = float(np.sqrt(np.mean(np.minimum(r, 0.0) ** 2)))
+    sortino = float(r.mean() / downside_dev * np.sqrt(periods_per_year)) if downside_dev > 1e-12 else 0.0
 
     max_dd = float(drawdown_series(eq).min())
     calmar = float(ann / abs(max_dd)) if max_dd < 0 else 0.0

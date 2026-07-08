@@ -1828,14 +1828,14 @@ class BacktestEngine:
         Searches the chain's contracts list for a matching (strike, option_type)
         pair. Returns None if not found.
         """
-        contracts = getattr(chain, "contracts", None)
+        contracts = getattr(chain, "quotes", None)
         if not contracts:
             return None
 
         option_type_upper = option_type.upper()
         for contract in contracts:
             c_strike = getattr(contract, "strike", None)
-            c_type = getattr(contract, "option_type", "").upper()
+            c_type = str(getattr(contract, "option_type", "")).upper()
             if c_strike == strike and c_type == option_type_upper:
                 return contract
 
@@ -1848,7 +1848,7 @@ class BacktestEngine:
 
         Used to determine the spread filter threshold.
         """
-        contracts = getattr(chain, "contracts", None)
+        contracts = getattr(chain, "quotes", None)
         if not contracts:
             return 0.0
 
@@ -1856,7 +1856,7 @@ class BacktestEngine:
         spreads: list[float] = []
 
         for contract in contracts:
-            c_type = getattr(contract, "option_type", "").upper()
+            c_type = str(getattr(contract, "option_type", "")).upper()
             if c_type != option_type_upper:
                 continue
             bid = getattr(contract, "bid", 0.0) or 0.0
@@ -2641,7 +2641,7 @@ class BacktestEngine:
         chain: OptionsChain, target_delta: float, option_type: str
     ) -> Optional[Any]:
         """Find the contract closest to a target delta in the chain."""
-        contracts = getattr(chain, "contracts", None)
+        contracts = getattr(chain, "quotes", None)
         if not contracts:
             return None
 
@@ -2650,7 +2650,7 @@ class BacktestEngine:
         best_delta_diff = float("inf")
 
         for contract in contracts:
-            c_type = getattr(contract, "option_type", "").upper()
+            c_type = str(getattr(contract, "option_type", "")).upper()
             if c_type != option_type_upper:
                 continue
 

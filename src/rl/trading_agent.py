@@ -671,7 +671,7 @@ class PPOAgent:
         states = torch.stack(self.states).to(self.device)
         actions = torch.stack(self.actions).to(self.device)
         old_log_probs = torch.stack(self.log_probs).to(self.device)
-        values = torch.stack(self.values).squeeze(-1).to(self.device)
+        values = torch.stack(self.values).view(-1).to(self.device)
 
         # Compute GAE
         advantages, returns = self._compute_gae(next_value)
@@ -757,7 +757,7 @@ class PPOAgent:
         """Compute Generalized Advantage Estimation."""
         rewards = torch.tensor(self.rewards, dtype=torch.float32).to(self.device)
         dones = torch.tensor(self.dones, dtype=torch.float32).to(self.device)
-        values = torch.stack(self.values).squeeze(-1).to(self.device)
+        values = torch.stack(self.values).view(-1).to(self.device)
 
         # Append next_value for bootstrapping
         values = torch.cat([values, next_value.to(self.device).squeeze()])
@@ -922,8 +922,11 @@ class TradingEnvironment:
 
         if self.position < 0:
             # Closing short first
-            close_pnl = self.position * (self.entry_price - execution_price)
-            self.cash += close_pnl - cost
+            # Covering a short: we BUY back the shares -> cash is DEBITED
+            # by the buyback notional (short-open credited it earlier). PnL
+            # is implicit in the two cash legs; close_pnl is log-only.
+            close_pnl = -self.position * (self.entry_price - execution_price)
+            self.cash += self.position * execution_price - cost  # position<0 -> debit
             self.position = 0
 
         # Open long
@@ -950,8 +953,10 @@ class TradingEnvironment:
 
         if self.position > 0:
             # Closing long first
+            # Closing a long: credit the sale proceeds. PnL is implicit
+            # (proceeds vs. the notional debited at open); log-only here.
             close_pnl = self.position * (execution_price - self.entry_price)
-            self.cash += close_pnl - cost
+            self.cash += self.position * execution_price - cost
             self.position = 0
 
         # Open short
@@ -980,7 +985,9 @@ class TradingEnvironment:
             pnl = -self.position * (self.entry_price - execution_price)
 
         cost = abs(self.position) * execution_price * self.transaction_cost
-        self.cash += pnl - cost
+        # Signed proceeds: long -> credit sale; short -> debit buyback.
+        # PnL is implicit in the cash legs; `pnl` is kept for the log/reward.
+        self.cash += self.position * execution_price - cost
         self.position = 0
 
         self.trades.append({
@@ -993,14 +1000,11 @@ class TradingEnvironment:
 
     def _get_equity(self, price: float) -> float:
         """Calculate current equity."""
-        if self.position > 0:
-            unrealized = self.position * (price - self.entry_price)
-        elif self.position < 0:
-            unrealized = -self.position * (self.entry_price - price)
-        else:
-            unrealized = 0
-
-        return self.cash + unrealized
+        # With notional cash accounting (open debits/credits full notional),
+        # equity is simply cash + signed market value of the position. The old
+        # cash + unrealized-PnL form dropped the position's principal, so
+        # opening a long instantly cratered equity by the whole notional.
+        return self.cash + self.position * price
 
     def _calculate_reward(
         self,

@@ -12,6 +12,7 @@ Connects all ML models and scanners to multi-vendor data sources:
 Author: Revolution Alpha Engine
 """
 
+import logging
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass, field
@@ -223,8 +224,11 @@ class FeatureEngineer:
         if self.config.normalize_features:
             features = self._normalize_features(features)
 
-        # Fill NaN values
-        features = features.ffill().bfill().fillna(0)
+        # Fill NaN values. Forward-fill only: bfill would inject FUTURE
+        # values into rolling-window warm-up rows (e.g. sma_200 for rows
+        # 0-198) - a genuine look-ahead leak. Warm-up rows fill with 0;
+        # callers should drop the first max-window rows per symbol.
+        features = features.ffill().fillna(0)
 
         return features
 
