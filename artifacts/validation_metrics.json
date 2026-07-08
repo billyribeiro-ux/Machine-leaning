@@ -1,5 +1,5 @@
 {
-  "generated_utc": "2026-06-27T23:30:07.070613+00:00",
+  "generated_utc": "2026-07-08T03:02:48.065150+00:00",
   "symbols": [
     "SPY",
     "QQQ",
@@ -17,32 +17,32 @@
     "JNJ",
     "WMT"
   ],
-  "n_sequences": 18375,
+  "n_sequences": 14460,
   "n_features": 115,
-  "date_start": "2021-08-09",
-  "date_end": "2026-06-25",
+  "date_start": "2022-08-30",
+  "date_end": "2026-07-06",
   "seq_len": 30,
   "horizon": 1,
   "n_splits": 5,
   "epochs_per_fold": 12,
   "txn_cost_bps": 1.0,
-  "oos_portfolio_days": 1225,
-  "mean_directional_accuracy": 0.5139440296832826,
-  "mean_information_coefficient": 0.011761098607440089,
-  "oos_sharpe_net": 0.9663394134207731,
-  "oos_cumulative_return": 1.1473581790924072,
-  "oos_annualized_return": 0.17024688892630446,
+  "oos_portfolio_days": 964,
+  "mean_directional_accuracy": 0.5213820941929023,
+  "mean_information_coefficient": -0.005727562017309795,
+  "oos_sharpe_net": 1.0604413444558496,
+  "oos_cumulative_return": 0.827307939529419,
+  "oos_annualized_return": 0.17068597016404397,
   "fold_sharpes": [
-    1.5549249046152824,
-    1.127677682138963,
-    2.100788358388776,
-    -0.6862051956061104,
-    1.9289104893598465
+    1.0464073890800436,
+    2.104460065767135,
+    2.1859477469899966,
+    0.853526369804724,
+    -1.0859194028539016
   ],
-  "deflated_sharpe_probability": 1.0,
-  "probability_of_overfitting": 0.39999999996,
-  "oos_return_skew": -0.4300510585308075,
-  "oos_return_excess_kurtosis": 9.664426803588867,
+  "deflated_sharpe_probability": 0.6944505655760799,
+  "probability_of_overfitting": NaN,
+  "oos_return_skew": 0.8501928448677063,
+  "oos_return_excess_kurtosis": 16.470184326171875,
   "verdict": "NO RELIABLE EDGE DETECTED on this data/config",
-  "runtime_seconds": 392.1
+  "runtime_seconds": 369.4
 }
